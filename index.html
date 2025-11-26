@@ -461,22 +461,32 @@
     });
 
     $('#btn-test-conf')?.addEventListener('click', async () => {
-      const msg = $('#conf-msg');
-      if (msg) msg.textContent = 'Teste Verbindung…';
-      try {
-        const c = await getClient();
-        const { error } = await c.auth.getSession();
-        if (error) {
-          if (msg) msg.textContent = 'Fehler: ' + error.message;
-        } else {
-          if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
-        }
-      } catch (e) {
-        console.error(e);
-        if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
-        resetClient();
-      }
-    });
+  const msg = $('#conf-msg');
+  if (msg) msg.textContent = 'Teste Verbindung…';
+
+  // NEU: aktuelle Eingaben lesen und in die Config speichern
+  const url = ($('#sb-url')?.value || '').trim();
+  const key = ($('#sb-key')?.value || '').trim();
+  if (url && key) {
+    saveConfig(url, key);
+    resetClient();
+  }
+
+  try {
+    const c = await getClient();
+    const { error } = await c.auth.getSession();
+    if (error) {
+      if (msg) msg.textContent = 'Fehler: ' + error.message;
+    } else {
+      if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
+    }
+  } catch (e) {
+    console.error(e);
+    if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
+    resetClient();
+  }
+});
+
 
     // -----------------------------
     // Auth
