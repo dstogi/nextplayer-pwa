@@ -1206,7 +1206,7 @@
         const c = await getClient();
         const [pRes, eRes, rRes] = await Promise.all([
           c.from('player').select('id, full_name, club_name, positions, dominant_foot'),
-          c.from('event').select('id, event_date, type'),
+          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
           c.from('rating').select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
             .limit(2000)
@@ -1263,7 +1263,7 @@
 
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
 
-          // Detail-Liste pro Spieler
+          // Detail-Liste pro Spieler (für Popup)
           let list = ratingsByPlayer.get(r.player_id);
           if (!list) {
             list = [];
@@ -1306,6 +1306,7 @@
           });
         }
 
+        // Filter anwenden
         rows = rows.filter(r => {
           const matchClub = !clubF || r.club === clubF;
 
@@ -1324,13 +1325,14 @@
           return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
         });
 
+        // Sortierung & Top 10
         rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
-
         const top = document.querySelector('#rank-top10')?.checked;
         if (top) rows = rows.slice(0, 10);
 
         lastRows = rows.slice();
 
+        // Tabelle bauen
         const tb = document.querySelector('#rank-table tbody');
         if (!tb) return;
 
@@ -1355,6 +1357,7 @@
             }).join('')
           : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
 
+        // Watchlist-Toggles
         tb.querySelectorAll('.fav-toggle').forEach(el => {
           el.addEventListener('click', (ev) => {
             ev.stopPropagation();
@@ -1367,61 +1370,38 @@
           });
         });
 
-        // NEU: Klick auf Zeile zeigt Einzelbewertungen
-          tb.onclick = (ev) => {
-       const tr = ev.target.closest('tr[data-pid]');
-       if (!tr) return;
-       if (ev.target.classList.contains('fav-toggle')) return;
+        // Popup bei Klick auf Zeile
+        tb.onclick = (ev) => {
+          const tr = ev.target.closest('tr[data-pid]');
+          if (!tr) return;
+          if (ev.target.classList.contains('fav-toggle')) return;
 
-       const pid = tr.getAttribute('data-pid');
-       const row = lastRows.find(r => String(r.id) === String(pid));
-       if (!row) return;
+          const pid = tr.getAttribute('data-pid');
+          const row = lastRows.find(r => String(r.id) === String(pid));
+          if (!row) return;
 
-       const details = ratingsByPlayer.get(row.id) || [];
+          const details = ratingsByPlayer.get(row.id) || [];
 
-       let detailText = '';
+          let detailText = '';
+          if (details.length) {
+            detailText =
+              '\n\nEinzelbewertungen:\n' +
+              details.map(d => {
+                const date  = (d.event_date || '').slice(0,10);
+                const type  = d.event_type === 'match'      ? 'Spiel'
+                            : d.event_type === 'training'   ? 'Training'
+                            : d.event_type === 'tournament' ? 'Turnier'
+                            : (d.event_type || '–');
 
-       if (details.length) {
-         detailText =
-           '\n\nEinzelbewertungen:\n' +
-           details.map(d => {
-             const date  = (d.event_date || '').slice(0,10);
-             const type  = d.event_type === 'match'      ? 'Spiel' :
-                           d.event_type === 'training'   ? 'Training' :
-                           d.event_type === 'tournament' ? 'Turnier' :
-                           (d.event_type || '–');
+                const pairing = d.event_name || '–';
+                const role    = d.role  || '–';
+                const rater   = d.rater || '–';
 
-             const pairing = d.event_name || '–';
-             const role    = d.role  || '–';
-             const rater   = d.rater || '–';
-
-             return (
-               `\nSpiel:    ${pairing}` +
-               `\nDatum:    ${date}` +
-               `\nTyp:      ${type}` +
-               `\nNote:     ${d.avg.toFixed(2)}` +
-               `\nBewerter: ${rater} (${role})\n`
-             );
-           }).join('\n-----------------------------------------\n');
-       } else {
-         detailText = '\n\nKeine Einzelbewertungen gefunden.';
-       }
-
-       alert(
-         'Spieler: ' + row.name + '\n' +
-         'Verein: '  + row.club + '\n' +
-         'Position(en): ' + (Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '')) + '\n' +
-         'Bewertungen: ' + row.cnt + '\n' +
-         'Ø Note: ' + row.avg.toFixed(2) +
-         detailText
-       );
-     };
-   
-    }).join('\n-----------------------------------------\n');
-}
-else {
-  detailText = '\n\nKeine Einzelbewertungen gefunden.';
-}
+                return `- ${date} ${type} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bewerter: ${rater}`;
+              }).join('\n');
+          } else {
+            detailText = '\n\nKeine Einzelbewertungen gefunden.';
+          }
 
           alert(
             'Spieler: ' + row.name + '\n' +
@@ -1441,6 +1421,7 @@ else {
         if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
       }
     }
+
 
     ['change', 'input'].forEach(evt => {
       [
