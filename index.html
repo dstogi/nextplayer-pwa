@@ -54,7 +54,6 @@
       color: #c0c0c0;
     }
 
-    /* Top-Navigation */
     .top-nav {
       margin-top: 10px;
       display: flex;
@@ -285,7 +284,7 @@
       <div id="prof-msg" class="status-line"></div>
     </section>
 
-    <!-- 2a. Spieler anlegen + 3. Bewertung & Events -->
+    <!-- 2a. Spieler anlegen + Events/Bewertung -->
     <section id="sec-rating" class="section-card">
       <h2><span>2a. Spieler & 3. Bewertung</span></h2>
 
@@ -323,7 +322,7 @@
         <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
       </div>
 
-      <!-- NEU: starker Fuß -->
+      <!-- Starker Fuß -->
       <div class="row">
         <label for="pl-foot">Starker Fuß</label>
         <select id="pl-foot">
@@ -438,7 +437,6 @@
           <option value="MST">MST</option>
         </select>
 
-        <!-- NEU: starker Fuß Filter -->
         <label for="rank-foot">Starker Fuß</label>
         <select id="rank-foot">
           <option value="">Alle</option>
@@ -550,7 +548,6 @@
     </section>
   </main>
 
-  <!-- Service Worker Registrierung -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
@@ -558,7 +555,6 @@
     }
   </script>
 
-  <!-- Navigation: Sections je nach Tab anzeigen -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
@@ -583,7 +579,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
-      // global verfügbar machen
       window.npShowSection = showSection;
       
       buttons.forEach(btn => {
@@ -593,12 +588,10 @@
         });
       });
 
-      // initial: nur Setup anzeigen
       showSection('sec-config');
     });
   </script>
 
-  <!-- Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
@@ -610,9 +603,6 @@
     let currentEvent = null;
     let allEvents = [];
 
-    // -----------------------------
-    // Supabase-Konfiguration
-    // -----------------------------
     function loadConfig() {
       return {
         url: localStorage.getItem('sb_url') || '',
@@ -686,9 +676,6 @@
       }
     });
 
-    // -----------------------------
-    // Auth
-    // -----------------------------
     async function loadCurrentUser() {
       try {
         const c = await getClient();
@@ -743,7 +730,6 @@
 
           await loadProfile();
           await refreshAllData();
-          // nach Login direkt zur Bewertung springen
           if (window.npShowSection) {
             window.npShowSection('sec-rating');
           }
@@ -769,9 +755,6 @@
       if (elUser) elUser.textContent = '';
     });
 
-    // -----------------------------
-    // Profil / Rolle (2b)
-    // -----------------------------
     function updateProfileFormForRole() {
       const roleSel   = document.getElementById('prof-role');
       const clubLabel = document.getElementById('prof-club-label');
@@ -854,7 +837,6 @@
         if (msg) msg.textContent = 'Profil gespeichert.';
 
         updateProfileFormForRole();
-        // nach Profil-Speichern zur Bewertung wechseln
         if (window.npShowSection) {
           window.npShowSection('sec-rating');
         }
@@ -900,9 +882,6 @@
       }
     }
 
-    // -----------------------------
-    // Rating UI
-    // -----------------------------
     const ratingKeys = [
       ['technik','Technik'],
       ['taktik','Taktik'],
@@ -940,9 +919,6 @@
     }
     buildCriteriaUI();
 
-    // -----------------------------
-    // Spieler anlegen (2a)
-    // -----------------------------
     async function createPlayer() {
       const msg = document.getElementById('player-create-msg');
 
@@ -983,7 +959,7 @@
           .single();
 
         if (error && error.code === '23505') {
-          console.warn('createPlayer duplicate, suche bestehenden Datensatz…', error);
+          console.warn('createPlayer duplicate', error);
 
           const { data: existing } = await c
             .from('player')
@@ -1093,9 +1069,6 @@
       }
     }
 
-    // -----------------------------
-    // Bewertung speichern
-    // -----------------------------
     document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
       try {
         const c = await getClient();
@@ -1182,9 +1155,6 @@
       }
     });
 
-    // -----------------------------
-    // Ranking & Watchlist
-    // -----------------------------
     function loadFavSet() {
       try {
         const raw = localStorage.getItem('fav_players') || '[]';
@@ -1199,14 +1169,14 @@
     }
     let favSet   = loadFavSet();
     let lastRows = [];
-    let ratingsByPlayer = new Map();  // NEU: Detailratings
+    let ratingsByPlayer = new Map();
 
     async function refreshRanking() {
       try {
         const c = await getClient();
         const [pRes, eRes, rRes] = await Promise.all([
           c.from('player').select('id, full_name, club_name, positions, dominant_foot'),
-          c.from('event').select('id, event_date, type'),
+          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
           c.from('rating').select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
             .limit(2000)
@@ -1238,7 +1208,7 @@
         const favMode = document.querySelector('#fav-filter')?.value || 'all';
 
         const agg = new Map();
-        ratingsByPlayer = new Map(); // neu aufbauen
+        ratingsByPlayer = new Map();
 
         for (const r of ratings) {
           const ev = eMap.get(r.event_id);
@@ -1263,7 +1233,6 @@
 
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
 
-          // Detail-Liste pro Spieler
           let list = ratingsByPlayer.get(r.player_id);
           if (!list) {
             list = [];
@@ -1367,61 +1336,44 @@
           });
         });
 
-        // NEU: Klick auf Zeile zeigt Einzelbewertungen
-          tb.onclick = (ev) => {
-       const tr = ev.target.closest('tr[data-pid]');
-       if (!tr) return;
-       if (ev.target.classList.contains('fav-toggle')) return;
+        tb.onclick = (ev) => {
+          const tr = ev.target.closest('tr[data-pid]');
+          if (!tr) return;
+          if (ev.target.classList.contains('fav-toggle')) return;
 
-       const pid = tr.getAttribute('data-pid');
-       const row = lastRows.find(r => String(r.id) === String(pid));
-       if (!row) return;
+          const pid = tr.getAttribute('data-pid');
+          const row = lastRows.find(r => String(r.id) === String(pid));
+          if (!row) return;
 
-       const details = ratingsByPlayer.get(row.id) || [];
+          const details = ratingsByPlayer.get(row.id) || [];
 
-       let detailText = '';
+          let detailText = '';
 
-       if (details.length) {
-         detailText =
-           '\n\nEinzelbewertungen:\n' +
-           details.map(d => {
-             const date  = (d.event_date || '').slice(0,10);
-             const type  = d.event_type === 'match'      ? 'Spiel' :
-                           d.event_type === 'training'   ? 'Training' :
-                           d.event_type === 'tournament' ? 'Turnier' :
-                           (d.event_type || '–');
+          if (details.length) {
+            detailText =
+              '\n\nEinzelbewertungen:\n' +
+              details.map(d => {
+                const date  = (d.event_date || '').slice(0,10);
+                const type  = d.event_type === 'match'      ? 'Spiel' :
+                              d.event_type === 'training'   ? 'Training' :
+                              d.event_type === 'tournament' ? 'Turnier' :
+                              (d.event_type || '–');
 
-             const pairing = d.event_name || '–';
-             const role    = d.role  || '–';
-             const rater   = d.rater || '–';
+                const pairing = d.event_name || '–';
+                const role    = d.role  || '–';
+                const rater   = d.rater || '–';
 
-             return (
-               `\nSpiel:    ${pairing}` +
-               `\nDatum:    ${date}` +
-               `\nTyp:      ${type}` +
-               `\nNote:     ${d.avg.toFixed(2)}` +
-               `\nBewerter: ${rater} (${role})\n`
-             );
-           }).join('\n-----------------------------------------\n');
-       } else {
-         detailText = '\n\nKeine Einzelbewertungen gefunden.';
-       }
-
-       alert(
-         'Spieler: ' + row.name + '\n' +
-         'Verein: '  + row.club + '\n' +
-         'Position(en): ' + (Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '')) + '\n' +
-         'Bewertungen: ' + row.cnt + '\n' +
-         'Ø Note: ' + row.avg.toFixed(2) +
-         detailText
-       );
-     };
-   
-    }).join('\n-----------------------------------------\n');
-}
-else {
-  detailText = '\n\nKeine Einzelbewertungen gefunden.';
-}
+                return (
+                  `\nSpiel:    ${pairing}` +
+                  `\nDatum:    ${date}` +
+                  `\nTyp:      ${type}` +
+                  `\nNote:     ${d.avg.toFixed(2)}` +
+                  `\nBewerter: ${rater} (${role})\n`
+                );
+              }).join('\n-----------------------------------------\n');
+          } else {
+            detailText = '\n\nKeine Einzelbewertungen gefunden.';
+          }
 
           alert(
             'Spieler: ' + row.name + '\n' +
@@ -1488,9 +1440,6 @@ else {
       URL.revokeObjectURL(url);
     });
 
-    // -----------------------------
-    // ICS-Import
-    // -----------------------------
     function parseICS(txt) {
       const out = [];
       const blocks = txt.split(/BEGIN:VEVENT/).slice(1).map(s => 'BEGIN:VEVENT' + s);
@@ -1573,9 +1522,6 @@ else {
       }
     });
 
-    // -----------------------------
-    // Letzte Bewertungen
-    // -----------------------------
     async function refreshLastComments() {
       try {
         const c = await getClient();
@@ -1627,9 +1573,6 @@ else {
       }
     }
 
-    // -----------------------------
-    // Events anlegen & suchen
-    // -----------------------------
     async function createEvent() {
       const dateEl   = document.getElementById('event-date');
       const typeEl   = document.getElementById('event-type');
@@ -1732,7 +1675,11 @@ else {
         if (away) return away;
       }
       if (ev.subtype) return ev.subtype;
-      return `Event ${ev.id}`;
+      const date = ev.event_date || '';
+      const type = ev.type || '';
+      const loc  = ev.location || '';
+      const base = [date, type].filter(Boolean).join(' ');
+      return [base, loc].filter(Boolean).join(' | ') || 'Unbenanntes Event';
     }
 
     function formatEventDisplayLine(ev) {
@@ -1787,14 +1734,7 @@ else {
 
       const label = document.querySelector('#event-current');
       if (label) {
-        let pairing = '';
-        if (ev.competition || ev.opponent) {
-          pairing = `${ev.competition || ''} - ${ev.opponent || ''}`.trim();
-        } else if (ev.subtype) {
-          pairing = ev.subtype;
-        } else {
-          pairing = `Event ${ev.id}`;
-        }
+        const pairing = formatEventPairing(ev);
         const dateStr = ev.event_date ? ` am ${ev.event_date}` : '';
         label.textContent = `Aktuell ausgewähltes Spiel: ${pairing}${dateStr}`;
       }
@@ -1859,9 +1799,6 @@ else {
       });
     }
 
-    // -----------------------------
-    // Initial-Ladevorgang
-    // -----------------------------
     async function refreshAllData() {
       await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
       await refreshRanking();
