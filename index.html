@@ -721,7 +721,11 @@
 
           await loadProfile();
           await refreshAllData();
+     // nach Login direkt zur Bewertung springen
+          if (window.npShowSection) {
+            window.npShowSection('sec-rating'); 
         }
+      }
       } catch (e) {
         console.error(e);
         if (msg) msg.textContent = 'Fehler beim Login.';
