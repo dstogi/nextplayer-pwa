@@ -1372,7 +1372,7 @@
         });
 
         // Klick auf Zeile zeigt Einzelbewertungen
-        tb.onclick = (ev) => {
+               tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
           if (ev.target.classList.contains('fav-toggle')) return;
@@ -1398,8 +1398,15 @@
                 const role    = d.role  || '–';
                 const rater   = d.rater || '–';
 
-                return `- ${date} ${type} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bewerter: ${rater}`;
-              }).join('\n');
+                // Mehrzeilige Darstellung pro Bewertung
+                return (
+                  `\nSpiel:    ${pairing}` +
+                  `\nDatum:    ${date}` +
+                  `\nTyp:      ${type}` +
+                  `\nNote:     ${d.avg.toFixed(2)}` +
+                  `\nBewerter: ${rater} (${role})\n`
+                );
+              }).join('\n-----------------------------------------\n');
           } else {
             detailText = '\n\nKeine Einzelbewertungen gefunden.';
           }
