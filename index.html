@@ -4,36 +4,186 @@
   <meta charset="utf-8" />
   <title>NextPlayer™ – Scouting App</title>
 
+  <!-- Mobile & PWA -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#050608" />
 
   <!-- PWA Manifest -->
   <link rel="manifest" href="manifest.json" />
 
-  <!-- Icons -->
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/nextplayer-192.png" />
-  <link rel="apple-touch-icon" href="icons/nextplayer-512.png" />
+  <!-- Icons (aktuell deine Dummy-Icons im Repo) -->
+  <link rel="icon" type="image/png" sizes="192x192" href="NextPlayer-192.png" />
+  <link rel="apple-touch-icon" href="NextPlayer-512.png" />
 
   <style>
     body {
       font-family: system-ui, sans-serif;
       margin: 0;
+      padding: 0;
+      background: #f4f4f4;
+    }
+    header {
+      background: #222;
+      color: #fff;
+      padding: 10px 20px;
+    }
+    main {
       padding: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h2 {
+      margin-top: 30px;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 4px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    label {
+      display: inline-block;
+      min-width: 120px;
+      font-size: 0.9rem;
+    }
+    input, select, textarea, button {
+      padding: 4px 6px;
+      font-size: 0.9rem;
+    }
+    textarea {
+      width: 100%;
+      max-width: 600px;
+      min-height: 60px;
+    }
+    .status-line {
+      margin-top: 5px;
+      font-size: 0.85rem;
+      color: #444;
+    }
+    #criteria > div {
+      margin-bottom: 6px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 900px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      font-size: 0.85rem;
+      text-align: left;
+    }
+    th {
+      background: #eee;
+    }
+
+    /* Mini-Mobile-Tuning */
+    @media (max-width: 700px) {
+      main { padding: 10px; }
+      label { min-width: 100px; }
+      .row { gap: 6px; }
     }
   </style>
 </head>
 <body>
+  <header>
+    <h1>NextPlayer™ – Scouting App</h1>
+  </header>
 
-  <h1>NextPlayer™ – App läuft!</h1>
-  <p>Wenn du das hier siehst, funktioniert deine PWA.</p>
+  <main>
+    <!-- dein kompletter bisheriger Inhalt -->
+    <!-- 1. Supabase-Konfiguration -->
+    <h2>1. Supabase-Konfiguration</h2>
+    <div class="row">
+      <label for="sb-url">Supabase URL</label>
+      <input id="sb-url" type="text" size="40" placeholder="https://xxxx.supabase.co">
+    </div>
+    <div class="row">
+      <label for="sb-key">Anon Key</label>
+      <input id="sb-key" type="text" size="60" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+    </div>
+    <div class="row">
+      <button id="btn-save-conf">Speichern</button>
+      <button id="btn-test-conf">Verbindung testen</button>
+    </div>
+    <div id="conf-msg" class="status-line"></div>
 
-  <!-- Service Worker -->
+    <!-- 2. Auth -->
+    <h2>2. Login / Registrierung</h2>
+    <div class="row">
+      <label for="auth-email">E-Mail</label>
+      <input id="auth-email" type="email" size="30">
+    </div>
+    <div class="row">
+      <label for="auth-pass">Passwort</label>
+      <input id="auth-pass" type="password" size="20">
+    </div>
+    <div class="row">
+      <button id="btn-signup">Registrieren</button>
+      <button id="btn-login">Login</button>
+      <button id="btn-logout">Logout</button>
+    </div>
+    <div class="status-line">
+      <span id="auth-user"></span>
+    </div>
+    <div id="auth-msg" class="status-line"></div>
+
+    <!-- 2b. Profil / Rolle -->
+    <h2>2b. Profil / Rolle</h2>
+    <div class="row">
+      <label for="prof-role">Rolle</label>
+      <select id="prof-role">
+        <option value="">Bitte wählen…</option>
+        <option value="trainer">Trainer</option>
+        <option value="spieler">Aktiver Spieler</option>
+        <option value="scout">Scout</option>
+        <option value="eltern">Elternteil</option>
+        <option value="zuschauer">Zuschauer / Fan</option>
+        <option value="sonstige">Sonstige</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="prof-club" id="prof-club-label">Verein (optional)</label>
+      <input id="prof-club" type="text" size="30">
+    </div>
+    <div class="row">
+      <label for="prof-extra" id="prof-extra-label">Zusatzinfo (optional)</label>
+      <input id="prof-extra" type="text" size="40" placeholder="">
+    </div>
+    <div class="row">
+      <button id="btn-save-profile" type="button">Profil speichern</button>
+    </div>
+    <div id="prof-msg" class="status-line"></div>
+
+    <!-- 2a. Spieler anlegen (manuell) -->
+    <!-- … ab hier kannst du den gesamten Body deiner alten Datei
+         1:1 weiterlaufen lassen – ich kürze nur im Chat … -->
+    <!-- BITTE: alles von "<h2>2a. Spieler anlegen (manuell)</h2>" bis
+         vor "<!-- Logik -->" aus deiner alten Datei hier hineinkopieren. -->
+
+    <!-- 2a, 3, 3b, 3c, 3d, 4, 5, 6 – UNVERÄNDERT übernehmen -->
+
+  </main>
+
+  <!-- Service Worker Registrierung für PWA -->
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(err => console.error('SW registration failed:', err));
     }
   </script>
 
+  <!-- Deine komplette vorhandene Logik unverändert -->
+  <script type="module">
+    <!-- HIER kommt dein kompletter <script type="module">-Block
+         aus der alten Datei rein – von "import { createClient } ..."
+         bis zum Ende. 1:1 übernehmen. -->
+  </script>
 </body>
 </html>
 
