@@ -2,7 +2,15 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <title>Scouting App – Supabase</title>
+  <title>NextPlayer™ – Scouting App</title>
+
+  <!-- PWA & Mobil -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#050608" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="NextPlayer-192.png" />
+  <link rel="apple-touch-icon" href="NextPlayer-512.png" />
+
   <style>
     :root {
       --np-bg: #050608;
@@ -46,7 +54,7 @@
       color: #c0c0c0;
     }
 
-    /* einfache Top-Navigation */
+    /* Top-Navigation */
     .top-nav {
       margin-top: 10px;
       display: flex;
@@ -189,7 +197,6 @@
       header h1 { font-size: 1.1rem; }
     }
   </style>
-
 </head>
 <body>
   <header>
@@ -197,7 +204,7 @@
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
     <div class="top-nav">
-      <button data-target="sec-config"    class="active">Setup</button>
+      <button data-target="sec-config"  class="active">Setup</button>
       <button data-target="sec-auth">Login</button>
       <button data-target="sec-profile">Profil</button>
       <button data-target="sec-rating">Bewerten</button>
@@ -210,51 +217,48 @@
   <main>
 
     <!-- 1. Supabase-Konfiguration -->
-    <h2>1. Supabase-Konfiguration</h2>
-    <div class="row">
-      <label for="sb-url">Supabase URL</label>
-      <input id="sb-url" type="text" size="40" placeholder="https://xxxx.supabase.co">
-    </div>
-    <div class="row">
-      <label for="sb-key">Anon Key</label>
-      <input id="sb-key" type="text" size="60" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
-    </div>
-    <div class="row">
-      <button id="btn-save-conf">Speichern</button>
-      <button id="btn-test-conf">Verbindung testen</button>
-    </div>
-    <div id="conf-msg" class="status-line"></div>
+    <section id="sec-config" class="section-card">
+      <h2><span>1. Supabase-Konfiguration</span></h2>
+      <div class="row">
+        <label for="sb-url">Supabase URL</label>
+        <input id="sb-url" type="text" size="40" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="row">
+        <label for="sb-key">Anon Key</label>
+        <input id="sb-key" type="text" size="60" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      </div>
+      <div class="row">
+        <button id="btn-save-conf">Speichern</button>
+        <button id="btn-test-conf">Verbindung testen</button>
+      </div>
+      <div id="conf-msg" class="status-line"></div>
+    </section>
 
-        <!-- 2. Login / Registrierung -->
+    <!-- 2. Login / Registrierung -->
     <section id="sec-auth" class="section-card">
       <h2><span>2. Login / Registrierung</span></h2>
-
       <div class="row">
         <label for="auth-email">E-Mail</label>
         <input id="auth-email" type="email" size="30">
       </div>
-
       <div class="row">
         <label for="auth-pass">Passwort</label>
         <input id="auth-pass" type="password" size="20">
       </div>
-
       <div class="row">
         <button id="btn-signup">Registrieren</button>
         <button id="btn-login">Login</button>
         <button id="btn-logout">Logout</button>
       </div>
-
       <div class="status-line">
         <span id="auth-user"></span>
       </div>
       <div id="auth-msg" class="status-line"></div>
     </section>
 
-          <!-- 2b. Profil / Rolle -->
+    <!-- 2b. Profil / Rolle -->
     <section id="sec-profile" class="section-card">
       <h2><span>2b. Profil / Rolle</span></h2>
-
       <div class="row">
         <label for="prof-role">Rolle</label>
         <select id="prof-role">
@@ -267,29 +271,24 @@
           <option value="sonstige">Sonstige</option>
         </select>
       </div>
-
       <div class="row">
         <label for="prof-club" id="prof-club-label">Verein (optional)</label>
         <input id="prof-club" type="text" size="30">
       </div>
-
       <div class="row">
         <label for="prof-extra" id="prof-extra-label">Zusatzinfo (optional)</label>
         <input id="prof-extra" type="text" size="40" placeholder="">
       </div>
-
       <div class="row">
         <button id="btn-save-profile" type="button">Profil speichern</button>
       </div>
-
       <div id="prof-msg" class="status-line"></div>
     </section>
 
-<!-- 2a. Spieler anlegen (manuell) + 3. Bewertung & Events -->
+    <!-- 2a. Spieler anlegen + 3. Bewertung & Events -->
     <section id="sec-rating" class="section-card">
       <h2><span>2a. Spieler & 3. Bewertung</span></h2>
 
-      <!-- 2a. Spieler anlegen (manuell) -->
       <h3>2a. Spieler anlegen (manuell)</h3>
       <div class="row">
         <label for="pl-first">Vorname</label>
@@ -328,7 +327,6 @@
       </div>
       <div id="player-create-msg" class="status-line"></div>
 
-      <!-- 3. Bewertung erfassen -->
       <h3>3. Bewertung erfassen</h3>
       <div class="row">
         <label for="r-player">Spieler</label>
@@ -349,7 +347,6 @@
       </div>
       <div id="rate-msg" class="status-line"></div>
 
-      <!-- 3b. Ereignis suchen -->
       <h3>3b. Ereignis suchen</h3>
       <div class="row">
         <label for="search-pairing">Paarung / Spiel</label>
@@ -363,7 +360,6 @@
         Kein Spiel ausgewählt.
       </p>
 
-      <!-- 3d. Event-Details -->
       <h3>3d. Event-Details</h3>
       <div id="event-card" style="
         background:#fff;
@@ -376,13 +372,11 @@
         <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
       </div>
 
-      <!-- 3c. Event anlegen -->
       <h3>3c. Event anlegen</h3>
       <div class="row">
         <label for="event-date">Datum</label>
         <input id="event-date" type="date">
       </div>
-
       <div class="row">
         <label for="event-type">Event-Typ</label>
         <select id="event-type">
@@ -391,37 +385,31 @@
           <option value="tournament">Turnier</option>
         </select>
       </div>
-
       <div class="row">
         <label for="event-home">Heimteam</label>
         <input id="event-home" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
       </div>
-
       <div class="row">
         <label for="event-away">Auswärtsteam</label>
         <input id="event-away" type="text" size="30" placeholder="z.B. SC Freiburg U17">
       </div>
-
       <div class="row">
         <label for="event-name">Name</label>
         <input id="event-name" type="text" size="40" placeholder="z.B. Oberliga-Heimspiel oder Testspiel">
       </div>
-
       <div class="row">
         <label for="event-location">Ort</label>
         <input id="event-location" type="text" size="40" placeholder="z.B. Kunstrasen Villingen">
       </div>
-
       <div class="row">
         <button id="btn-create-event" type="button">Event speichern</button>
       </div>
       <div id="event-create-msg" class="status-line"></div>
     </section>
 
-        <!-- 4. Ranking -->
+    <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
       <h2><span>4. Ranking</span></h2>
-
       <div class="row">
         <label for="club-filter">Verein</label>
         <select id="club-filter"></select>
@@ -505,10 +493,9 @@
       </table>
     </section>
 
-        <!-- 5. Kalender-Import (ICS) -->
+    <!-- 5. Kalender-Import (ICS) -->
     <section id="sec-events" class="section-card">
       <h2><span>5. Kalender-Import (ICS)</span></h2>
-
       <div class="row">
         <label for="ics-file">ICS-Datei</label>
         <input id="ics-file" type="file" accept=".ics">
@@ -522,7 +509,7 @@
       <div id="ics-msg" class="status-line"></div>
     </section>
 
-       <!-- 6. Letzte Bewertungen (optional) -->
+    <!-- 6. Letzte Bewertungen -->
     <section id="sec-last" class="section-card">
       <h2><span>6. Letzte Bewertungen</span></h2>
       <table>
@@ -539,9 +526,54 @@
         </tbody>
       </table>
     </section>
- </main>
+  </main>
 
-  <!-- Logik -->
+  <!-- Service Worker Registrierung -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .catch(err => console.error('SW registration failed:', err));
+    }
+  </script>
+
+  <!-- Navigation: Sections je nach Tab anzeigen -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const buttons = Array.from(document.querySelectorAll('.top-nav button'));
+      const sections = {
+        'sec-config':  document.getElementById('sec-config'),
+        'sec-auth':    document.getElementById('sec-auth'),
+        'sec-profile': document.getElementById('sec-profile'),
+        'sec-rating':  document.getElementById('sec-rating'),
+        'sec-ranking': document.getElementById('sec-ranking'),
+        'sec-events':  document.getElementById('sec-events'),
+        'sec-last':    document.getElementById('sec-last')
+      };
+
+      function showSection(id) {
+        Object.entries(sections).forEach(([key, el]) => {
+          if (!el) return;
+          el.style.display = (key === id) ? 'block' : 'none';
+        });
+        buttons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.target === id);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          if (target) showSection(target);
+        });
+      });
+
+      // initial: nur Setup anzeigen
+      showSection('sec-config');
+    });
+  </script>
+
+  <!-- Deine komplette Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
@@ -604,31 +636,30 @@
     });
 
     $('#btn-test-conf')?.addEventListener('click', async () => {
-  const msg = $('#conf-msg');
-  if (msg) msg.textContent = 'Teste Verbindung…';
+      const msg = $('#conf-msg');
+      if (msg) msg.textContent = 'Teste Verbindung…';
 
-  // NEU: aktuelle Eingaben lesen und in die Config speichern
-  const url = ($('#sb-url')?.value || '').trim();
-  const key = ($('#sb-key')?.value || '').trim();
-  if (url && key) {
-    saveConfig(url, key);
-    resetClient();
-  }
+      const url = ($('#sb-url')?.value || '').trim();
+      const key = ($('#sb-key')?.value || '').trim();
+      if (url && key) {
+        saveConfig(url, key);
+        resetClient();
+      }
 
-  try {
-    const c = await getClient();
-    const { error } = await c.auth.getSession();
-    if (error) {
-      if (msg) msg.textContent = 'Fehler: ' + error.message;
-    } else {
-      if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
-    }
-  } catch (e) {
-    console.error(e);
-    if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
-    resetClient();
-  }
-});
+      try {
+        const c = await getClient();
+        const { error } = await c.auth.getSession();
+        if (error) {
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+        } else {
+          if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
+        }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
+        resetClient();
+      }
+    });
 
     // -----------------------------
     // Auth
@@ -793,7 +824,6 @@
         currentProfile = data;
         if (msg) msg.textContent = 'Profil gespeichert.';
 
-
         updateProfileFormForRole();
       } catch (e) {
         console.error('saveProfile', e);
@@ -826,7 +856,6 @@
           if (roleSel)    roleSel.value    = data.role       || '';
           if (clubInput)  clubInput.value  = data.club_name  || '';
           if (extraInput) extraInput.value = data.extra_info || '';
-
 
           updateProfileFormForRole();
         } else {
@@ -1028,96 +1057,94 @@
       }
     }
 
-// -----------------------------
-// Bewertung speichern (ohne Rollen-Dropdown)
-// -----------------------------
-document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
-  try {
-    const c = await getClient();
-    const sessionRes = await c.auth.getSession();
-    const user = sessionRes?.data?.session?.user || null;
-    const msg = document.querySelector('#rate-msg');
+    // -----------------------------
+    // Bewertung speichern
+    // -----------------------------
+    document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
+      try {
+        const c = await getClient();
+        const sessionRes = await c.auth.getSession();
+        const user = sessionRes?.data?.session?.user || null;
+        const msg = document.querySelector('#rate-msg');
 
-    if (!user) {
-      const m = document.querySelector('#auth-msg');
-      if (m) m.textContent = 'Bitte zuerst einloggen.';
-      return;
-    }
+        if (!user) {
+          const m = document.querySelector('#auth-msg');
+          if (m) m.textContent = 'Bitte zuerst einloggen.';
+          return;
+        }
 
-    // Rolle MUSS im Profil gesetzt sein
-    if (!currentProfile || !currentProfile.role) {
-      if (msg) msg.textContent = 'Bitte zuerst im Profil (2b) deine Rolle auswählen und speichern.';
-      return;
-    }
+        if (!currentProfile || !currentProfile.role) {
+          if (msg) msg.textContent = 'Bitte zuerst im Profil (2b) deine Rolle auswählen und speichern.';
+          return;
+        }
 
-    const playerSel = document.querySelector('#r-player');
-    const eventSel  = document.querySelector('#r-event');
-    const commentEl = document.querySelector('#r-comment');
+        const playerSel = document.querySelector('#r-player');
+        const eventSel  = document.querySelector('#r-event');
+        const commentEl = document.querySelector('#r-comment');
 
-    const player_id = playerSel?.value || null;
-    const dropdownEventId = eventSel?.value || null;
-    let   event_id  = (currentEvent && currentEvent.id) ? currentEvent.id : dropdownEventId;
+        const player_id = playerSel?.value || null;
+        const dropdownEventId = eventSel?.value || null;
+        let   event_id  = (currentEvent && currentEvent.id) ? currentEvent.id : dropdownEventId;
 
-    if (!event_id) {
-      if (msg) msg.textContent = 'Bitte zuerst ein Event auswählen (3b/3c oder Event-Dropdown).';
-      return;
-    }
+        if (!event_id) {
+          if (msg) msg.textContent = 'Bitte zuerst ein Event auswählen (3b/3c oder Event-Dropdown).';
+          return;
+        }
 
-    if (!currentEvent && dropdownEventId) {
-      const ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
-      if (ev) {
-        setCurrentEvent(ev);
-        event_id = ev.id;
+        if (!currentEvent && dropdownEventId) {
+          const ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
+          if (ev) {
+            setCurrentEvent(ev);
+            event_id = ev.id;
+          }
+        }
+
+        if (!player_id) {
+          if (msg) msg.textContent = 'Bitte einen Spieler auswählen (oder in 2a neu anlegen).';
+          return;
+        }
+
+        const comment = (commentEl?.value || '').trim();
+
+        const crit = {};
+        ratingKeys.forEach(([k]) => {
+          const sel = document.querySelector(`select[data-k="${k}"]`);
+          const v = parseFloat(sel?.value);
+          crit[k] = isNaN(v) ? null : v;
+        });
+
+        const roleForRating = currentProfile.role || '';
+        crit._role  = roleForRating;
+        crit._rater = user.email || '';
+
+        const payload = {
+          rater_id: user.id,
+          player_id,
+          event_id,
+          criteria: crit,
+          comment
+        };
+
+        const { error } = await c
+          .from('rating')
+          .upsert(payload, {
+            onConflict: 'rater_id,player_id,event_id'
+          });
+
+        if (error) {
+          console.error('upsert rating error', error);
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+        } else {
+          if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
+          await refreshRanking();
+          await refreshLastComments();
+        }
+      } catch (e) {
+        console.error('save rating', e);
+        const msg = document.querySelector('#rate-msg');
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
       }
-    }
-
-    if (!player_id) {
-      if (msg) msg.textContent = 'Bitte einen Spieler auswählen (oder in 2a neu anlegen).';
-      return;
-    }
-
-    const comment = (commentEl?.value || '').trim();
-
-    const crit = {};
-    ratingKeys.forEach(([k]) => {
-      const sel = document.querySelector(`select[data-k="${k}"]`);
-      const v = parseFloat(sel?.value);
-      crit[k] = isNaN(v) ? null : v;
     });
-
-    // Rolle aus Profil verwenden
-    const roleForRating = currentProfile.role || '';
-    crit._role  = roleForRating;
-    crit._rater = user.email || '';
-
-    const payload = {
-      rater_id: user.id,
-      player_id,
-      event_id,
-      criteria: crit,
-      comment
-    };
-
-    const { error } = await c
-      .from('rating')
-      .upsert(payload, {
-        onConflict: 'rater_id,player_id,event_id'
-      });
-
-    if (error) {
-      console.error('upsert rating error', error);
-      if (msg) msg.textContent = 'Fehler: ' + error.message;
-    } else {
-      if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
-      await refreshRanking();
-      await refreshLastComments();
-    }
-  } catch (e) {
-    console.error('save rating', e);
-    const msg = document.querySelector('#rate-msg');
-    if (msg) msg.textContent = 'Fehler beim Speichern.';
-  }
-});
 
     // -----------------------------
     // Ranking & Watchlist
