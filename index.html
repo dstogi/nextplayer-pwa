@@ -322,6 +322,18 @@
         </select>
         <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
       </div>
+
+      <!-- NEU: starker Fuß -->
+      <div class="row">
+        <label for="pl-foot">Starker Fuß</label>
+        <select id="pl-foot">
+          <option value="">Bitte wählen…</option>
+          <option value="left">links</option>
+          <option value="right">rechts</option>
+          <option value="both">beidfüßig</option>
+        </select>
+      </div>
+
       <div class="row">
         <button id="btn-create-player" type="button">Spieler speichern</button>
       </div>
@@ -425,6 +437,15 @@
           <option value="AST">AST</option>
           <option value="MST">MST</option>
         </select>
+
+        <!-- NEU: starker Fuß Filter -->
+        <label for="rank-foot">Starker Fuß</label>
+        <select id="rank-foot">
+          <option value="">Alle</option>
+          <option value="left">links</option>
+          <option value="right">rechts</option>
+          <option value="both">beidfüßig</option>
+        </select>
       </div>
       <div class="row">
         <label for="rank-type">Event-Typ</label>
@@ -482,13 +503,14 @@
             <th>Spieler</th>
             <th>Verein</th>
             <th>Pos</th>
+            <th>Fuß</th>
             <th>#Bewertungen</th>
             <th>Ø Note</th>
             <th>Letztes Event</th>
           </tr>
         </thead>
         <tbody>
-          <tr><td colspan="7">Noch keine Daten.</td></tr>
+          <tr><td colspan="8">Noch keine Daten.</td></tr>
         </tbody>
       </table>
     </section>
@@ -721,11 +743,11 @@
 
           await loadProfile();
           await refreshAllData();
-     // nach Login direkt zur Bewertung springen
+          // nach Login direkt zur Bewertung springen
           if (window.npShowSection) {
-            window.npShowSection('sec-rating'); 
+            window.npShowSection('sec-rating');
+          }
         }
-      }
       } catch (e) {
         console.error(e);
         if (msg) msg.textContent = 'Fehler beim Login.';
@@ -930,6 +952,7 @@
       const clubCur  = (document.getElementById('pl-club-current')?.value || '').trim();
       const clubPrev = (document.getElementById('pl-club-prev')?.value   || '').trim();
       const posSel   = document.getElementById('pl-pos');
+      const footSel  = document.getElementById('pl-foot');
 
       if (!first || !last) {
         if (msg) msg.textContent = 'Bitte mindestens Vor- und Nachname eingeben.';
@@ -953,7 +976,8 @@
             birthdate: birth || null,
             club_name: clubCur || null,
             prev_club: clubPrev || null,
-            positions: positions.length ? positions : null
+            positions: positions.length ? positions : null,
+            dominant_foot: footSel?.value || null
           }])
           .select('id')
           .single();
@@ -991,6 +1015,7 @@
             if (el) el.value = '';
           });
         if (posSel) Array.from(posSel.options).forEach(o => (o.selected = false));
+        if (footSel) footSel.value = '';
 
         await refreshPlayers();
         await refreshClubFilter?.();
@@ -1179,7 +1204,7 @@
       try {
         const c = await getClient();
         const [pRes, eRes, rRes] = await Promise.all([
-          c.from('player').select('id, full_name, club_name, positions'),
+          c.from('player').select('id, full_name, club_name, positions, dominant_foot'),
           c.from('event').select('id, event_date, type'),
           c.from('rating').select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
@@ -1202,6 +1227,7 @@
 
         const clubF   = document.querySelector('#club-filter')?.value || '';
         const posF    = document.querySelector('#rank-pos')?.value || '';
+        const footF   = document.querySelector('#rank-foot')?.value || '';
         const typeF   = document.querySelector('#rank-type')?.value || '';
         const roleF   = (document.querySelector('#rank-role')?.value || '').toLowerCase();
         const fromF   = document.querySelector('#rank-from')?.value || '';
@@ -1248,13 +1274,14 @@
 
         let rows = [];
         for (const [pid, st] of agg.entries()) {
-          const pl = pMap.get(pid) || { full_name: pid, club_name: '', positions: null };
+          const pl = pMap.get(pid) || { full_name: pid, club_name: '', positions: null, dominant_foot: null };
           const avg = st.sum / st.cnt;
           rows.push({
             id:   pid,
             name: pl.full_name,
             club: pl.club_name || '',
             pos:  pl.positions || null,
+            foot: pl.dominant_foot || '',
             cnt:  st.cnt,
             avg,
             last: st.last
@@ -1271,11 +1298,12 @@
               : []);
 
           const matchPos  = !posF || posArr.includes(posF);
+          const matchFoot = !footF || r.foot === footF;
           const matchText = !q || r.name.toLowerCase().includes(q) || r.club.toLowerCase().includes(q);
           const matchCnt  = r.cnt >= minR;
           const matchFav  = (favMode !== 'fav' || favSet.has(r.id));
 
-          return matchClub && matchPos && matchText && matchCnt && matchFav;
+          return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
         });
 
         rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
@@ -1292,17 +1320,22 @@
           ? rows.map(r => {
               const star   = favSet.has(r.id) ? '★' : '☆';
               const posStr = Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || '');
+              const footLabel =
+                r.foot === 'left' ? 'links' :
+                r.foot === 'right' ? 'rechts' :
+                r.foot === 'both' ? 'beidfüßig' : '';
               return `<tr data-pid="${r.id}">
                         <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
                         <td>${r.name}</td>
                         <td>${r.club}</td>
                         <td>${posStr}</td>
+                        <td>${footLabel}</td>
                         <td>${r.cnt}</td>
                         <td>${r.avg.toFixed(2)}</td>
                         <td>${r.last || ''}</td>
                       </tr>`;
             }).join('')
-          : '<tr><td colspan="7">Keine Daten für die aktuellen Filter.</td></tr>';
+          : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
 
         tb.querySelectorAll('.fav-toggle').forEach(el => {
           el.addEventListener('click', (ev) => {
@@ -1323,8 +1356,8 @@
           const name = tr.children[1]?.textContent || '';
           const club = tr.children[2]?.textContent || '';
           const pos  = tr.children[3]?.textContent || '';
-          const cnt  = tr.children[4]?.textContent || '';
-          const avg  = tr.children[5]?.textContent || '';
+          const cnt  = tr.children[5]?.textContent || ''; // Achtung: Spalten verschoben
+          const avg  = tr.children[6]?.textContent || '';
           alert(
             'Spieler: ' + name + '\n' +
             'Verein: '  + club + '\n' +
@@ -1347,6 +1380,7 @@
       [
         'club-filter',
         'rank-pos',
+        'rank-foot',
         'rank-type',
         'rank-role',
         'rank-from',
@@ -1364,7 +1398,7 @@
 
     document.getElementById('btn-export-csv')?.addEventListener('click', () => {
       if (!lastRows.length) return;
-      const header = ['Spieler','Verein','Position(en)','#Bewertungen','Ø Note','Letztes Event'];
+      const header = ['Spieler','Verein','Position(en)','Fuß','#Bewertungen','Ø Note','Letztes Event'];
       const lines = [
         header.join(';'),
         ...lastRows.map(r =>
@@ -1372,6 +1406,7 @@
             r.name,
             r.club,
             Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || ''),
+            (r.foot === 'left' ? 'links' : r.foot === 'right' ? 'rechts' : r.foot === 'both' ? 'beidfüßig' : ''),
             r.cnt,
             r.avg.toFixed(2),
             r.last || ''
