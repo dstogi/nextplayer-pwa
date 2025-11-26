@@ -1368,39 +1368,55 @@
         });
 
         // NEU: Klick auf Zeile zeigt Einzelbewertungen
-        tb.onclick = (ev) => {
-          const tr = ev.target.closest('tr[data-pid]');
-          if (!tr) return;
-          if (ev.target.classList.contains('fav-toggle')) return;
+          tb.onclick = (ev) => {
+       const tr = ev.target.closest('tr[data-pid]');
+       if (!tr) return;
+       if (ev.target.classList.contains('fav-toggle')) return;
 
-          const pid = tr.getAttribute('data-pid');
-          const row = lastRows.find(r => String(r.id) === String(pid));
-          if (!row) return;
+       const pid = tr.getAttribute('data-pid');
+       const row = lastRows.find(r => String(r.id) === String(pid));
+       if (!row) return;
 
-          const details = ratingsByPlayer.get(row.id) || [];
+       const details = ratingsByPlayer.get(row.id) || [];
 
-          let detailText = '';
+       let detailText = '';
 
-if (details.length) {
-  detailText =
-    '\n\nEinzelbewertungen:\n' +
-    details.map(d => {
-      const date  = (d.event_date || '').slice(0,10);
-      const type  = d.event_type === 'match' ? 'Spiel' :
-                    d.event_type === 'training' ? 'Training' :
-                    d.event_type === 'tournament' ? 'Turnier' : d.event_type;
+       if (details.length) {
+         detailText =
+           '\n\nEinzelbewertungen:\n' +
+           details.map(d => {
+             const date  = (d.event_date || '').slice(0,10);
+             const type  = d.event_type === 'match'      ? 'Spiel' :
+                           d.event_type === 'training'   ? 'Training' :
+                           d.event_type === 'tournament' ? 'Turnier' :
+                           (d.event_type || '–');
 
-      const pairing = d.event_name || '–';
-      const role  = d.role || '–';
-      const rater = d.rater || '–';
+             const pairing = d.event_name || '–';
+             const role    = d.role  || '–';
+             const rater   = d.rater || '–';
 
-      return (
-        `\nSpiel:  ${pairing}` +
-        `\nDatum:  ${date}` +
-        `\nTyp:    ${type}` +
-        `\nNote:   ${d.avg.toFixed(2)}` +
-        `\nBewerter: ${rater} (${role})\n`
-      );
+             return (
+               `\nSpiel:    ${pairing}` +
+               `\nDatum:    ${date}` +
+               `\nTyp:      ${type}` +
+               `\nNote:     ${d.avg.toFixed(2)}` +
+               `\nBewerter: ${rater} (${role})\n`
+             );
+           }).join('\n-----------------------------------------\n');
+       } else {
+         detailText = '\n\nKeine Einzelbewertungen gefunden.';
+       }
+
+       alert(
+         'Spieler: ' + row.name + '\n' +
+         'Verein: '  + row.club + '\n' +
+         'Position(en): ' + (Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '')) + '\n' +
+         'Bewertungen: ' + row.cnt + '\n' +
+         'Ø Note: ' + row.avg.toFixed(2) +
+         detailText
+       );
+     };
+   
     }).join('\n-----------------------------------------\n');
 }
 else {
