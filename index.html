@@ -2,19 +2,7 @@
 <html lang="de">
 <head>
   <meta charset="utf-8" />
-  <title>NextPlayer™ – Scouting App</title>
-
-  <!-- Mobile & PWA -->
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#050608" />
-
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="manifest.json" />
-
-  <!-- Icons (aktuell deine Dummy-Icons im Repo) -->
-  <link rel="icon" type="image/png" sizes="192x192" href="NextPlayer-192.png" />
-  <link rel="apple-touch-icon" href="NextPlayer-512.png" />
-
+  <title>Scouting App – Supabase</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -29,8 +17,6 @@
     }
     main {
       padding: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
     }
     h2 {
       margin-top: 30px;
@@ -81,22 +67,14 @@
     th {
       background: #eee;
     }
-
-    /* Mini-Mobile-Tuning */
-    @media (max-width: 700px) {
-      main { padding: 10px; }
-      label { min-width: 100px; }
-      .row { gap: 6px; }
-    }
   </style>
 </head>
 <body>
   <header>
-    <h1>NextPlayer™ – Scouting App</h1>
+    <h1>Scouting App – Supabase</h1>
   </header>
 
   <main>
-    <!-- dein kompletter bisheriger Inhalt -->
     <!-- 1. Supabase-Konfiguration -->
     <h2>1. Supabase-Konfiguration</h2>
     <div class="row">
@@ -161,29 +139,1468 @@
     <div id="prof-msg" class="status-line"></div>
 
     <!-- 2a. Spieler anlegen (manuell) -->
-    <!-- … ab hier kannst du den gesamten Body deiner alten Datei
-         1:1 weiterlaufen lassen – ich kürze nur im Chat … -->
-    <!-- BITTE: alles von "<h2>2a. Spieler anlegen (manuell)</h2>" bis
-         vor "<!-- Logik -->" aus deiner alten Datei hier hineinkopieren. -->
+    <h2>2a. Spieler anlegen (manuell)</h2>
+    <div class="row">
+      <label for="pl-first">Vorname</label>
+      <input id="pl-first" type="text" size="20">
+    </div>
+    <div class="row">
+      <label for="pl-last">Nachname</label>
+      <input id="pl-last" type="text" size="20">
+    </div>
+    <div class="row">
+      <label for="pl-birth">Geburtsdatum</label>
+      <input id="pl-birth" type="date">
+    </div>
+    <div class="row">
+      <label for="pl-club-current">Aktueller Verein</label>
+      <input id="pl-club-current" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
+    </div>
+    <div class="row">
+      <label for="pl-club-prev">Verein vorher</label>
+      <input id="pl-club-prev" type="text" size="30" placeholder="z.B. SC Freiburg Jugend">
+    </div>
+    <div class="row">
+      <label for="pl-pos">Position(en)</label>
+      <select id="pl-pos" multiple size="6">
+        <option value="TW">TW (Torwart)</option>
+        <option value="AV">AV (Außenverteidiger)</option>
+        <option value="IV">IV (Innenverteidiger)</option>
+        <option value="MF">MF (Mittelfeld)</option>
+        <option value="AST">AST (Außenstürmer)</option>
+        <option value="MST">MST (Mittelstürmer)</option>
+      </select>
+      <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
+    </div>
+    <div class="row">
+      <button id="btn-create-player" type="button">Spieler speichern</button>
+    </div>
+    <div id="player-create-msg" class="status-line"></div>
 
-    <!-- 2a, 3, 3b, 3c, 3d, 4, 5, 6 – UNVERÄNDERT übernehmen -->
+    <!-- 3. Bewertung erfassen -->
+    <h2>3. Bewertung erfassen</h2>
+    <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
+      (Aktuelles Event siehe unten unter „3b. Ereignis suchen &amp; übernehmen“)
+    </p>
+    <div class="row">
+      <label for="r-player">Spieler</label>
+      <select id="r-player"></select>
+    </div>
+    <div class="row">
+      <label for="r-event">Event</label>
+      <select id="r-event"></select>
+    </div>
+    
+    <h3>Kriterien (Schulnoten 1–6)</h3>
+    <div id="criteria"></div>
 
+    <h3>Kommentar</h3>
+    <textarea id="r-comment" placeholder="Kurze Beschreibung der Leistung..."></textarea>
+    <div class="row">
+      <button id="btn-add-rating">Bewertung speichern</button>
+    </div>
+    <div id="rate-msg" class="status-line"></div>
+
+    <!-- 3b. Ereignis suchen & übernehmen -->
+    <section id="event-search">
+      <h2>3b. Ereignis suchen &amp; übernehmen</h2>
+      <div class="row">
+        <label for="search-pairing">Paarung / Spiel</label>
+        <input
+          id="search-pairing"
+          type="text"
+          size="40"
+          placeholder="z.B. FC 08 Villingen - SC Freiburg U17"
+        />
+        <button id="btn-search-event" type="button">Suchen</button>
+      </div>
+
+      <div id="event-results"></div>
+
+      <p id="event-current" style="font-size:0.9rem; color:#555; margin-top:10px;">
+        Kein Spiel ausgewählt.
+      </p>
+    </section>
+
+    <!-- 3d. Event-Details -->
+    <section id="event-detail">
+      <h2>3d. Event-Details</h2>
+      <div id="event-card" style="
+        background:#fff;
+        border-radius:8px;
+        padding:10px 14px;
+        box-shadow:0 1px 3px rgba(0,0,0,0.12);
+        max-width:600px;
+        font-size:0.9rem;
+      ">
+        <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
+      </div>
+    </section>
+
+    <!-- 3c. Event anlegen (manuell) -->
+    <section id="event-create">
+      <h2>3c. Event anlegen (manuell)</h2>
+
+      <div class="row">
+        <label for="event-date">Datum</label>
+        <input id="event-date" type="date">
+      </div>
+
+      <div class="row">
+        <label for="event-type">Event-Typ</label>
+        <select id="event-type">
+          <option value="match">Spiel</option>
+          <option value="training">Training</option>
+          <option value="tournament">Turnier</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="event-home">Heimteam</label>
+        <input id="event-home" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
+      </div>
+
+      <div class="row">
+        <label for="event-away">Auswärtsteam</label>
+        <input id="event-away" type="text" size="30" placeholder="z.B. SC Freiburg U17">
+      </div>
+
+      <div class="row">
+        <label for="event-name">Name</label>
+        <input id="event-name" type="text" size="40" placeholder="z.B. Oberliga-Heimspiel oder Testspiel">
+      </div>
+
+      <div class="row">
+        <label for="event-location">Ort</label>
+        <input id="event-location" type="text" size="40" placeholder="z.B. Kunstrasen Villingen">
+      </div>
+
+      <div class="row">
+        <button id="btn-create-event" type="button">Event speichern</button>
+      </div>
+
+      <div id="event-create-msg" class="status-line"></div>
+    </section>
+
+    <!-- 4. Ranking -->
+    <h2>4. Ranking</h2>
+    <div class="row">
+      <label for="club-filter">Verein</label>
+      <select id="club-filter"></select>
+    </div>
+    <div class="row">
+      <label for="rank-pos">Position</label>
+      <select id="rank-pos">
+        <option value="">Alle</option>
+        <option value="TW">TW</option>
+        <option value="AV">AV</option>
+        <option value="IV">IV</option>
+        <option value="MF">MF</option>
+        <option value="AST">AST</option>
+        <option value="MST">MST</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="rank-type">Event-Typ</label>
+      <select id="rank-type">
+        <option value="">Alle</option>
+        <option value="match">Spiel</option>
+        <option value="training">Training</option>
+        <option value="tournament">Turnier</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="rank-role">Bewertungs-Rolle</label>
+      <select id="rank-role">
+        <option value="">Alle</option>
+        <option value="trainer">Trainer</option>
+        <option value="scout">Scout</option>
+        <option value="eltern">Eltern</option>
+        <option value="spieler">Mitspieler</option>
+        <option value="sonstige">Sonstige</option>
+      </select>
+    </div>
+    <div class="row">
+      <label for="rank-from">Von Datum</label>
+      <input id="rank-from" type="date">
+      <label for="rank-to">Bis Datum</label>
+      <input id="rank-to" type="date">
+    </div>
+    <div class="row">
+      <label for="rank-min">Min. Bewertungen</label>
+      <input id="rank-min" type="number" value="1" min="0" style="width:70px;">
+    </div>
+    <div class="row">
+      <label for="rank-q">Suche (Name/Verein)</label>
+      <input id="rank-q" type="text" size="30">
+    </div>
+    <div class="row">
+      <label for="fav-filter">Watchlist</label>
+      <select id="fav-filter">
+        <option value="">Alle</option>
+        <option value="fav">Nur Favoriten</option>
+      </select>
+      <label>
+        <input type="checkbox" id="rank-top10">
+        nur Top 10
+      </label>
+      <button id="btn-refresh-ranking">Ranking aktualisieren</button>
+      <button id="btn-export-csv">CSV-Export</button>
+    </div>
+    <div id="rank-msg" class="status-line"></div>
+
+    <table id="rank-table">
+      <thead>
+        <tr>
+          <th>★</th>
+          <th>Spieler</th>
+          <th>Verein</th>
+          <th>Pos</th>
+          <th>#Bewertungen</th>
+          <th>Ø Note</th>
+          <th>Letztes Event</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="7">Noch keine Daten.</td></tr>
+      </tbody>
+    </table>
+
+    <!-- 5. ICS-Import -->
+    <h2>5. Kalender-Import (ICS)</h2>
+    <div class="row">
+      <label for="ics-file">ICS-Datei</label>
+      <input id="ics-file" type="file" accept=".ics">
+      <button id="btn-import-ics">Datei importieren</button>
+    </div>
+    <div class="row">
+      <label for="ics-url">ICS-URL</label>
+      <input id="ics-url" type="text" size="60" placeholder="https://.../kalender.ics">
+      <button id="btn-import-ics-url">Von URL laden</button>
+    </div>
+    <div id="ics-msg" class="status-line"></div>
+
+    <!-- 6. Letzte Bewertungen -->
+    <h2>6. Letzte Bewertungen (optional)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Spieler</th>
+          <th>Event</th>
+          <th>Kommentar</th>
+        </tr>
+      </thead>
+      <tbody id="last-ratings">
+        <tr><td colspan="4">Noch keine Bewertungen.</td></tr>
+      </tbody>
+    </table>
   </main>
 
-  <!-- Service Worker Registrierung für PWA -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .catch(err => console.error('SW registration failed:', err));
-    }
-  </script>
-
-  <!-- Deine komplette vorhandene Logik unverändert -->
+  <!-- Logik -->
   <script type="module">
-    <!-- HIER kommt dein kompletter <script type="module">-Block
-         aus der alten Datei rein – von "import { createClient } ..."
-         bis zum Ende. 1:1 übernehmen. -->
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const $  = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    let supa = null;
+    let currentUser = null;
+    let currentProfile = null;
+    let currentEvent = null;
+    let allEvents = [];
+
+    // -----------------------------
+    // Supabase-Konfiguration
+    // -----------------------------
+    function loadConfig() {
+      return {
+        url: localStorage.getItem('sb_url') || '',
+        key: localStorage.getItem('sb_key') || ''
+      };
+    }
+
+    function saveConfig(url, key) {
+      localStorage.setItem('sb_url', url || '');
+      localStorage.setItem('sb_key', key || '');
+    }
+
+    function resetClient() {
+      supa = null;
+    }
+
+    function ensureClient() {
+      const { url, key } = loadConfig();
+      if (!url || !key) {
+        const msg = $('#conf-msg');
+        if (msg) msg.textContent = 'Bitte Supabase-URL und Anon-Key speichern.';
+        throw new Error('Supabase-Konfiguration fehlt');
+      }
+      supa = createClient(url, key, {
+        auth: { storageKey: 'scout-app-auth', multiTab: false }
+      });
+      return supa;
+    }
+
+    async function getClient() {
+      if (supa) return supa;
+      return ensureClient();
+    }
+
+    $('#btn-save-conf')?.addEventListener('click', () => {
+      const url = ($('#sb-url')?.value || '').trim();
+      const key = ($('#sb-key')?.value || '').trim();
+      const msg = $('#conf-msg');
+      if (!url || !key) {
+        if (msg) msg.textContent = 'Bitte URL und Anon-Key eingeben.';
+        return;
+      }
+      saveConfig(url, key);
+      resetClient();
+      if (msg) msg.textContent = 'Konfiguration gespeichert.';
+    });
+
+    $('#btn-test-conf')?.addEventListener('click', async () => {
+      const msg = $('#conf-msg');
+      if (msg) msg.textContent = 'Teste Verbindung…';
+      try {
+        const c = await getClient();
+        const { error } = await c.auth.getSession();
+        if (error) {
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+        } else {
+          if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
+        }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
+        resetClient();
+      }
+    });
+
+    // -----------------------------
+    // Auth
+    // -----------------------------
+    async function loadCurrentUser() {
+      try {
+        const c = await getClient();
+        const { data } = await c.auth.getSession();
+        currentUser = data?.session?.user || null;
+        const elUser = $('#auth-user');
+        if (elUser) {
+          elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
+        }
+      } catch (e) {
+        console.error('loadCurrentUser', e);
+        currentUser = null;
+      }
+    }
+
+    $('#btn-signup')?.addEventListener('click', async () => {
+      const email = ($('#auth-email')?.value || '').trim();
+      const pwd   = ($('#auth-pass')?.value || '').trim();
+      const msg   = $('#auth-msg');
+      if (!email || !pwd) {
+        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+        return;
+      }
+      try {
+        const c = await getClient();
+        const { error } = await c.auth.signUp({ email, password: pwd });
+        if (msg) msg.textContent = error ? ('Fehler: ' + error.message) : 'Registriert – jetzt einloggen.';
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Fehler bei Registrierung.';
+      }
+    });
+
+    $('#btn-login')?.addEventListener('click', async () => {
+      const email = ($('#auth-email')?.value || '').trim();
+      const pwd   = ($('#auth-pass')?.value || '').trim();
+      const msg   = $('#auth-msg');
+      if (!email || !pwd) {
+        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+        return;
+      }
+      try {
+        const c = await getClient();
+        const { data, error } = await c.auth.signInWithPassword({ email, password: pwd });
+        if (error) {
+          if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
+        } else {
+          currentUser = data?.user || null;
+          if (msg) msg.textContent = 'Login OK.';
+          const elUser = $('#auth-user');
+          if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
+
+          await loadProfile();
+          await refreshAllData();
+        }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Fehler beim Login.';
+      }
+    });
+
+    $('#btn-logout')?.addEventListener('click', async () => {
+      try {
+        const c = await getClient();
+        await c.auth.signOut();
+      } catch (e) {
+        console.error(e);
+      }
+      currentUser = null;
+      currentProfile = null;
+      const msg = $('#auth-msg');
+      if (msg) msg.textContent = 'Abgemeldet.';
+      const elUser = $('#auth-user');
+      if (elUser) elUser.textContent = '';
+    });
+
+    // -----------------------------
+    // Profil / Rolle (2b)
+    // -----------------------------
+    function updateProfileFormForRole() {
+      const roleSel   = document.getElementById('prof-role');
+      const clubLabel = document.getElementById('prof-club-label');
+      const extraLabel= document.getElementById('prof-extra-label');
+
+      if (!roleSel || !clubLabel || !extraLabel) return;
+
+      const role = roleSel.value;
+
+      clubLabel.textContent  = 'Verein (optional)';
+      extraLabel.textContent = 'Zusatzinfo (optional)';
+
+      if (role === 'spieler') {
+        clubLabel.textContent  = 'Aktueller Verein (Pflicht)';
+        extraLabel.textContent = 'Zusatzinfo Spieler (z.B. Position, Liga, optional)';
+      } else if (role === 'trainer') {
+        clubLabel.textContent  = 'Verein als Trainer (Pflicht)';
+        extraLabel.textContent = 'Lizenzangabe (optional, z.B. „UEFA B“)';
+      } else if (role === 'scout') {
+        clubLabel.textContent  = 'Verein / Organisation als Scout (optional)';
+        extraLabel.textContent = 'Weitere Infos (optional)';
+      } else if (role === 'eltern') {
+        clubLabel.textContent  = 'Verein des Kindes (optional)';
+        extraLabel.textContent = 'Weitere Infos (optional)';
+      } else if (role === 'zuschauer') {
+        clubLabel.textContent  = 'Lieblingsverein (optional)';
+        extraLabel.textContent = 'Weitere Infos (optional)';
+      }
+    }
+
+    document.getElementById('prof-role')?.addEventListener('change', updateProfileFormForRole);
+
+    async function saveProfile() {
+      const msg       = document.getElementById('prof-msg');
+      const roleSel   = document.getElementById('prof-role');
+      const clubInput = document.getElementById('prof-club');
+      const extraInput= document.getElementById('prof-extra');
+
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+
+      const role = roleSel?.value || '';
+      if (!role) {
+        if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
+        return;
+      }
+
+      const club_name  = (clubInput?.value || '').trim();
+      const extra_info = (extraInput?.value || '').trim();
+
+      if ((role === 'spieler' || role === 'trainer') && !club_name) {
+        if (msg) msg.textContent = 'Bitte den Verein angeben (Pflicht für Spieler & Trainer).';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const payload = {
+          user_id: currentUser.id,
+          role,
+          club_name:  club_name  || null,
+          extra_info: extra_info || null
+        };
+
+        const { data, error } = await c
+          .from('profile')
+          .upsert(payload, { onConflict: 'user_id' })
+          .select('user_id, role, club_name, extra_info')
+          .single();
+
+        if (error) {
+          console.error('saveProfile error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern des Profils.';
+          return;
+        }
+
+        currentProfile = data;
+        if (msg) msg.textContent = 'Profil gespeichert.';
+
+
+        updateProfileFormForRole();
+      } catch (e) {
+        console.error('saveProfile', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    }
+
+    document.getElementById('btn-save-profile')?.addEventListener('click', saveProfile);
+
+    async function loadProfile() {
+      if (!currentUser) {
+        currentProfile = null;
+        return;
+      }
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('profile')
+          .select('user_id, role, club_name, extra_info')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          currentProfile = data;
+
+          const roleSel    = document.getElementById('prof-role');
+          const clubInput  = document.getElementById('prof-club');
+          const extraInput = document.getElementById('prof-extra');
+
+          if (roleSel)    roleSel.value    = data.role       || '';
+          if (clubInput)  clubInput.value  = data.club_name  || '';
+          if (extraInput) extraInput.value = data.extra_info || '';
+
+
+          updateProfileFormForRole();
+        } else {
+          currentProfile = null;
+        }
+      } catch (e) {
+        console.error('loadProfile', e);
+        currentProfile = null;
+      }
+    }
+
+    // -----------------------------
+    // Rating UI
+    // -----------------------------
+    const ratingKeys = [
+      ['technik','Technik'],
+      ['taktik','Taktik'],
+      ['intelligenz','Spielintelligenz'],
+      ['handlung','Handlungsschnelligkeit'],
+      ['mentalitaet','Mentalität'],
+      ['physis','Physis'],
+      ['team','Teamverhalten'],
+      ['konzentration','Konzentration'],
+      ['kreativitaet','Kreativität'],
+      ['tempo','Spieltempo'],
+      ['offensiv','Offensiv'],
+      ['defensiv','Defensiv']
+    ];
+    const gradeSteps = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
+
+    function gradeCells() {
+      return gradeSteps.map(v => `<option value="${v}">${v}</option>`).join('');
+    }
+
+    function buildCriteriaUI() {
+      const wrap = document.querySelector('#criteria');
+      if (!wrap) return;
+      wrap.innerHTML = '';
+      ratingKeys.forEach(([key,label]) => {
+        const div = document.createElement('div');
+        div.style.minWidth = '150px';
+        div.innerHTML = `
+          <label>${label}</label>
+          <select data-k="${key}">
+            ${gradeCells()}
+          </select>`;
+        wrap.appendChild(div);
+      });
+    }
+    buildCriteriaUI();
+
+    // -----------------------------
+    // Spieler anlegen (2a)
+    // -----------------------------
+    async function createPlayer() {
+      const msg = document.getElementById('player-create-msg');
+
+      const first = (document.getElementById('pl-first')?.value || '').trim();
+      const last  = (document.getElementById('pl-last')?.value  || '').trim();
+      const birth = (document.getElementById('pl-birth')?.value || '').trim();
+      const clubCur  = (document.getElementById('pl-club-current')?.value || '').trim();
+      const clubPrev = (document.getElementById('pl-club-prev')?.value   || '').trim();
+      const posSel   = document.getElementById('pl-pos');
+
+      if (!first || !last) {
+        if (msg) msg.textContent = 'Bitte mindestens Vor- und Nachname eingeben.';
+        return;
+      }
+
+      const full = `${first} ${last}`.trim();
+      const positions = posSel
+        ? Array.from(posSel.selectedOptions).map(o => o.value)
+        : [];
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('player')
+          .insert([{
+            full_name: full,
+            first_name: first,
+            last_name: last,
+            birthdate: birth || null,
+            club_name: clubCur || null,
+            prev_club: clubPrev || null,
+            positions: positions.length ? positions : null
+          }])
+          .select('id')
+          .single();
+
+        if (error && error.code === '23505') {
+          console.warn('createPlayer duplicate, suche bestehenden Datensatz…', error);
+
+          const { data: existing } = await c
+            .from('player')
+            .select('id')
+            .eq('full_name', full)
+            .eq('club_name', clubCur || null)
+            .maybeSingle();
+
+          const sel = document.getElementById('r-player');
+          if (sel && existing?.id) {
+            sel.value = existing.id;
+          }
+
+          if (msg) msg.textContent = 'Spieler existiert bereits – wurde ausgewählt.';
+          return;
+        }
+
+        if (error) {
+          console.error('createPlayer error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
+          return;
+        }
+
+        if (msg) msg.textContent = 'Spieler gespeichert.';
+
+        ['pl-first','pl-last','pl-birth','pl-club-current','pl-club-prev']
+          .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+        if (posSel) Array.from(posSel.options).forEach(o => (o.selected = false));
+
+        await refreshPlayers();
+        await refreshClubFilter?.();
+
+        const sel = document.getElementById('r-player');
+        if (sel && data?.id) {
+          sel.value = data.id;
+        }
+      } catch (e) {
+        console.error('createPlayer', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern: ' + (e.message || e);
+      }
+    }
+
+    document.getElementById('btn-create-player')?.addEventListener('click', createPlayer);
+
+    async function refreshPlayers() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player')
+          .select('id, full_name, club_name')
+          .order('full_name');
+        if (error) throw error;
+        const sel = document.querySelector('#r-player');
+        if (!sel) return;
+        sel.innerHTML = (data || []).map(p =>
+          `<option value="${p.id}">${p.full_name} (${p.club_name || ''})</option>`
+        ).join('');
+      } catch (e) {
+        console.error('refreshPlayers', e);
+      }
+    }
+
+    async function refreshClubFilter() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player')
+          .select('club_name');
+        if (error) throw error;
+        const clubs = Array.from(
+          new Set(
+            (data || [])
+              .map(x => (x.club_name || '').trim())
+              .filter(Boolean)
+          )
+        ).sort();
+        const sel = document.querySelector('#club-filter');
+        if (!sel) return;
+        sel.innerHTML =
+          '<option value="">Alle</option>' +
+          clubs.map(cc => `<option value="${cc}">${cc}</option>`).join('');
+      } catch (e) {
+        console.error('refreshClubFilter', e);
+      }
+    }
+
+    async function refreshEvents() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: false });
+        if (error) throw error;
+        allEvents = data || [];
+        const sel = document.querySelector('#r-event');
+        if (!sel) return;
+        sel.innerHTML = allEvents.map(e =>
+          `<option value="${e.id}">${e.event_date} ${e.type}</option>`
+        ).join('');
+      } catch (e) {
+        console.error('refreshEvents', e);
+      }
+    }
+
+
+// -----------------------------
+// Bewertung speichern (ohne Rollen-Dropdown)
+// -----------------------------
+document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
+  try {
+    const c = await getClient();
+    const sessionRes = await c.auth.getSession();
+    const user = sessionRes?.data?.session?.user || null;
+    const msg = document.querySelector('#rate-msg');
+
+    if (!user) {
+      const m = document.querySelector('#auth-msg');
+      if (m) m.textContent = 'Bitte zuerst einloggen.';
+      return;
+    }
+
+    // Rolle MUSS im Profil gesetzt sein
+    if (!currentProfile || !currentProfile.role) {
+      if (msg) msg.textContent = 'Bitte zuerst im Profil (2b) deine Rolle auswählen und speichern.';
+      return;
+    }
+
+    const playerSel = document.querySelector('#r-player');
+    const eventSel  = document.querySelector('#r-event');
+    const commentEl = document.querySelector('#r-comment');
+
+    const player_id = playerSel?.value || null;
+    const dropdownEventId = eventSel?.value || null;
+    let   event_id  = (currentEvent && currentEvent.id) ? currentEvent.id : dropdownEventId;
+
+    if (!event_id) {
+      if (msg) msg.textContent = 'Bitte zuerst ein Event auswählen (3b/3c oder Event-Dropdown).';
+      return;
+    }
+
+    if (!currentEvent && dropdownEventId) {
+      const ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
+      if (ev) {
+        setCurrentEvent(ev);
+        event_id = ev.id;
+      }
+    }
+
+    if (!player_id) {
+      if (msg) msg.textContent = 'Bitte einen Spieler auswählen (oder in 2a neu anlegen).';
+      return;
+    }
+
+    const comment = (commentEl?.value || '').trim();
+
+    const crit = {};
+    ratingKeys.forEach(([k]) => {
+      const sel = document.querySelector(`select[data-k="${k}"]`);
+      const v = parseFloat(sel?.value);
+      crit[k] = isNaN(v) ? null : v;
+    });
+
+    // Rolle aus Profil verwenden
+    const roleForRating = currentProfile.role || '';
+    crit._role  = roleForRating;
+    crit._rater = user.email || '';
+
+    const payload = {
+      rater_id: user.id,
+      player_id,
+      event_id,
+      criteria: crit,
+      comment
+    };
+
+    const { error } = await c
+      .from('rating')
+      .upsert(payload, {
+        onConflict: 'rater_id,player_id,event_id'
+      });
+
+    if (error) {
+      console.error('upsert rating error', error);
+      if (msg) msg.textContent = 'Fehler: ' + error.message;
+    } else {
+      if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
+      await refreshRanking();
+      await refreshLastComments();
+    }
+  } catch (e) {
+    console.error('save rating', e);
+    const msg = document.querySelector('#rate-msg');
+    if (msg) msg.textContent = 'Fehler beim Speichern.';
+  }
+});
+
+    // -----------------------------
+    // Ranking & Watchlist
+    // -----------------------------
+    function loadFavSet() {
+      try {
+        const raw = localStorage.getItem('fav_players') || '[]';
+        const arr = JSON.parse(raw);
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch {
+        return new Set();
+      }
+    }
+    function saveFavSet(set) {
+      localStorage.setItem('fav_players', JSON.stringify([...set]));
+    }
+    let favSet   = loadFavSet();
+    let lastRows = [];
+
+    async function refreshRanking() {
+      try {
+        const c = await getClient();
+        const [pRes, eRes, rRes] = await Promise.all([
+          c.from('player').select('id, full_name, club_name, positions'),
+          c.from('event').select('id, event_date, type'),
+          c.from('rating').select('player_id, event_id, criteria, created_at')
+            .order('created_at', { ascending: false })
+            .limit(2000)
+        ]);
+
+        if (pRes.error || eRes.error || rRes.error) {
+          console.error(pRes.error || eRes.error || rRes.error);
+          const msg = document.querySelector('#rank-msg');
+          if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+          return;
+        }
+
+        const players = pRes.data || [];
+        const events  = eRes.data || [];
+        const ratings = rRes.data || [];
+
+        const pMap = new Map(players.map(p => [p.id, p]));
+        const eMap = new Map(events.map(e => [e.id, e]));
+
+        const clubF   = document.querySelector('#club-filter')?.value || '';
+        const posF    = document.querySelector('#rank-pos')?.value || '';
+        const typeF   = document.querySelector('#rank-type')?.value || '';
+        const roleF   = (document.querySelector('#rank-role')?.value || '').toLowerCase();
+        const fromF   = document.querySelector('#rank-from')?.value || '';
+        const toF     = document.querySelector('#rank-to')?.value || '';
+        const q       = (document.querySelector('#rank-q')?.value || '').toLowerCase();
+        const minR    = parseInt(document.querySelector('#rank-min')?.value || '0', 10) || 0;
+        const favMode = document.querySelector('#fav-filter')?.value || 'all';
+
+        const agg = new Map();
+
+        for (const r of ratings) {
+          const ev = eMap.get(r.event_id);
+          const pl = pMap.get(r.player_id);
+          if (!ev || !pl) continue;
+
+          const critObj = r.criteria || {};
+          const roleVal = (critObj._role || '').toLowerCase();
+
+          if (roleF && roleF !== 'alle' && roleVal !== roleF) continue;
+
+          const d = (ev.event_date || '').slice(0, 10);
+
+          if (typeF && ev.type !== typeF) continue;
+          if (fromF && d < fromF) continue;
+          if (toF   && d > toF)   continue;
+
+          const vals = Object.entries(critObj)
+            .map(([k, v]) => k.startsWith('_') ? NaN : Number(v))
+            .filter(n => Number.isFinite(n));
+          if (!vals.length) continue;
+
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+          const key = r.player_id;
+          let stat = agg.get(key);
+          if (!stat) {
+            stat = { sum: 0, cnt: 0, last: '0000-00-00' };
+          }
+          stat.sum  += avg;
+          stat.cnt  += 1;
+          if (d > stat.last) stat.last = d;
+          agg.set(key, stat);
+        }
+
+        let rows = [];
+        for (const [pid, st] of agg.entries()) {
+          const pl = pMap.get(pid) || { full_name: pid, club_name: '', positions: null };
+          const avg = st.sum / st.cnt;
+          rows.push({
+            id:   pid,
+            name: pl.full_name,
+            club: pl.club_name || '',
+            pos:  pl.positions || null,
+            cnt:  st.cnt,
+            avg,
+            last: st.last
+          });
+        }
+
+        rows = rows.filter(r => {
+          const matchClub = !clubF || r.club === clubF;
+
+          const posArr = Array.isArray(r.pos)
+            ? r.pos
+            : (typeof r.pos === 'string' && r.pos.length
+              ? r.pos.split(',').map(x => x.trim()).filter(Boolean)
+              : []);
+
+          const matchPos  = !posF || posArr.includes(posF);
+          const matchText = !q || r.name.toLowerCase().includes(q) || r.club.toLowerCase().includes(q);
+          const matchCnt  = r.cnt >= minR;
+          const matchFav  = (favMode !== 'fav' || favSet.has(r.id));
+
+          return matchClub && matchPos && matchText && matchCnt && matchFav;
+        });
+
+        rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
+
+        const top = document.querySelector('#rank-top10')?.checked;
+        if (top) rows = rows.slice(0, 10);
+
+        lastRows = rows.slice();
+
+        const tb = document.querySelector('#rank-table tbody');
+        if (!tb) return;
+
+        tb.innerHTML = rows.length
+          ? rows.map(r => {
+              const star   = favSet.has(r.id) ? '★' : '☆';
+              const posStr = Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || '');
+              return `<tr data-pid="${r.id}">
+                        <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
+                        <td>${r.name}</td>
+                        <td>${r.club}</td>
+                        <td>${posStr}</td>
+                        <td>${r.cnt}</td>
+                        <td>${r.avg.toFixed(2)}</td>
+                        <td>${r.last || ''}</td>
+                      </tr>`;
+            }).join('')
+          : '<tr><td colspan="7">Keine Daten für die aktuellen Filter.</td></tr>';
+
+        tb.querySelectorAll('.fav-toggle').forEach(el => {
+          el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const pid = el.getAttribute('data-pid');
+            if (!pid) return;
+            if (favSet.has(pid)) favSet.delete(pid);
+            else favSet.add(pid);
+            saveFavSet(favSet);
+            refreshRanking();
+          });
+        });
+
+        tb.onclick = (ev) => {
+          const tr = ev.target.closest('tr[data-pid]');
+          if (!tr) return;
+          if (ev.target.classList.contains('fav-toggle')) return;
+          const name = tr.children[1]?.textContent || '';
+          const club = tr.children[2]?.textContent || '';
+          const pos  = tr.children[3]?.textContent || '';
+          const cnt  = tr.children[4]?.textContent || '';
+          const avg  = tr.children[5]?.textContent || '';
+          alert(
+            'Spieler: ' + name + '\n' +
+            'Verein: '  + club + '\n' +
+            'Position(en): ' + pos + '\n' +
+            'Bewertungen: ' + cnt + '\n' +
+            'Ø Note: ' + avg
+          );
+        };
+
+        const rankMsg = $('#rank-msg');
+        if (rankMsg) rankMsg.textContent = `OK: ${rows.length} Spieler`;
+      } catch (e) {
+        console.error('refreshRanking', e);
+        const msg = $('#rank-msg');
+        if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+      }
+    }
+
+    ['change', 'input'].forEach(evt => {
+      [
+        'club-filter',
+        'rank-pos',
+        'rank-type',
+        'rank-role',
+        'rank-from',
+        'rank-to',
+        'rank-min',
+        'rank-q',
+        'fav-filter',
+        'rank-top10'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(evt, () => refreshRanking());
+      });
+    });
+    document.getElementById('btn-refresh-ranking')?.addEventListener('click', () => refreshRanking());
+
+    document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+      if (!lastRows.length) return;
+      const header = ['Spieler','Verein','Position(en)','#Bewertungen','Ø Note','Letztes Event'];
+      const lines = [
+        header.join(';'),
+        ...lastRows.map(r =>
+          [
+            r.name,
+            r.club,
+            Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || ''),
+            r.cnt,
+            r.avg.toFixed(2),
+            r.last || ''
+          ].join(';')
+        )
+      ];
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ranking.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // -----------------------------
+    // ICS-Import
+    // -----------------------------
+    function parseICS(txt) {
+      const out = [];
+      const blocks = txt.split(/BEGIN:VEVENT/).slice(1).map(s => 'BEGIN:VEVENT' + s);
+      for (const block of blocks) {
+        const get = (k) => {
+          const re = new RegExp('^' + k + '(?:;[^:]+)?:\\s*(.+)$','m');
+          const m  = block.match(re);
+          return m ? m[1].trim() : null;
+        };
+        let dt = get('DTSTART');
+        if (!dt) {
+          const m = block.match(/^DTSTART(?:;TZID=[^:]+)?:([0-9T]+)/m);
+          if (m) dt = m[1];
+        }
+        if (!dt) continue;
+        const raw = dt.replace(/[^0-9]/g,'').slice(0,8);
+        if (raw.length < 8) continue;
+        const event_date = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+        const summary  = get('SUMMARY')  || '';
+        const location = get('LOCATION') || '';
+        out.push({
+          event_date,
+          type:'match',
+          subtype: summary.slice(0,120),
+          competition:null,
+          age_group:null,
+          opponent:null,
+          location:location.slice(0,120)
+        });
+      }
+      return out;
+    }
+
+    document.getElementById('btn-import-ics')?.addEventListener('click', async () => {
+      const c = await getClient().catch(e => {
+        const m = $('#ics-msg');
+        if (m) m.textContent = 'Nicht verbunden.';
+        return null;
+      });
+      if (!c) return;
+      const fileInput = document.getElementById('ics-file');
+      const msg = document.getElementById('ics-msg');
+      const file = fileInput?.files?.[0];
+      if (!file) { if (msg) msg.textContent = 'Bitte eine .ics-Datei wählen.'; return; }
+      try {
+        const txt = await file.text();
+        const events = parseICS(txt);
+        if (!events.length) { if (msg) msg.textContent = 'Keine VEVENTs gefunden.'; return; }
+        const { error } = await c.from('event').insert(events);
+        if (error) { console.error(error); if (msg) msg.textContent = 'Fehler: ' + error.message; }
+        else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Fehler beim Import.';
+      }
+    });
+
+    document.getElementById('btn-import-ics-url')?.addEventListener('click', async () => {
+      const c = await getClient().catch(e => {
+        const m = $('#ics-msg');
+        if (m) m.textContent = 'Nicht verbunden.';
+        return null;
+      });
+      if (!c) return;
+      const msg  = document.getElementById('ics-msg');
+      const url  = (document.getElementById('ics-url')?.value || '').trim();
+      if (!url) { if (msg) msg.textContent = 'Bitte eine ICS-URL eingeben.'; return; }
+      try {
+        const res = await fetch(url, { redirect:'follow' });
+        if (!res.ok) throw new Error(res.statusText);
+        const txt = await res.text();
+        const events = parseICS(txt);
+        if (!events.length) { if (msg) msg.textContent = 'Keine VEVENTs gefunden.'; return; }
+        const { error } = await c.from('event').insert(events);
+        if (error) { console.error(error); if (msg) msg.textContent = 'Fehler: ' + error.message; }
+        else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Fehler beim Laden. Nutze ggf. Download + Datei-Import.';
+      }
+    });
+
+    // -----------------------------
+    // Letzte Bewertungen
+    // -----------------------------
+    async function refreshLastComments() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('rating')
+          .select('id, player_id, event_id, comment, created_at')
+          .order('created_at', { ascending:false })
+          .limit(5);
+        if (error) throw error;
+        const pMap = new Map();
+        const eMap = new Map();
+        const idsP = Array.from(new Set((data||[]).map(r => r.player_id).filter(Boolean)));
+        const idsE = Array.from(new Set((data||[]).map(r => r.event_id).filter(Boolean)));
+        if (idsP.length) {
+          const pr = await c.from('player').select('id, full_name').in('id', idsP);
+          (pr.data||[]).forEach(p => pMap.set(p.id, p.full_name));
+        }
+        if (idsE.length) {
+          const er = await c.from('event').select('id, event_date, subtype, competition, opponent').in('id', idsE);
+          (er.data||[]).forEach(ev => {
+            let name = '';
+            if (ev.competition || ev.opponent) {
+              name = `${ev.competition || ''} - ${ev.opponent || ''}`.trim();
+            } else if (ev.subtype) {
+              name = ev.subtype;
+            } else {
+              name = ev.event_date || '';
+            }
+            eMap.set(ev.id, `${ev.event_date || ''} ${name}`);
+          });
+        }
+        const box = document.getElementById('last-ratings');
+        if (!box) return;
+        box.innerHTML = (data||[]).length
+          ? (data||[]).map(r => {
+              const pn = pMap.get(r.player_id) || r.player_id;
+              const en = eMap.get(r.event_id) || '';
+              const ctext = (r.comment || '').substring(0,120);
+              return `<tr>
+                        <td>${(r.created_at||'').slice(0,10)}</td>
+                        <td>${pn}</td>
+                        <td>${en}</td>
+                        <td>${ctext}</td>
+                      </tr>`;
+            }).join('')
+          : '<tr><td colspan="4">Noch keine Bewertungen.</td></tr>';
+      } catch (e) {
+        console.error('refreshLastComments', e);
+      }
+    }
+
+    // -----------------------------
+    // Events anlegen & suchen
+    // -----------------------------
+    async function createEvent() {
+      const dateEl   = document.getElementById('event-date');
+      const typeEl   = document.getElementById('event-type');
+      const homeEl   = document.getElementById('event-home');
+      const awayEl   = document.getElementById('event-away');
+      const nameEl   = document.getElementById('event-name');
+      const locEl    = document.getElementById('event-location');
+      const msg      = document.getElementById('event-create-msg');
+
+      const event_date = (dateEl?.value || '').trim();
+      const type       = (typeEl?.value || '').trim();
+
+      const competition = (homeEl?.value || '').trim();
+      const opponent    = (awayEl?.value || '').trim();
+      const subtype     = (nameEl?.value || '').trim();
+      const location    = (locEl?.value || '').trim();
+
+      if (!event_date || !type) {
+        if (msg) msg.textContent = 'Bitte mindestens Datum und Event-Typ eingeben.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('event')
+          .insert([{
+            event_date,
+            type,
+            competition,
+            opponent,
+            subtype,
+            location
+          }])
+          .select();
+
+        if (error) {
+          console.error('createEvent error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
+          return;
+        }
+
+        if (msg) msg.textContent = 'Event gespeichert.';
+
+        if (homeEl) homeEl.value = '';
+        if (awayEl) awayEl.value = '';
+        if (nameEl) nameEl.value = '';
+        if (locEl)  locEl.value  = '';
+
+        await refreshEvents();
+        if (data && data.length) {
+          setCurrentEvent(data[0]);
+        }
+      } catch (e) {
+        console.error('createEvent', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    }
+
+    document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
+
+    async function searchEventsByTerm(term) {
+      try {
+        const c = await getClient();
+
+        let query = c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: false })
+          .limit(50);
+
+        term = (term || '').trim();
+        if (term) {
+          const orFilter =
+            `competition.ilike.%${term}%,` +
+            `opponent.ilike.%${term}%,` +
+            `subtype.ilike.%${term}%,` +
+            `location.ilike.%${term}%`;
+          query = query.or(orFilter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        renderEventResults(data || []);
+      } catch (e) {
+        console.error('searchEventsByTerm', e);
+        const box = document.querySelector('#event-results');
+        if (box) box.textContent = 'Fehler bei der Suche.';
+      }
+    }
+
+    function formatEventPairing(ev) {
+      if (ev.competition || ev.opponent) {
+        const home = (ev.competition || '').trim();
+        const away = (ev.opponent || '').trim();
+        if (home && away) return `${home} - ${away}`;
+        if (home) return home;
+        if (away) return away;
+      }
+      if (ev.subtype) return ev.subtype;
+      return `Event ${ev.id}`;
+    }
+
+    function formatEventDisplayLine(ev) {
+      const parts = [];
+      if (ev.event_date) parts.push(ev.event_date);
+      if (ev.type)       parts.push(ev.type);
+      const pairing = formatEventPairing(ev);
+      if (pairing)      parts.push(pairing);
+      if (ev.location)  parts.push(ev.location);
+      return parts.join(' | ');
+    }
+
+    function renderEventResults(list) {
+      const box = document.querySelector('#event-results');
+      if (!box) return;
+
+      if (!list.length) {
+        box.textContent = 'Keine Spiele gefunden.';
+        return;
+      }
+
+      const ul = document.createElement('ul');
+      ul.style.listStyle = 'none';
+      ul.style.padding = '0';
+      ul.style.margin = '0';
+
+      list.forEach(ev => {
+        const li = document.createElement('li');
+        li.style.marginBottom = '6px';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.padding = '4px 8px';
+        btn.style.cursor = 'pointer';
+
+        btn.textContent = formatEventDisplayLine(ev);
+
+        btn.addEventListener('click', () => {
+          setCurrentEvent(ev);
+        });
+
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+
+      box.innerHTML = '';
+      box.appendChild(ul);
+    }
+
+    function setCurrentEvent(ev) {
+      currentEvent = ev;
+
+      const label = document.querySelector('#event-current');
+      if (label) {
+        let pairing = '';
+        if (ev.competition || ev.opponent) {
+          pairing = `${ev.competition || ''} - ${ev.opponent || ''}`.trim();
+        } else if (ev.subtype) {
+          pairing = ev.subtype;
+        } else {
+          pairing = `Event ${ev.id}`;
+        }
+        const dateStr = ev.event_date ? ` am ${ev.event_date}` : '';
+        label.textContent = `Aktuell ausgewähltes Spiel: ${pairing}${dateStr}`;
+      }
+
+      const card = document.querySelector('#event-card');
+      if (card && ev) {
+        const pairing = formatEventPairing(ev);
+        const dateStr = ev.event_date || '';
+        const typeStr = ev.type || '';
+        const locStr  = ev.location || '';
+        const extra   = ev.subtype || '';
+
+        card.innerHTML = `
+          <div style="font-size:0.95rem; font-weight:600; margin-bottom:4px;">
+            ${pairing}
+          </div>
+          <div style="font-size:0.85rem; color:#555; margin-bottom:2px;">
+            Datum: ${dateStr}
+          </div>
+          <div style="font-size:0.85rem; color:#555; margin-bottom:2px;">
+            Typ: ${typeStr}${extra ? ' (' + extra + ')' : ''}
+          </div>
+          <div style="font-size:0.85rem; color:#555; margin-bottom:2px;">
+            Ort: ${locStr}
+          </div>
+          <div style="font-size:0.8rem; color:#777;">
+            Event-ID: ${ev.id}
+          </div>
+        `;
+      }
+
+      const sel = document.querySelector('#r-event');
+      if (sel && ev.id) {
+        const opt = sel.querySelector(`option[value="${ev.id}"]`);
+        if (opt) sel.value = String(ev.id);
+      }
+    }
+
+    const inpPairing = document.querySelector('#search-pairing');
+    const btnSearchEvent = document.querySelector('#btn-search-event');
+
+    if (btnSearchEvent && inpPairing) {
+      btnSearchEvent.addEventListener('click', () => {
+        const term = (inpPairing.value || '').trim();
+        searchEventsByTerm(term);
+      });
+
+      inpPairing.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const term = (inpPairing.value || '').trim();
+          searchEventsByTerm(term);
+        }
+      });
+    }
+
+    const selEvent = document.querySelector('#r-event');
+    if (selEvent) {
+      selEvent.addEventListener('change', () => {
+        const id = selEvent.value;
+        const ev = allEvents.find(e => String(e.id) === id);
+        if (ev) setCurrentEvent(ev);
+      });
+    }
+
+    // -----------------------------
+    // Initial-Ladevorgang
+    // -----------------------------
+    async function refreshAllData() {
+      await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
+      await refreshRanking();
+      await refreshLastComments();
+    }
+
+    (async function init() {
+      const cfg = {
+        url: localStorage.getItem('sb_url') || '',
+        key: localStorage.getItem('sb_key') || ''
+      };
+      const urlInput = document.getElementById('sb-url');
+      const keyInput = document.getElementById('sb-key');
+      if (urlInput) urlInput.value = cfg.url;
+      if (keyInput) keyInput.value = cfg.key;
+
+      if (cfg.url && cfg.key) {
+        try {
+          await getClient();
+          await loadCurrentUser();
+          await loadProfile();
+          await refreshAllData();
+          const rankMsg = $('#rank-msg');
+          if (rankMsg) rankMsg.textContent = 'Bereit.';
+        } catch (e) {
+          console.error('init', e);
+        }
+      }
+    })();
   </script>
 </body>
 </html>
-
