@@ -832,6 +832,10 @@
         if (msg) msg.textContent = 'Profil gespeichert.';
 
         updateProfileFormForRole();
+        // nach Profil-Speichern zur Bewertung wechseln
+        if (window.npShowSection) {
+          window.npShowSection('sec-rating');
+        }
       } catch (e) {
         console.error('saveProfile', e);
         if (msg) msg.textContent = 'Fehler beim Speichern.';
