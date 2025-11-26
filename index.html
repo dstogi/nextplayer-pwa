@@ -561,6 +561,9 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
+      // global verfügbar machen
+      window.npShowSection = showSection;
+      
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
           const target = btn.dataset.target;
