@@ -1380,18 +1380,32 @@
           const details = ratingsByPlayer.get(row.id) || [];
 
           let detailText = '';
-          if (details.length) {
-            detailText = '\n\nEinzelbewertungen:\n' + details.map(d => {
-              const date  = (d.event_date || '').slice(0,10);
-              const etype = d.event_type || '';
-              const ename = d.event_name || '';
-              const role  = d.role || '';
-              const rater = d.rater || '';
-              return `- ${date} ${etype} ${ename} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bewerter: ${rater}`;
-            }).join('\n');
-          } else {
-            detailText = '\n\nKeine Einzelbewertungen gefunden.';
-          }
+
+if (details.length) {
+  detailText =
+    '\n\nEinzelbewertungen:\n' +
+    details.map(d => {
+      const date  = (d.event_date || '').slice(0,10);
+      const type  = d.event_type === 'match' ? 'Spiel' :
+                    d.event_type === 'training' ? 'Training' :
+                    d.event_type === 'tournament' ? 'Turnier' : d.event_type;
+
+      const pairing = d.event_name || '–';
+      const role  = d.role || '–';
+      const rater = d.rater || '–';
+
+      return (
+        `\nSpiel:  ${pairing}` +
+        `\nDatum:  ${date}` +
+        `\nTyp:    ${type}` +
+        `\nNote:   ${d.avg.toFixed(2)}` +
+        `\nBewerter: ${rater} (${role})\n`
+      );
+    }).join('\n-----------------------------------------\n');
+}
+else {
+  detailText = '\n\nKeine Einzelbewertungen gefunden.';
+}
 
           alert(
             'Spieler: ' + row.name + '\n' +
