@@ -1723,7 +1723,8 @@ else {
       }
     }
 
-    function formatEventPairing(ev) {
+        function formatEventPairing(ev) {
+      // 1) klassische Paarung, wenn Heim/Gast vorhanden
       if (ev.competition || ev.opponent) {
         const home = (ev.competition || '').trim();
         const away = (ev.opponent || '').trim();
@@ -1731,9 +1732,18 @@ else {
         if (home) return home;
         if (away) return away;
       }
+
+      // 2) Falls ein Name/Subtype hinterlegt ist (z.B. "Oberliga-Heimspiel")
       if (ev.subtype) return ev.subtype;
-      return `Event ${ev.id}`;
+
+      // 3) Fallback: Datum + Typ + Ort (ohne Event-ID)
+      const date = ev.event_date || '';
+      const type = ev.type || '';
+      const loc  = ev.location || '';
+      const base = [date, type].filter(Boolean).join(' ');
+      return [base, loc].filter(Boolean).join(' | ') || 'Unbenanntes Event';
     }
+
 
     function formatEventDisplayLine(ev) {
       const parts = [];
