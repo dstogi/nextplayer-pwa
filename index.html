@@ -225,52 +225,65 @@
     </div>
     <div id="conf-msg" class="status-line"></div>
 
-    <!-- 2. Auth -->
-    <h2>2. Login / Registrierung</h2>
-    <div class="row">
-      <label for="auth-email">E-Mail</label>
-      <input id="auth-email" type="email" size="30">
-    </div>
-    <div class="row">
-      <label for="auth-pass">Passwort</label>
-      <input id="auth-pass" type="password" size="20">
-    </div>
-    <div class="row">
-      <button id="btn-signup">Registrieren</button>
-      <button id="btn-login">Login</button>
-      <button id="btn-logout">Logout</button>
-    </div>
-    <div class="status-line">
-      <span id="auth-user"></span>
-    </div>
-    <div id="auth-msg" class="status-line"></div>
+        <!-- 2. Login / Registrierung -->
+    <section id="sec-auth" class="section-card">
+      <h2><span>2. Login / Registrierung</span></h2>
 
-    <!-- 2b. Profil / Rolle -->
-    <h2>2b. Profil / Rolle</h2>
-    <div class="row">
-      <label for="prof-role">Rolle</label>
-      <select id="prof-role">
-        <option value="">Bitte wählen…</option>
-        <option value="trainer">Trainer</option>
-        <option value="spieler">Aktiver Spieler</option>
-        <option value="scout">Scout</option>
-        <option value="eltern">Elternteil</option>
-        <option value="zuschauer">Zuschauer / Fan</option>
-        <option value="sonstige">Sonstige</option>
-      </select>
-    </div>
-    <div class="row">
-      <label for="prof-club" id="prof-club-label">Verein (optional)</label>
-      <input id="prof-club" type="text" size="30">
-    </div>
-    <div class="row">
-      <label for="prof-extra" id="prof-extra-label">Zusatzinfo (optional)</label>
-      <input id="prof-extra" type="text" size="40" placeholder="">
-    </div>
-    <div class="row">
-      <button id="btn-save-profile" type="button">Profil speichern</button>
-    </div>
-    <div id="prof-msg" class="status-line"></div>
+      <div class="row">
+        <label for="auth-email">E-Mail</label>
+        <input id="auth-email" type="email" size="30">
+      </div>
+
+      <div class="row">
+        <label for="auth-pass">Passwort</label>
+        <input id="auth-pass" type="password" size="20">
+      </div>
+
+      <div class="row">
+        <button id="btn-signup">Registrieren</button>
+        <button id="btn-login">Login</button>
+        <button id="btn-logout">Logout</button>
+      </div>
+
+      <div class="status-line">
+        <span id="auth-user"></span>
+      </div>
+      <div id="auth-msg" class="status-line"></div>
+    </section>
+
+          <!-- 2b. Profil / Rolle -->
+    <section id="sec-profile" class="section-card">
+      <h2><span>2b. Profil / Rolle</span></h2>
+
+      <div class="row">
+        <label for="prof-role">Rolle</label>
+        <select id="prof-role">
+          <option value="">Bitte wählen…</option>
+          <option value="trainer">Trainer</option>
+          <option value="spieler">Aktiver Spieler</option>
+          <option value="scout">Scout</option>
+          <option value="eltern">Elternteil</option>
+          <option value="zuschauer">Zuschauer / Fan</option>
+          <option value="sonstige">Sonstige</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="prof-club" id="prof-club-label">Verein (optional)</label>
+        <input id="prof-club" type="text" size="30">
+      </div>
+
+      <div class="row">
+        <label for="prof-extra" id="prof-extra-label">Zusatzinfo (optional)</label>
+        <input id="prof-extra" type="text" size="40" placeholder="">
+      </div>
+
+      <div class="row">
+        <button id="btn-save-profile" type="button">Profil speichern</button>
+      </div>
+
+      <div id="prof-msg" class="status-line"></div>
+    </section>
 
     <!-- 2a. Spieler anlegen (manuell) -->
     <h2>2a. Spieler anlegen (manuell)</h2>
