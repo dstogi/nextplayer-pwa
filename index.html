@@ -286,147 +286,152 @@
     </section>
 
     <!-- 2a. Spieler anlegen (manuell) -->
-    <h2>2a. Spieler anlegen (manuell)</h2>
-    <div class="row">
-      <label for="pl-first">Vorname</label>
-      <input id="pl-first" type="text" size="20">
-    </div>
-    <div class="row">
-      <label for="pl-last">Nachname</label>
-      <input id="pl-last" type="text" size="20">
-    </div>
-    <div class="row">
-      <label for="pl-birth">Geburtsdatum</label>
-      <input id="pl-birth" type="date">
-    </div>
-    <div class="row">
-      <label for="pl-club-current">Aktueller Verein</label>
-      <input id="pl-club-current" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
-    </div>
-    <div class="row">
-      <label for="pl-club-prev">Verein vorher</label>
-      <input id="pl-club-prev" type="text" size="30" placeholder="z.B. SC Freiburg Jugend">
-    </div>
-    <div class="row">
-      <label for="pl-pos">Position(en)</label>
-      <select id="pl-pos" multiple size="6">
-        <option value="TW">TW (Torwart)</option>
-        <option value="AV">AV (Außenverteidiger)</option>
-        <option value="IV">IV (Innenverteidiger)</option>
-        <option value="MF">MF (Mittelfeld)</option>
-        <option value="AST">AST (Außenstürmer)</option>
-        <option value="MST">MST (Mittelstürmer)</option>
-      </select>
-      <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
-    </div>
-    <div class="row">
-      <button id="btn-create-player" type="button">Spieler speichern</button>
-    </div>
-    <div id="player-create-msg" class="status-line"></div>
+        <!-- 2a. Spieler anlegen (manuell) + 3. Bewertung & Events -->
+    <section id="sec-rating" class="section-card">
+      <h2><span>2a. Spieler & 3. Bewertung</span></h2>
 
-    <!-- 3. Bewertung erfassen -->
-    <h2>3. Bewertung erfassen</h2>
-    <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
-      (Aktuelles Event siehe unten unter „3b. Ereignis suchen &amp; übernehmen“)
-    </p>
-    <div class="row">
-      <label for="r-player">Spieler</label>
-      <select id="r-player"></select>
-    </div>
-    <div class="row">
-      <label for="r-event">Event</label>
-      <select id="r-event"></select>
-    </div>
-    
-    <h3>Kriterien (Schulnoten 1–6)</h3>
-    <div id="criteria"></div>
-
-    <h3>Kommentar</h3>
-    <textarea id="r-comment" placeholder="Kurze Beschreibung der Leistung..."></textarea>
-    <div class="row">
-      <button id="btn-add-rating">Bewertung speichern</button>
-    </div>
-    <div id="rate-msg" class="status-line"></div>
-
-    <!-- 3b. Ereignis suchen & übernehmen -->
-    <section id="event-search">
-      <h2>3b. Ereignis suchen &amp; übernehmen</h2>
+      <!-- 2a. Spieler anlegen (manuell) -->
+      <h3>2a. Spieler anlegen (manuell)</h3>
       <div class="row">
-        <label for="search-pairing">Paarung / Spiel</label>
-        <input
-          id="search-pairing"
-          type="text"
-          size="40"
-          placeholder="z.B. FC 08 Villingen - SC Freiburg U17"
-        />
-        <button id="btn-search-event" type="button">Suchen</button>
+        <label for="pl-first">Vorname</label>
+        <input id="pl-first" type="text" size="20">
       </div>
-
-      <div id="event-results"></div>
-
-      <p id="event-current" style="font-size:0.9rem; color:#555; margin-top:10px;">
-        Kein Spiel ausgewählt.
-      </p>
-    </section>
-
-    <!-- 3d. Event-Details -->
-    <section id="event-detail">
-      <h2>3d. Event-Details</h2>
-      <div id="event-card" style="
-        background:#fff;
-        border-radius:8px;
-        padding:10px 14px;
-        box-shadow:0 1px 3px rgba(0,0,0,0.12);
-        max-width:600px;
-        font-size:0.9rem;
-      ">
-        <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
-      </div>
-    </section>
-
-    <!-- 3c. Event anlegen (manuell) -->
-    <section id="event-create">
-      <h2>3c. Event anlegen (manuell)</h2>
-
       <div class="row">
-        <label for="event-date">Datum</label>
-        <input id="event-date" type="date">
+        <label for="pl-last">Nachname</label>
+        <input id="pl-last" type="text" size="20">
       </div>
-
       <div class="row">
-        <label for="event-type">Event-Typ</label>
-        <select id="event-type">
-          <option value="match">Spiel</option>
-          <option value="training">Training</option>
-          <option value="tournament">Turnier</option>
+        <label for="pl-birth">Geburtsdatum</label>
+        <input id="pl-birth" type="date">
+      </div>
+      <div class="row">
+        <label for="pl-club-current">Aktueller Verein</label>
+        <input id="pl-club-current" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
+      </div>
+      <div class="row">
+        <label for="pl-club-prev">Verein vorher</label>
+        <input id="pl-club-prev" type="text" size="30" placeholder="z.B. SC Freiburg Jugend">
+      </div>
+      <div class="row">
+        <label for="pl-pos">Position(en)</label>
+        <select id="pl-pos" multiple size="6">
+          <option value="TW">TW (Torwart)</option>
+          <option value="AV">AV (Außenverteidiger)</option>
+          <option value="IV">IV (Innenverteidiger)</option>
+          <option value="MF">MF (Mittelfeld)</option>
+          <option value="AST">AST (Außenstürmer)</option>
+          <option value="MST">MST (Mittelstürmer)</option>
         </select>
+        <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
       </div>
-
       <div class="row">
-        <label for="event-home">Heimteam</label>
-        <input id="event-home" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
+        <button id="btn-create-player" type="button">Spieler speichern</button>
       </div>
+      <div id="player-create-msg" class="status-line"></div>
 
+      <!-- 3. Bewertung erfassen -->
+      <h3>3. Bewertung erfassen</h3>
+      <p style="font-size:0.85rem; color:#555; margin-top:-6px;">
+        (Aktuelles Event siehe unten unter „3b. Ereignis suchen &amp; übernehmen“)
+      </p>
       <div class="row">
-        <label for="event-away">Auswärtsteam</label>
-        <input id="event-away" type="text" size="30" placeholder="z.B. SC Freiburg U17">
+        <label for="r-player">Spieler</label>
+        <select id="r-player"></select>
       </div>
-
       <div class="row">
-        <label for="event-name">Name</label>
-        <input id="event-name" type="text" size="40" placeholder="z.B. Oberliga-Heimspiel oder Testspiel">
+        <label for="r-event">Event</label>
+        <select id="r-event"></select>
       </div>
 
+      <h3>Kriterien (Schulnoten 1–6)</h3>
+      <div id="criteria"></div>
+
+      <h3>Kommentar</h3>
+      <textarea id="r-comment" placeholder="Kurze Beschreibung der Leistung..."></textarea>
       <div class="row">
-        <label for="event-location">Ort</label>
-        <input id="event-location" type="text" size="40" placeholder="z.B. Kunstrasen Villingen">
+        <button id="btn-add-rating">Bewertung speichern</button>
       </div>
+      <div id="rate-msg" class="status-line"></div>
 
-      <div class="row">
-        <button id="btn-create-event" type="button">Event speichern</button>
-      </div>
+      <!-- 3b. Ereignis suchen & übernehmen -->
+      <h3>3b. Ereignis suchen &amp; übernehmen</h3>
+      <section id="event-search">
+        <div class="row">
+          <label for="search-pairing">Paarung / Spiel</label>
+          <input
+            id="search-pairing"
+            type="text"
+            size="40"
+            placeholder="z.B. FC 08 Villingen - SC Freiburg U17"
+          />
+          <button id="btn-search-event" type="button">Suchen</button>
+        </div>
 
-      <div id="event-create-msg" class="status-line"></div>
+        <div id="event-results"></div>
+
+        <p id="event-current" style="font-size:0.9rem; color:#555; margin-top:10px;">
+          Kein Spiel ausgewählt.
+        </p>
+      </section>
+
+      <!-- 3d. Event-Details -->
+      <h3>3d. Event-Details</h3>
+      <section id="event-detail">
+        <div id="event-card" style="
+          background:#fff;
+          border-radius:8px;
+          padding:10px 14px;
+          box-shadow:0 1px 3px rgba(0,0,0,0.12);
+          max-width:600px;
+          font-size:0.9rem;
+        ">
+          <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
+        </div>
+      </section>
+
+      <!-- 3c. Event anlegen (manuell) -->
+      <h3>3c. Event anlegen (manuell)</h3>
+      <section id="event-create">
+        <div class="row">
+          <label for="event-date">Datum</label>
+          <input id="event-date" type="date">
+        </div>
+
+        <div class="row">
+          <label for="event-type">Event-Typ</label>
+          <select id="event-type">
+            <option value="match">Spiel</option>
+            <option value="training">Training</option>
+            <option value="tournament">Turnier</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="event-home">Heimteam</label>
+          <input id="event-home" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
+        </div>
+
+        <div class="row">
+          <label for="event-away">Auswärtsteam</label>
+          <input id="event-away" type="text" size="30" placeholder="z.B. SC Freiburg U17">
+        </div>
+
+        <div class="row">
+          <label for="event-name">Name</label>
+          <input id="event-name" type="text" size="40" placeholder="z.B. Oberliga-Heimspiel oder Testspiel">
+        </div>
+
+        <div class="row">
+          <label for="event-location">Ort</label>
+          <input id="event-location" type="text" size="40" placeholder="z.B. Kunstrasen Villingen">
+        </div>
+
+        <div class="row">
+          <button id="btn-create-event" type="button">Event speichern</button>
+        </div>
+
+        <div id="event-create-msg" class="status-line"></div>
+      </section>
     </section>
 
     <!-- 4. Ranking -->
