@@ -598,7 +598,7 @@
     });
   </script>
 
-  <!-- Deine komplette Supabase-Logik -->
+  <!-- Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
@@ -1199,6 +1199,7 @@
     }
     let favSet   = loadFavSet();
     let lastRows = [];
+    let ratingsByPlayer = new Map();  // NEU: Detailratings
 
     async function refreshRanking() {
       try {
@@ -1237,6 +1238,7 @@
         const favMode = document.querySelector('#fav-filter')?.value || 'all';
 
         const agg = new Map();
+        ratingsByPlayer = new Map(); // neu aufbauen
 
         for (const r of ratings) {
           const ev = eMap.get(r.event_id);
@@ -1260,6 +1262,22 @@
           if (!vals.length) continue;
 
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+          // Detail-Liste pro Spieler
+          let list = ratingsByPlayer.get(r.player_id);
+          if (!list) {
+            list = [];
+            ratingsByPlayer.set(r.player_id, list);
+          }
+          list.push({
+            avg,
+            created_at: r.created_at || '',
+            event_date: ev.event_date || '',
+            event_type: ev.type || '',
+            event_name: formatEventPairing(ev),
+            role: critObj._role || '',
+            rater: critObj._rater || ''
+          });
 
           const key = r.player_id;
           let stat = agg.get(key);
@@ -1349,21 +1367,39 @@
           });
         });
 
+        // NEU: Klick auf Zeile zeigt Einzelbewertungen
         tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
           if (ev.target.classList.contains('fav-toggle')) return;
-          const name = tr.children[1]?.textContent || '';
-          const club = tr.children[2]?.textContent || '';
-          const pos  = tr.children[3]?.textContent || '';
-          const cnt  = tr.children[5]?.textContent || ''; // Achtung: Spalten verschoben
-          const avg  = tr.children[6]?.textContent || '';
+
+          const pid = tr.getAttribute('data-pid');
+          const row = lastRows.find(r => String(r.id) === String(pid));
+          if (!row) return;
+
+          const details = ratingsByPlayer.get(row.id) || [];
+
+          let detailText = '';
+          if (details.length) {
+            detailText = '\n\nEinzelbewertungen:\n' + details.map(d => {
+              const date  = (d.event_date || '').slice(0,10);
+              const etype = d.event_type || '';
+              const ename = d.event_name || '';
+              const role  = d.role || '';
+              const rater = d.rater || '';
+              return `- ${date} ${etype} ${ename} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bewerter: ${rater}`;
+            }).join('\n');
+          } else {
+            detailText = '\n\nKeine Einzelbewertungen gefunden.';
+          }
+
           alert(
-            'Spieler: ' + name + '\n' +
-            'Verein: '  + club + '\n' +
-            'Position(en): ' + pos + '\n' +
-            'Bewertungen: ' + cnt + '\n' +
-            'Ø Note: ' + avg
+            'Spieler: ' + row.name + '\n' +
+            'Verein: '  + row.club + '\n' +
+            'Position(en): ' + (Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '')) + '\n' +
+            'Bewertungen: ' + row.cnt + '\n' +
+            'Ø Note: ' + row.avg.toFixed(2) +
+            detailText
           );
         };
 
