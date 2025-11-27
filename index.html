@@ -1239,6 +1239,7 @@
 
         const agg = new Map();
         ratingsByPlayer = new Map(); // neu aufbauen
+        let rows = [];
 
         for (const r of ratings) {
           const ev = eMap.get(r.event_id);
