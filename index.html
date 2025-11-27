@@ -1293,12 +1293,19 @@
           agg.set(key, stat);
         }
 
-        // rows aus Aggregation aufbauen
-        for (const [pid, st] of agg.entries()) {
-          const pl = pMap.get(pid) || { full_name: pid, club_name: '', positions: null, dominant_foot: null, birthdate: null };
+                // rows aus Aggregation aufbauen
+        rows = [];
+        for (const [playerId, st] of agg.entries()) {
+          const pl = pMap.get(playerId) || {
+            full_name: playerId,
+            club_name: '',
+            positions: null,
+            dominant_foot: null,
+            birthdate: null
+          };
           const avg = st.sum / st.cnt;
           rows.push({
-            id:    pid,
+            id:    playerId,
             name:  pl.full_name,
             club:  pl.club_name || '',
             pos:   pl.positions || null,
