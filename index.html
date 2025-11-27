@@ -1201,12 +1201,12 @@
     let lastRows = [];
     let ratingsByPlayer = new Map();  // NEU: Detailratings
 
-    async function refreshRanking() {
+        async function refreshRanking() {
       try {
         const c = await getClient();
-          const [pRes, eRes, rRes] = await Promise.all([
-  c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
-  c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
+        const [pRes, eRes, rRes] = await Promise.all([
+          c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
+          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
           c.from('rating').select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
             .limit(2000)
@@ -1238,9 +1238,10 @@
         const favMode = document.querySelector('#fav-filter')?.value || 'all';
 
         const agg = new Map();
-        ratingsByPlayer = new Map(); // neu aufbauen
-        let rows = [];
+        ratingsByPlayer = new Map();    // globale Map neu aufbauen
+        let rows = [];                  // HIER ist rows sauber definiert
 
+        // Ratings aggregieren und Detail-Liste aufbauen
         for (const r of ratings) {
           const ev = eMap.get(r.event_id);
           const pl = pMap.get(r.player_id);
@@ -1264,7 +1265,7 @@
 
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
 
-          // Detail-Liste pro Spieler (für Popup)
+          // Detail-Eintrag für Popup
           let list = ratingsByPlayer.get(r.player_id);
           if (!list) {
             list = [];
@@ -1276,10 +1277,11 @@
             event_date: ev.event_date || '',
             event_type: ev.type || '',
             event_name: formatEventPairing(ev),
-            role: critObj._role || '',
-            rater: critObj._rater || ''
+            role:       critObj._role  || '',
+            rater:      critObj._rater || ''
           });
 
+          // Aggregation für Ranking-Zeile
           const key = r.player_id;
           let stat = agg.get(key);
           if (!stat) {
@@ -1291,7 +1293,11 @@
           agg.set(key, stat);
         }
 
-                 rows.push({
+        // rows aus Aggregation aufbauen
+        for (const [pid, st] of agg.entries()) {
+          const pl = pMap.get(pid) || { full_name: pid, club_name: '', positions: null, dominant_foot: null, birthdate: null };
+          const avg = st.sum / st.cnt;
+          rows.push({
             id:    pid,
             name:  pl.full_name,
             club:  pl.club_name || '',
@@ -1302,6 +1308,7 @@
             avg,
             last:  st.last
           });
+        }
 
         // Filter anwenden
         rows = rows.filter(r => {
@@ -1329,7 +1336,7 @@
 
         lastRows = rows.slice();
 
-        // Tabelle bauen
+        // Tabelle rendern
         const tb = document.querySelector('#rank-table tbody');
         if (!tb) return;
 
@@ -1355,7 +1362,6 @@
           : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
 
         // Watchlist-Toggles
-               // Watchlist-Toggles
         tb.querySelectorAll('.fav-toggle').forEach(el => {
           el.addEventListener('click', (ev) => {
             ev.stopPropagation();
@@ -1368,7 +1374,7 @@
           });
         });
 
-             // Klick auf Zeile zeigt Einzelbewertungen (kompakt formatiert)
+        // Klick auf Zeile: Popup mit Details
         tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
@@ -1378,7 +1384,6 @@
           const row = lastRows.find(r => String(r.id) === String(pid));
           if (!row) return;
 
-          // Spieler-Objekt aus pMap holen (für Geburtsdatum & Fuß)
           const pl = pMap.get(row.id) || {};
           const birthStr = pl.birthdate || '-';
           const footVal  = pl.dominant_foot || row.foot || '';
@@ -1390,7 +1395,6 @@
 
           const details = ratingsByPlayer.get(row.id) || [];
 
-          // Einzelbewertungen kompakt
           let detailText = '';
           if (details.length) {
             detailText =
@@ -1408,7 +1412,6 @@
                 const rater   = d.rater || '';
                 const raterShort = rater.includes('@') ? rater.split('@')[0] : rater;
 
-                // Eine kompakte Zeile pro Bewertung
                 return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${raterShort}`;
               }).join('\n');
           } else {
@@ -1426,16 +1429,15 @@
             detailText
           );
         };
-   
-        const rankMsgLocal = $('#rank-msg');
-     if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
-   } catch (e) {
-     console.error('refreshRanking', e);
-     const msg = $('#rank-msg');
-     if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
-   }
- }
 
+        const rankMsgLocal = $('#rank-msg');
+        if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
+      } catch (e) {
+        console.error('refreshRanking', e);
+        const msg = $('#rank-msg');
+        if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+      }
+    }
 
     ['change', 'input'].forEach(evt => {
       [
