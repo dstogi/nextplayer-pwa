@@ -1204,9 +1204,9 @@
     async function refreshRanking() {
       try {
         const c = await getClient();
-                const [pRes, eRes, rRes] = await Promise.all([
-          c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
-          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
+          const [pRes, eRes, rRes] = await Promise.all([
+  c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
+  c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
           c.from('rating').select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
             .limit(2000)
@@ -1367,8 +1367,7 @@
           });
         });
 
-        // Klick auf Zeile zeigt Einzelbewertungen (schön formatiert)
-           // Klick auf Zeile zeigt Einzelbewertungen (übersichtlich formatiert)
+             // Klick auf Zeile zeigt Einzelbewertungen (kompakt formatiert)
         tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
@@ -1378,17 +1377,19 @@
           const row = lastRows.find(r => String(r.id) === String(pid));
           if (!row) return;
 
-          const details = ratingsByPlayer.get(row.id) || [];
-
-          // Kopf-Daten des Spielers
+          // Spieler-Objekt aus pMap holen (für Geburtsdatum & Fuß)
+          const pl = pMap.get(row.id) || {};
+          const birthStr = pl.birthdate || '-';
+          const footVal  = pl.dominant_foot || row.foot || '';
           const footLabel =
-            row.foot === 'left' ? 'links' :
-            row.foot === 'right' ? 'rechts' :
-            row.foot === 'both' ? 'beidfüßig' : '';
-          const birthStr = row.birth || '-';
+            footVal === 'left' ? 'links' :
+            footVal === 'right' ? 'rechts' :
+            footVal === 'both' ? 'beidfüßig' : (footVal || '-');
           const posStr   = Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '');
 
-          // Einzelbewertungen
+          const details = ratingsByPlayer.get(row.id) || [];
+
+          // Einzelbewertungen kompakt
           let detailText = '';
           if (details.length) {
             detailText =
@@ -1400,10 +1401,14 @@
                   d.event_type === 'training'   ? 'Tr.' :
                   d.event_type === 'tournament' ? 'Tu.' :
                   (d.event_type || '');
+
                 const pairing = d.event_name || '';
                 const role    = d.role  || '';
                 const rater   = d.rater || '';
-                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${rater}`;
+                const raterShort = rater.includes('@') ? rater.split('@')[0] : rater;
+
+                // Eine kompakte Zeile pro Bewertung
+                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${raterShort}`;
               }).join('\n');
           } else {
             detailText = '\n\nKeine Einzelbewertungen gefunden.';
@@ -1413,15 +1418,15 @@
             'Spieler: '      + row.name + '\n' +
             'Geb.: '         + birthStr + '\n' +
             'Verein: '       + row.club + '\n' +
-            'Pos.: '         + posStr + '\n' +
-            'Fuß: '          + (footLabel || '-') + '\n' +
+            'Position(en): ' + posStr + '\n' +
+            'Fuß: '          + footLabel + '\n' +
             'Bewertungen: '  + row.cnt + '\n' +
             'Ø Note: '       + row.avg.toFixed(2) +
             detailText
           );
         };
-  
-      const rankMsgLocal = $('#rank-msg');
+   
+        const rankMsgLocal = $('#rank-msg');
      if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
    } catch (e) {
      console.error('refreshRanking', e);
