@@ -1204,8 +1204,8 @@
     async function refreshRanking() {
       try {
         const c = await getClient();
-        const [pRes, eRes, rRes] = await Promise.all([
-          c.from('player').select('id, full_name, club_name, positions, dominant_foot'),
+                const [pRes, eRes, rRes] = await Promise.all([
+          c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
           c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
           c.from('rating').select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
@@ -1290,21 +1290,17 @@
           agg.set(key, stat);
         }
 
-        let rows = [];
-        for (const [pid, st] of agg.entries()) {
-          const pl = pMap.get(pid) || { full_name: pid, club_name: '', positions: null, dominant_foot: null };
-          const avg = st.sum / st.cnt;
-          rows.push({
-            id:   pid,
-            name: pl.full_name,
-            club: pl.club_name || '',
-            pos:  pl.positions || null,
-            foot: pl.dominant_foot || '',
-            cnt:  st.cnt,
+                 rows.push({
+            id:    pid,
+            name:  pl.full_name,
+            club:  pl.club_name || '',
+            pos:   pl.positions || null,
+            foot:  pl.dominant_foot || '',
+            birth: pl.birthdate || '',
+            cnt:   st.cnt,
             avg,
-            last: st.last
+            last:  st.last
           });
-        }
 
         // Filter anwenden
         rows = rows.filter(r => {
@@ -1372,6 +1368,7 @@
         });
 
         // Klick auf Zeile zeigt Einzelbewertungen (schön formatiert)
+           // Klick auf Zeile zeigt Einzelbewertungen (übersichtlich formatiert)
         tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
@@ -1383,46 +1380,47 @@
 
           const details = ratingsByPlayer.get(row.id) || [];
 
+          // Kopf-Daten des Spielers
+          const footLabel =
+            row.foot === 'left' ? 'links' :
+            row.foot === 'right' ? 'rechts' :
+            row.foot === 'both' ? 'beidfüßig' : '';
+          const birthStr = row.birth || '-';
+          const posStr   = Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '');
+
+          // Einzelbewertungen
           let detailText = '';
           if (details.length) {
             detailText =
               '\n\nEinzelbewertungen:\n' +
               details.map(d => {
                 const date  = (d.event_date || '').slice(0,10);
-                const type  = d.event_type === 'match'      ? 'Spiel'
-                            : d.event_type === 'training'   ? 'Training'
-                            : d.event_type === 'tournament' ? 'Turnier'
-                            : (d.event_type || '–');
-
-                const pairing = d.event_name || '–';
-                const role    = d.role  || '–';
-                const rater   = d.rater || '–';
-
-                // Mehrzeilige Darstellung pro Bewertung
-                return [
-                  '',
-                  `Spiel:    ${pairing}`,
-                  `Datum:    ${date}`,
-                  `Typ:      ${type}`,
-                  `Note:     ${d.avg.toFixed(2)}`,
-                  `Bewerter: ${rater} (${role})`,
-                  ''
-                ].join('\n');
-              }).join('\n-----------------------------------------\n');
+                const typeShort =
+                  d.event_type === 'match'      ? 'Sp.' :
+                  d.event_type === 'training'   ? 'Tr.' :
+                  d.event_type === 'tournament' ? 'Tu.' :
+                  (d.event_type || '');
+                const pairing = d.event_name || '';
+                const role    = d.role  || '';
+                const rater   = d.rater || '';
+                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${rater}`;
+              }).join('\n');
           } else {
             detailText = '\n\nKeine Einzelbewertungen gefunden.';
           }
 
           alert(
-            'Spieler: ' + row.name + '\n' +
-            'Verein: '  + row.club + '\n' +
-            'Position(en): ' + (Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '')) + '\n' +
-            'Bewertungen: ' + row.cnt + '\n' +
-            'Ø Note: ' + row.avg.toFixed(2) +
+            'Spieler: '      + row.name + '\n' +
+            'Geb.: '         + birthStr + '\n' +
+            'Verein: '       + row.club + '\n' +
+            'Pos.: '         + posStr + '\n' +
+            'Fuß: '          + (footLabel || '-') + '\n' +
+            'Bewertungen: '  + row.cnt + '\n' +
+            'Ø Note: '       + row.avg.toFixed(2) +
             detailText
           );
         };
-
+  
       const rankMsgLocal = $('#rank-msg');
      if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
    } catch (e) {
