@@ -1414,14 +1414,14 @@
           );
         };
 
-               const rankMsg = $('#rank-msg');
-        if (rankMsg) rankMsg.textContent = `OK: ${rows.length} Spieler`;
-      } catch (e) {
-        console.error('refreshRanking', e);
-        const msg = $('#rank-msg');
-        if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
-      }
-    }
+      const rankMsgLocal = $('#rank-msg');
+     if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
+   } catch (e) {
+     console.error('refreshRanking', e);
+     const msg = $('#rank-msg');
+     if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+   }
+ }
 
 
     ['change', 'input'].forEach(evt => {
