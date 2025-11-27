@@ -1371,7 +1371,7 @@
           });
         });
 
-        // Klick auf Zeile zeigt Einzelbewertungen
+        // Klick auf Zeile zeigt Einzelbewertungen (schön formatiert)
         tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
@@ -1398,8 +1398,17 @@
                 const role    = d.role  || '–';
                 const rater   = d.rater || '–';
 
-                return `- ${date} ${type} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bewerter: ${rater}`;
-              }).join('\n');
+                // Mehrzeilige Darstellung pro Bewertung
+                return [
+                  '',
+                  `Spiel:    ${pairing}`,
+                  `Datum:    ${date}`,
+                  `Typ:      ${type}`,
+                  `Note:     ${d.avg.toFixed(2)}`,
+                  `Bewerter: ${rater} (${role})`,
+                  ''
+                ].join('\n');
+              }).join('\n-----------------------------------------\n');
           } else {
             detailText = '\n\nKeine Einzelbewertungen gefunden.';
           }
