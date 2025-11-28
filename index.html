@@ -631,8 +631,7 @@
       showSection('sec-config');
     });
   </script>
-
-  <!-- Supabase-Logik -->
+ <!-- Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
@@ -640,7 +639,7 @@
 
     let supa = null;
     let currentUser = null;
-    let currentUserMeta = null;   // NEU: Alter / Eltern
+    let currentUserMeta = null;   // Alter / Eltern
     let currentProfile = null;
     let currentEvent = null;
     let allEvents = [];
@@ -721,181 +720,181 @@
       }
     });
 
-// -----------------------------
-// Auth & Jugendschutz
-// -----------------------------
-function updateAuthLockInfo() {
-  const el = $('#auth-lock-info');
-  const approvalBox = $('#auth-approval-link');
-  if (!el) return;
+    // -----------------------------
+    // Auth & Jugendschutz
+    // -----------------------------
+    function updateAuthLockInfo() {
+      const el = $('#auth-lock-info');
+      const approvalBox = $('#auth-approval-link');
+      if (!el) return;
 
-  if (!currentUser) {
-    el.innerHTML = '';
-    if (approvalBox) approvalBox.innerHTML = '';
-    return;
-  }
-  if (!currentUserMeta) {
-    el.innerHTML = 'ℹ️ Kein Altersprofil hinterlegt. Konto gilt als freigeschaltet (Testmodus).';
-    return;
-  }
+      if (!currentUser) {
+        el.innerHTML = '';
+        if (approvalBox) approvalBox.innerHTML = '';
+        return;
+      }
+      if (!currentUserMeta) {
+        el.innerHTML = 'ℹ️ Kein Altersprofil hinterlegt. Konto gilt als freigeschaltet (Testmodus).';
+        return;
+      }
 
-  const year = currentUserMeta.birth_year;
-  if (!year) {
-    el.innerHTML = 'ℹ️ Geburtsjahr fehlt im Profil.';
-    return;
-  }
-  const nowYear = new Date().getFullYear();
-  const age = nowYear - year;
-  const minor = age < 16;
+      const year = currentUserMeta.birth_year;
+      if (!year) {
+        el.innerHTML = 'ℹ️ Geburtsjahr fehlt im Profil.';
+        return;
+      }
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      const minor = age < 16;
 
-  if (minor && currentUserMeta.parent_required) {
-    if (currentUserMeta.parent_approved) {
-      el.innerHTML = `✅ Konto freigeschaltet (minderjährig, ca. ${age} Jahre, Elternzustimmung liegt vor).`;
-    } else {
-      el.innerHTML =
-        `🔒 Konto gesperrt (minderjährig, ca. ${age} Jahre). ` +
-        `Bitte Freigabelink an einen Erziehungsberechtigten senden.`;
-    }
-  } else if (minor) {
-    el.innerHTML =
-      `ℹ️ Minderjährig (ca. ${age} Jahre) – Elternzustimmung ist derzeit nicht als Pflicht markiert.`;
-  } else {
-    el.innerHTML =
-      `✅ Konto freigeschaltet (ca. ${age} Jahre, keine Elternzustimmung erforderlich).`;
-  }
-}
-
-function isMinorLocked() {
-  if (!currentUserMeta) return false;
-  if (!currentUserMeta.parent_required) return false;
-  const year = currentUserMeta.birth_year;
-  if (!year) return false;
-  const nowYear = new Date().getFullYear();
-  const age = nowYear - year;
-  return age < 16 && !currentUserMeta.parent_approved;
-}
-
-async function loadCurrentUser() {
-  try {
-    const c = await getClient();
-    const { data } = await c.auth.getSession();
-    currentUser = data?.session?.user || null;
-    const elUser = $('#auth-user');
-    if (elUser) {
-      elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
-    }
-  } catch (e) {
-    console.error('loadCurrentUser', e);
-    currentUser = null;
-  }
-}
-
-async function loadUserMeta() {
-  if (!currentUser) {
-    currentUserMeta = null;
-    updateAuthLockInfo();
-    return;
-  }
-  try {
-    const c = await getClient();
-    const { data, error } = await c
-      .from('user_profile')
-      .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
-      .eq('id', currentUser.id)
-      .maybeSingle();
-
-    if (!error && data) {
-      currentUserMeta = data;
-    } else {
-      currentUserMeta = null;
-    }
-  } catch (e) {
-    console.error('loadUserMeta', e);
-    currentUserMeta = null;
-  }
-  updateAuthLockInfo();
-}
-
-// Hilfsfunktion: Token generieren (für Elternfreigabe)
-function generateToken() {
-  const arr = new Uint8Array(16);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
-$('#btn-signup')?.addEventListener('click', async () => {
-  const email       = ($('#auth-email')?.value || '').trim();
-  const pwd         = ($('#auth-pass')?.value || '').trim();
-  const nick        = ($('#reg-nick')?.value || '').trim();
-  const yearStr     = ($('#reg-year')?.value || '').trim();
-  const regRole     = ($('#reg-role')?.value || '').trim();
-  const parentEmail = ($('#reg-parent-email')?.value || '').trim();
-  const msg         = $('#auth-msg');
-  const approvalBox = $('#auth-approval-link');
-
-  if (msg) msg.textContent = '';
-  if (approvalBox) approvalBox.innerHTML = '';
-
-  if (!email || !pwd) {
-    if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
-    return;
-  }
-  if (!nick || !yearStr) {
-    if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
-    return;
-  }
-  if (!regRole) {
-    if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
-    return;
-  }
-
-  const birthYear = parseInt(yearStr, 10);
-  const nowYear   = new Date().getFullYear();
-  if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
-    if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
-    return;
-  }
-  const age            = nowYear - birthYear;
-  const parentRequired = age < 16;
-
-  if (parentRequired && !parentEmail) {
-    if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
-    return;
-  }
-
-  try {
-    const c = await getClient();
-    const { data, error } = await c.auth.signUp({ email, password: pwd });
-
-    if (error) {
-      if (msg) msg.textContent = 'Fehler: ' + error.message;
-      return;
+      if (minor && currentUserMeta.parent_required) {
+        if (currentUserMeta.parent_approved) {
+          el.innerHTML = `✅ Konto freigeschaltet (minderjährig, ca. ${age} Jahre, Elternzustimmung liegt vor).`;
+        } else {
+          el.innerHTML =
+            `🔒 Konto gesperrt (minderjährig, ca. ${age} Jahre). ` +
+            `Bitte Freigabelink an einen Erziehungsberechtigten senden.`;
+        }
+      } else if (minor) {
+        el.innerHTML =
+          `ℹ️ Minderjährig (ca. ${age} Jahre) – Elternzustimmung ist derzeit nicht als Pflicht markiert.`;
+      } else {
+        el.innerHTML =
+          `✅ Konto freigeschaltet (ca. ${age} Jahre, keine Elternzustimmung erforderlich).`;
+      }
     }
 
-    const user = data?.user;
-    if (!user) {
-      if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
-      return;
+    function isMinorLocked() {
+      if (!currentUserMeta) return false;
+      if (!currentUserMeta.parent_required) return false;
+      const year = currentUserMeta.birth_year;
+      if (!year) return false;
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      return age < 16 && !currentUserMeta.parent_approved;
     }
 
-    // 1) Alters-/Elternprofil
-    const { error: profErr } = await c
-      .from('user_profile')
-      .insert({
-        id: user.id,
-        nickname: nick,
-        birth_year: birthYear,
-        parent_email: parentEmail || null,
-        parent_required: parentRequired,
-        parent_approved: parentRequired ? false : true
-      });
-
-    if (profErr) {
-      console.error('user_profile insert', profErr);
-      if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
-      return;
+    async function loadCurrentUser() {
+      try {
+        const c = await getClient();
+        const { data } = await c.auth.getSession();
+        currentUser = data?.session?.user || null;
+        const elUser = $('#auth-user');
+        if (elUser) {
+          elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
+        }
+      } catch (e) {
+        console.error('loadCurrentUser', e);
+        currentUser = null;
+      }
     }
+
+    async function loadUserMeta() {
+      if (!currentUser) {
+        currentUserMeta = null;
+        updateAuthLockInfo();
+        return;
+      }
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('user_profile')
+          .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          currentUserMeta = data;
+        } else {
+          currentUserMeta = null;
+        }
+      } catch (e) {
+        console.error('loadUserMeta', e);
+        currentUserMeta = null;
+      }
+      updateAuthLockInfo();
+    }
+
+    // Hilfsfunktion: Token generieren (für Elternfreigabe)
+    function generateToken() {
+      const arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
+    $('#btn-signup')?.addEventListener('click', async () => {
+      const email       = ($('#auth-email')?.value || '').trim();
+      const pwd         = ($('#auth-pass')?.value || '').trim();
+      const nick        = ($('#reg-nick')?.value || '').trim();
+      const yearStr     = ($('#reg-year')?.value || '').trim();
+      const regRole     = ($('#reg-role')?.value || '').trim();
+      const parentEmail = ($('#reg-parent-email')?.value || '').trim();
+      const msg         = $('#auth-msg');
+      const approvalBox = $('#auth-approval-link');
+
+      if (msg) msg.textContent = '';
+      if (approvalBox) approvalBox.innerHTML = '';
+
+      if (!email || !pwd) {
+        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+        return;
+      }
+      if (!nick || !yearStr) {
+        if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
+        return;
+      }
+      if (!regRole) {
+        if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
+        return;
+      }
+
+      const birthYear = parseInt(yearStr, 10);
+      const nowYear   = new Date().getFullYear();
+      if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
+        if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
+        return;
+      }
+      const age            = nowYear - birthYear;
+      const parentRequired = age < 16;
+
+      if (parentRequired && !parentEmail) {
+        if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c.auth.signUp({ email, password: pwd });
+
+        if (error) {
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+          return;
+        }
+
+        const user = data?.user;
+        if (!user) {
+          if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
+          return;
+        }
+
+        // 1) Alters-/Elternprofil
+        const { error: profErr } = await c
+          .from('user_profile')
+          .insert({
+            id: user.id,
+            nickname: nick,
+            birth_year: birthYear,
+            parent_email: parentEmail || null,
+            parent_required: parentRequired,
+            parent_approved: parentRequired ? false : true
+          });
+
+        if (profErr) {
+          console.error('user_profile insert', profErr);
+          if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
+          return;
+        }
 
     // 2) Profil mit Rolle direkt anlegen
     const { error: prof2Err } = await c
