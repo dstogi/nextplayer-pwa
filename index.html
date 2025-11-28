@@ -859,7 +859,70 @@ $('#btn-test-conf')?.addEventListener('click', async () => {
       crypto.getRandomValues(arr);
       return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
     }
+// Sorgt dafür, dass es für den aktuellen User einen Eltern-Freigabelink gibt
+async function ensureApprovalLinkForCurrentUser() {
+  const approvalBox = $('#auth-approval-link');
+  if (!currentUser || !currentUserMeta || !approvalBox) return;
 
+  const childId = currentUserMeta.id || currentUser.id;
+  let email = currentUserMeta.parent_email || '';
+
+  if (!email) {
+    // ohne Eltern-Mail gibt es nichts zu tun
+    return;
+  }
+
+  try {
+    const c = await getClient();
+
+    // Gibt es schon einen Eintrag in parental_consent?
+    const { data, error } = await c
+      .from('parental_consent')
+      .select('token, email')
+      .eq('child_id', childId)
+      .maybeSingle();
+
+    let token;
+    if (!error && data) {
+      token = data.token;
+      // Falls im Datensatz eine andere Mail steht, diese nehmen
+      email = data.email || email;
+    } else {
+      // Noch kein Eintrag: neuen Token erzeugen
+      token = generateToken();
+      const { error: insErr } = await c
+        .from('parental_consent')
+        .insert({
+          child_id: childId,
+          token,
+          email
+        });
+
+      if (insErr) {
+        console.error('ensureApprovalLink insert error', insErr);
+        return;
+      }
+    }
+
+    const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+    const approvalLink = `${base}approve.html?token=${token}`;
+
+    const subject = encodeURIComponent('Einwilligung für NextPlayer™');
+    const body = encodeURIComponent(
+      `Hallo,\n\n` +
+      `bitte klicken Sie auf den folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
+      `${approvalLink}\n\n` +
+      `Viele Grüße\nNextPlayer™`
+    );
+
+    approvalBox.innerHTML =
+      `Freigabelink: <a href="${approvalLink}" target="_blank">${approvalLink}</a><br>` +
+      `<a href="mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}">` +
+      `E-Mail mit diesem Link öffnen</a>`;
+  } catch (e) {
+    console.error('ensureApprovalLinkForCurrentUser', e);
+  }
+}
     // Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
     $('#btn-signup')?.addEventListener('click', async () => {
       const email       = ($('#auth-email')?.value || '').trim();
@@ -1028,14 +1091,16 @@ $('#btn-login')?.addEventListener('click', async () => {
       const locked = isMinorLocked();
 
       if (locked) {
-        // Konto ist noch gesperrt -> im Login-Bereich bleiben
         if (msg) msg.textContent =
           'Login OK, aber dein Konto ist noch gesperrt (Elternzustimmung fehlt).';
+
+        // HIER: Freigabelink erzeugen/anzeigen
+        await ensureApprovalLinkForCurrentUser();
+
         if (window.npShowSection) {
           window.npShowSection('sec-auth');
         }
       } else {
-        // Konto freigeschaltet -> direkt zu Bewerten springen
         if (msg) msg.textContent = 'Login OK.';
         if (window.npShowSection) {
           window.npShowSection('sec-rating');
@@ -1045,63 +1110,6 @@ $('#btn-login')?.addEventListener('click', async () => {
   } catch (e) {
     console.error(e);
     if (msg) msg.textContent = 'Fehler beim Login.';
-  }
-});
-
-// Logout
-$('#btn-logout')?.addEventListener('click', async () => {
-  try {
-    const c = await getClient();
-    await c.auth.signOut();
-  } catch (e) {
-    console.error(e);
-  }
-
-  currentUser = null;
-  currentUserMeta = null;
-  currentProfile = null;
-
-  const msg         = $('#auth-msg');
-  const approvalBox = $('#auth-approval-link');
-  const elUser      = $('#auth-user');
-
-  if (msg) msg.textContent = 'Abgemeldet.';
-  if (elUser) elUser.textContent = '';
-  if (approvalBox) approvalBox.innerHTML = '';
-
-  // Eingabefelder im Login-/Registrierungsbereich leeren
-  const idsToClear = [
-    'auth-email',
-    'auth-pass',
-    'reg-nick',
-    'reg-year',
-    'reg-parent-email'
-  ];
-  idsToClear.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-
-  const regRoleSel = document.getElementById('reg-role');
-  if (regRoleSel) regRoleSel.value = '';
-
-  // Profil-Felder zurücksetzen
-  const profRoleSel = document.getElementById('prof-role');
-  const profClub    = document.getElementById('prof-club');
-  const profExtra   = document.getElementById('prof-extra');
-
-  if (profRoleSel) {
-    profRoleSel.value = '';
-    profRoleSel.disabled = false;
-  }
-  if (profClub)  profClub.value  = '';
-  if (profExtra) profExtra.value = '';
-
-  updateAuthLockInfo();
-
-  // Nach Logout zurück auf den Login-Tab springen
-  if (window.npShowSection) {
-    window.npShowSection('sec-auth');
   }
 });
 
