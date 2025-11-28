@@ -637,11 +637,6 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-function generateToken() {
-  const arr = new Uint8Array(16);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-}
 
     let supa = null;
     let currentUser = null;
@@ -726,94 +721,100 @@ function generateToken() {
       }
     });
 
-    // -----------------------------
-    // Auth & Jugendschutz
-    // -----------------------------
-    function updateAuthLockInfo() {
-      const el = $('#auth-lock-info');
-      if (!el) return;
+// -----------------------------
+// Auth & Jugendschutz
+// -----------------------------
+function updateAuthLockInfo() {
+  const el = $('#auth-lock-info');
+  const approvalBox = $('#auth-approval-link');
+  if (!el) return;
 
-      if (!currentUser) {
-        el.textContent = '';
-        return;
-      }
-      if (!currentUserMeta) {
-        el.textContent = 'Kein Altersprofil hinterlegt. Konto gilt als voll freigeschaltet (Testmodus).';
-        return;
-      }
+  if (!currentUser) {
+    el.innerHTML = '';
+    if (approvalBox) approvalBox.innerHTML = '';
+    return;
+  }
+  if (!currentUserMeta) {
+    el.innerHTML = 'ℹ️ Kein Altersprofil hinterlegt. Konto gilt als freigeschaltet (Testmodus).';
+    return;
+  }
 
-      const year = currentUserMeta.birth_year;
-      if (!year) {
-        el.textContent = 'Geburtsjahr fehlt im Profil.';
-        return;
-      }
-      const nowYear = new Date().getFullYear();
-      const age = nowYear - year;
-      const minor = age < 16;
+  const year = currentUserMeta.birth_year;
+  if (!year) {
+    el.innerHTML = 'ℹ️ Geburtsjahr fehlt im Profil.';
+    return;
+  }
+  const nowYear = new Date().getFullYear();
+  const age = nowYear - year;
+  const minor = age < 16;
 
-      if (minor && currentUserMeta.parent_required) {
-        if (currentUserMeta.parent_approved) {
-          el.textContent = `Minderjährig (ca. ${age}) – Elternzustimmung liegt vor.`;
-        } else {
-          el.textContent = `Minderjährig (ca. ${age}) – Konto ist gesperrt, bis ein Erziehungsberechtigter zustimmt.`;
-        }
-      } else if (minor) {
-        el.textContent = `Minderjährig (ca. ${age}) – Elternzustimmung nicht als Pflicht markiert.`;
-      } else {
-        el.textContent = `Alter ca. ${age} – keine Elternzustimmung erforderlich.`;
-      }
+  if (minor && currentUserMeta.parent_required) {
+    if (currentUserMeta.parent_approved) {
+      el.innerHTML = `✅ Konto freigeschaltet (minderjährig, ca. ${age} Jahre, Elternzustimmung liegt vor).`;
+    } else {
+      el.innerHTML =
+        `🔒 Konto gesperrt (minderjährig, ca. ${age} Jahre). ` +
+        `Bitte Freigabelink an einen Erziehungsberechtigten senden.`;
     }
+  } else if (minor) {
+    el.innerHTML =
+      `ℹ️ Minderjährig (ca. ${age} Jahre) – Elternzustimmung ist derzeit nicht als Pflicht markiert.`;
+  } else {
+    el.innerHTML =
+      `✅ Konto freigeschaltet (ca. ${age} Jahre, keine Elternzustimmung erforderlich).`;
+  }
+}
 
-    function isMinorLocked() {
-      if (!currentUserMeta) return false;
-      if (!currentUserMeta.parent_required) return false;
-      const year = currentUserMeta.birth_year;
-      if (!year) return false;
-      const nowYear = new Date().getFullYear();
-      const age = nowYear - year;
-      return age < 16 && !currentUserMeta.parent_approved;
+function isMinorLocked() {
+  if (!currentUserMeta) return false;
+  if (!currentUserMeta.parent_required) return false;
+  const year = currentUserMeta.birth_year;
+  if (!year) return false;
+  const nowYear = new Date().getFullYear();
+  const age = nowYear - year;
+  return age < 16 && !currentUserMeta.parent_approved;
+}
+
+async function loadCurrentUser() {
+  try {
+    const c = await getClient();
+    const { data } = await c.auth.getSession();
+    currentUser = data?.session?.user || null;
+    const elUser = $('#auth-user');
+    if (elUser) {
+      elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
     }
+  } catch (e) {
+    console.error('loadCurrentUser', e);
+    currentUser = null;
+  }
+}
 
-    async function loadCurrentUser() {
-      try {
-        const c = await getClient();
-        const { data } = await c.auth.getSession();
-        currentUser = data?.session?.user || null;
-        const elUser = $('#auth-user');
-        if (elUser) {
-          elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
-        }
-      } catch (e) {
-        console.error('loadCurrentUser', e);
-        currentUser = null;
-      }
+async function loadUserMeta() {
+  if (!currentUser) {
+    currentUserMeta = null;
+    updateAuthLockInfo();
+    return;
+  }
+  try {
+    const c = await getClient();
+    const { data, error } = await c
+      .from('user_profile')
+      .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
+      .eq('id', currentUser.id)
+      .maybeSingle();
+
+    if (!error && data) {
+      currentUserMeta = data;
+    } else {
+      currentUserMeta = null;
     }
-
-    async function loadUserMeta() {
-      if (!currentUser) {
-        currentUserMeta = null;
-        updateAuthLockInfo();
-        return;
-      }
-      try {
-        const c = await getClient();
-        const { data, error } = await c
-          .from('user_profile')
-          .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
-          .eq('id', currentUser.id)
-          .maybeSingle();
-
-        if (!error && data) {
-          currentUserMeta = data;
-        } else {
-          currentUserMeta = null;
-        }
-      } catch (e) {
-        console.error('loadUserMeta', e);
-        currentUserMeta = null;
-      }
-      updateAuthLockInfo();
-    }
+  } catch (e) {
+    console.error('loadUserMeta', e);
+    currentUserMeta = null;
+  }
+  updateAuthLockInfo();
+}
 
 // Hilfsfunktion: Token generieren (für Elternfreigabe)
 function generateToken() {
@@ -833,11 +834,9 @@ $('#btn-signup')?.addEventListener('click', async () => {
   const msg         = $('#auth-msg');
   const approvalBox = $('#auth-approval-link');
 
-  // Statusfelder leeren
   if (msg) msg.textContent = '';
   if (approvalBox) approvalBox.innerHTML = '';
 
-  // Basis-Checks
   if (!email || !pwd) {
     if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
     return;
@@ -932,7 +931,6 @@ $('#btn-signup')?.addEventListener('click', async () => {
         return;
       }
 
-      // Basis-URL für approve.html bestimmen
       const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
       const approvalLink = `${base}approve.html?token=${token}`;
 
@@ -954,7 +952,6 @@ $('#btn-signup')?.addEventListener('click', async () => {
           `E-Mail mit diesem Link öffnen</a>`;
       }
     } else {
-      // Volljährig / keine Elternpflicht
       msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
     }
   } catch (e) {
@@ -1073,7 +1070,6 @@ async function saveProfile() {
 
   let role = roleSel?.value || '';
   if (!role && currentProfile && currentProfile.role) {
-    // Rolle kommt aus der Registrierung, Feld ist evtl. disabled
     role = currentProfile.role;
   }
   if (!role) {
@@ -1163,6 +1159,7 @@ async function loadProfile() {
     currentProfile = null;
   }
 }
+
     // -----------------------------
     // Rating UI
     // -----------------------------
