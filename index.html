@@ -694,31 +694,69 @@
       if (msg) msg.textContent = 'Konfiguration gespeichert.';
     });
 
-    $('#btn-test-conf')?.addEventListener('click', async () => {
-      const msg = $('#conf-msg');
-      if (msg) msg.textContent = 'Teste Verbindung…';
+$('#btn-test-conf')?.addEventListener('click', async () => {
+  const msg = $('#conf-msg');
+  if (msg) msg.textContent = 'Teste Verbindung…';
 
-      const url = ($('#sb-url')?.value || '').trim();
-      const key = ($('#sb-key')?.value || '').trim();
-      if (url && key) {
-        saveConfig(url, key);
-        resetClient();
-      }
+  const url = ($('#sb-url')?.value || '').trim();
+  const key = ($('#sb-key')?.value || '').trim();
+  if (url && key) {
+    saveConfig(url, key);
+    resetClient();
+  }
 
-      try {
-        const c = await getClient();
-        const { error } = await c.auth.getSession();
-        if (error) {
-          if (msg) msg.textContent = 'Fehler: ' + error.message;
-        } else {
-          if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
-        }
-      } catch (e) {
-        console.error(e);
-        if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
-        resetClient();
+  try {
+    const c = await getClient();
+    const { error } = await c.auth.getSession();
+    if (error) {
+      if (msg) msg.textContent = 'Fehler: ' + error.message;
+    } else {
+      if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
+
+      // Alte Session sauber abmelden, damit Demo "frisch" ist
+      await c.auth.signOut();
+      currentUser = null;
+      currentUserMeta = null;
+      currentProfile = null;
+
+      // Login-UI zurücksetzen
+      const idsToClear = [
+        'auth-email',
+        'auth-pass',
+        'reg-nick',
+        'reg-year',
+        'reg-parent-email'
+      ];
+      idsToClear.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const regRoleSel = document.getElementById('reg-role');
+      if (regRoleSel) regRoleSel.value = '';
+
+      const elUser   = $('#auth-user');
+      const lockInfo = $('#auth-lock-info');
+      const authMsg  = $('#auth-msg');
+      const apprBox  = $('#auth-approval-link');
+
+      if (elUser)   elUser.textContent = '';
+      if (lockInfo) lockInfo.textContent = '';
+      if (authMsg)  authMsg.textContent  = '';
+      if (apprBox)  apprBox.innerHTML    = '';
+
+      updateAuthLockInfo();
+
+      // Automatisch auf den Login-Tab springen
+      if (window.npShowSection) {
+        window.npShowSection('sec-auth');
       }
-    });
+    }
+  } catch (e) {
+    console.error(e);
+    if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
+    resetClient();
+  }
+});
 
     // -----------------------------
     // Auth & Jugendschutz
@@ -2194,30 +2232,26 @@ async function loadProfile() {
       await refreshLastComments();
     }
 
-    (async function init() {
-      const cfg = {
-        url: localStorage.getItem('sb_url') || '',
-        key: localStorage.getItem('sb_key') || ''
-      };
-      const urlInput = document.getElementById('sb-url');
-      const keyInput = document.getElementById('sb-key');
-      if (urlInput) urlInput.value = cfg.url;
-      if (keyInput) keyInput.value = cfg.key;
+(async function init() {
+  const cfg = {
+    url: localStorage.getItem('sb_url') || '',
+    key: localStorage.getItem('sb_key') || ''
+  };
+  const urlInput = document.getElementById('sb-url');
+  const keyInput = document.getElementById('sb-key');
+  if (urlInput) urlInput.value = cfg.url;
+  if (keyInput) keyInput.value = cfg.key;
 
-      if (cfg.url && cfg.key) {
-        try {
-          await getClient();
-          await loadCurrentUser();
-          await loadUserMeta();
-          await loadProfile();
-          await refreshAllData();
-          const rankMsg = $('#rank-msg');
-          if (rankMsg) rankMsg.textContent = 'Bereit.';
-        } catch (e) {
-          console.error('init', e);
-        }
-      }
-    })();
+  if (cfg.url && cfg.key) {
+    try {
+      await getClient();
+      const rankMsg = $('#rank-msg');
+      if (rankMsg) rankMsg.textContent = 'Bereit (bitte einloggen).';
+    } catch (e) {
+      console.error('init', e);
+    }
+  }
+})();
   </script>
 </body>
 </html>
