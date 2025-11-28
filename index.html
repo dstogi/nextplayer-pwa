@@ -289,6 +289,7 @@
       </div>
       <div id="auth-lock-info" class="status-line"></div>
       <div id="auth-msg" class="status-line"></div>
+    <div id="auth-approval-link" class="status-line"></div>
     </section>
 
     <!-- 2b. Profil / Rolle -->
@@ -636,6 +637,11 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+function generateToken() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
     let supa = null;
     let currentUser = null;
@@ -809,155 +815,347 @@
       updateAuthLockInfo();
     }
 
-    // Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
-    $('#btn-signup')?.addEventListener('click', async () => {
-      const email = ($('#auth-email')?.value || '').trim();
-      const pwd   = ($('#auth-pass')?.value || '').trim();
-      const nick  = ($('#reg-nick')?.value || '').trim();
-      const yearStr = ($('#reg-year')?.value || '').trim();
-      const regRole = ($('#reg-role')?.value || '').trim();
-      const parentEmail = ($('#reg-parent-email')?.value || '').trim();
-      const msg   = $('#auth-msg');
+// Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
+$('#btn-signup')?.addEventListener('click', async () => {
+  const email       = ($('#auth-email')?.value || '').trim();
+  const pwd         = ($('#auth-pass')?.value || '').trim();
+  const nick        = ($('#reg-nick')?.value || '').trim();
+  const yearStr     = ($('#reg-year')?.value || '').trim();
+  const regRole     = ($('#reg-role')?.value || '').trim();
+  const parentEmail = ($('#reg-parent-email')?.value || '').trim();
+  const msg         = $('#auth-msg');
+  const approvalBox = $('#auth-approval-link');
 
-      if (!email || !pwd) {
-        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+  // Statusfelder leeren
+  if (msg) msg.textContent = '';
+  if (approvalBox) approvalBox.innerHTML = '';
+
+  // Basis-Checks
+  if (!email || !pwd) {
+    if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+    return;
+  }
+  if (!nick || !yearStr) {
+    if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
+    return;
+  }
+  if (!regRole) {
+    if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
+    return;
+  }
+
+  const birthYear = parseInt(yearStr, 10);
+  const nowYear   = new Date().getFullYear();
+  if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
+    if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
+    return;
+  }
+  const age            = nowYear - birthYear;
+  const parentRequired = age < 16;
+
+  if (parentRequired && !parentEmail) {
+    if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
+    return;
+  }
+
+  try {
+    const c = await getClient();
+    const { data, error } = await c.auth.signUp({ email, password: pwd });
+
+    if (error) {
+      if (msg) msg.textContent = 'Fehler: ' + error.message;
+      return;
+    }
+
+    const user = data?.user;
+    if (!user) {
+      if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
+      return;
+    }
+
+    // 1) Alters-/Elternprofil
+    const { error: profErr } = await c
+      .from('user_profile')
+      .insert({
+        id: user.id,
+        nickname: nick,
+        birth_year: birthYear,
+        parent_email: parentEmail || null,
+        parent_required: parentRequired,
+        parent_approved: parentRequired ? false : true
+      });
+
+    if (profErr) {
+      console.error('user_profile insert', profErr);
+      if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
+      return;
+    }
+
+    // 2) Profil mit Rolle direkt anlegen
+    const { error: prof2Err } = await c
+      .from('profile')
+      .upsert({
+        user_id: user.id,
+        role: regRole,
+        club_name: null,
+        extra_info: null
+      }, { onConflict: 'user_id' });
+
+    if (prof2Err) {
+      console.error('profile insert error', prof2Err);
+      if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
+      return;
+    }
+
+    // 3) Bei Minderjährigen: Token erzeugen + Freigabelink & Mail-Link anzeigen
+    if (parentRequired) {
+      const token = generateToken();
+
+      const { error: consentErr } = await c
+        .from('parental_consent')
+        .insert({
+          child_id: user.id,
+          token,
+          email: parentEmail || null
+        });
+
+      if (consentErr) {
+        console.error('parental_consent insert error', consentErr);
+        msg.textContent = 'Registrierung erfolgreich. Konto ist gesperrt. Freigabelink konnte nicht gespeichert werden.';
         return;
       }
-      if (!nick || !yearStr) {
-        if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
-        return;
+
+      // Basis-URL für approve.html bestimmen
+      const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+      const approvalLink = `${base}approve.html?token=${token}`;
+
+      msg.textContent =
+        'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
+
+      if (approvalBox) {
+        const subject = encodeURIComponent('Einwilligung für NextPlayer™');
+        const body = encodeURIComponent(
+          `Hallo,\n\n` +
+          `bitte klicken Sie auf den folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
+          `${approvalLink}\n\n` +
+          `Viele Grüße\nNextPlayer™`
+        );
+
+        approvalBox.innerHTML =
+          `Freigabelink: <a href="${approvalLink}" target="_blank">${approvalLink}</a><br>` +
+          `<a href="mailto:${encodeURIComponent(parentEmail)}?subject=${subject}&body=${body}">` +
+          `E-Mail mit diesem Link öffnen</a>`;
       }
-if (!nick || !yearStr) {
-  if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
-  return;
-}
+    } else {
+      // Volljährig / keine Elternpflicht
+      msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
+    }
+  } catch (e) {
+    console.error(e);
+    if (msg) msg.textContent = 'Fehler bei Registrierung.';
+  }
+});
 
-if (!regRole) {
-  if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
-  return;
-}
-      
-      const birthYear = parseInt(yearStr, 10);
-      const nowYear = new Date().getFullYear();
-      if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
-        if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
-        return;
-      }
-      const age = nowYear - birthYear;
-      const parentRequired = age < 16;
-      if (parentRequired && !parentEmail) {
-        if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
-        return;
-      }
+// Login
+$('#btn-login')?.addEventListener('click', async () => {
+  const email = ($('#auth-email')?.value || '').trim();
+  const pwd   = ($('#auth-pass')?.value || '').trim();
+  const msg   = $('#auth-msg');
+  const approvalBox = $('#auth-approval-link');
 
-      try {
-        const c = await getClient();
-        const { data, error } = await c.auth.signUp({ email, password: pwd });
+  if (approvalBox) approvalBox.innerHTML = '';
 
-        if (error) {
-          if (msg) msg.textContent = 'Fehler: ' + error.message;
-          return;
-        }
-
-        const user = data?.user;
-        if (!user) {
-          if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
-          return;
-        }
-
-        const { error: profErr } = await c
-          .from('user_profile')
-          .insert({
-            id: user.id,
-            nickname: nick,
-            birth_year: birthYear,
-            parent_email: parentEmail || null,
-            parent_required: parentRequired,
-            parent_approved: parentRequired ? false : true
-          });
-
-        if (profErr) {
-          console.error('user_profile insert', profErr);
-          if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
-          return;
-        }
-// NEU: Profil mit Rolle direkt anlegen
-const { error: prof2Err } = await c
-  .from('profile')
-  .upsert({
-    user_id: user.id,
-    role: regRole,
-    club_name: null,
-    extra_info: null
-  }, { onConflict: 'user_id' });
-
-if (prof2Err) {
-  console.error('profile insert error', prof2Err);
-  // kein harter Abbruch, aber Hinweis für dich:
-  if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
-  return;
-}
-        
-        if (parentRequired) {
-          msg.textContent = 'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
-        } else {
-          msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
-        }
-      } catch (e) {
-        console.error(e);
-        if (msg) msg.textContent = 'Fehler bei Registrierung.';
-      }
-    });
-
-    $('#btn-login')?.addEventListener('click', async () => {
-      const email = ($('#auth-email')?.value || '').trim();
-      const pwd   = ($('#auth-pass')?.value || '').trim();
-      const msg   = $('#auth-msg');
-      if (!email || !pwd) {
-        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
-        return;
-      }
-      try {
-        const c = await getClient();
-        const { data, error } = await c.auth.signInWithPassword({ email, password: pwd });
-        if (error) {
-          if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
-        } else {
-          currentUser = data?.user || null;
-          const elUser = $('#auth-user');
-          if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
-          msg.textContent = 'Login OK.';
-
-          await loadUserMeta();
-          await loadProfile();
-          await refreshAllData();
-
-          if (window.npShowSection) {
-            window.npShowSection('sec-rating');
-          }
-        }
-      } catch (e) {
-        console.error(e);
-        if (msg) msg.textContent = 'Fehler beim Login.';
-      }
-    });
-
-    $('#btn-logout')?.addEventListener('click', async () => {
-      try {
-        const c = await getClient();
-        await c.auth.signOut();
-      } catch (e) {
-        console.error(e);
-      }
-      currentUser = null;
-      currentUserMeta = null;
-      currentProfile = null;
-      const msg = $('#auth-msg');
-      if (msg) msg.textContent = 'Abgemeldet.';
+  if (!email || !pwd) {
+    if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+    return;
+  }
+  try {
+    const c = await getClient();
+    const { data, error } = await c.auth.signInWithPassword({ email, password: pwd });
+    if (error) {
+      if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
+    } else {
+      currentUser = data?.user || null;
       const elUser = $('#auth-user');
-      if (elUser) elUser.textContent = '';
-      updateAuthLockInfo();
-    });
+      if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
+      msg.textContent = 'Login OK.';
+
+      await loadUserMeta();
+      await loadProfile();
+      await refreshAllData();
+
+      if (window.npShowSection) {
+        window.npShowSection('sec-rating');
+      }
+    }
+  } catch (e) {
+    console.error(e);
+    if (msg) msg.textContent = 'Fehler beim Login.';
+  }
+});
+
+// Logout
+$('#btn-logout')?.addEventListener('click', async () => {
+  try {
+    const c = await getClient();
+    await c.auth.signOut();
+  } catch (e) {
+    console.error(e);
+  }
+  currentUser = null;
+  currentUserMeta = null;
+  currentProfile = null;
+  const msg = $('#auth-msg');
+  const approvalBox = $('#auth-approval-link');
+  if (msg) msg.textContent = 'Abgemeldet.';
+  const elUser = $('#auth-user');
+  if (elUser) elUser.textContent = '';
+  if (approvalBox) approvalBox.innerHTML = '';
+  updateAuthLockInfo();
+});
+
+// -----------------------------
+// Profil / Rolle (2b)
+// -----------------------------
+function updateProfileFormForRole() {
+  const roleSel   = document.getElementById('prof-role');
+  const clubLabel = document.getElementById('prof-club-label');
+  const extraLabel= document.getElementById('prof-extra-label');
+
+  if (!roleSel || !clubLabel || !extraLabel) return;
+
+  const role = roleSel.value;
+
+  clubLabel.textContent  = 'Verein (optional)';
+  extraLabel.textContent = 'Zusatzinfo (optional)';
+
+  if (role === 'spieler') {
+    clubLabel.textContent  = 'Aktueller Verein (Pflicht)';
+    extraLabel.textContent = 'Zusatzinfo Spieler (z.B. Position, Liga, optional)';
+  } else if (role === 'trainer') {
+    clubLabel.textContent  = 'Verein als Trainer (Pflicht)';
+    extraLabel.textContent = 'Lizenzangabe (optional, z.B. „UEFA B“)';
+  } else if (role === 'scout') {
+    clubLabel.textContent  = 'Verein / Organisation als Scout (optional)';
+    extraLabel.textContent = 'Weitere Infos (optional)';
+  } else if (role === 'eltern') {
+    clubLabel.textContent  = 'Verein des Kindes (optional)';
+    extraLabel.textContent = 'Weitere Infos (optional)';
+  } else if (role === 'zuschauer') {
+    clubLabel.textContent  = 'Lieblingsverein (optional)';
+    extraLabel.textContent = 'Weitere Infos (optional)';
+  }
+}
+
+document.getElementById('prof-role')?.addEventListener('change', updateProfileFormForRole);
+
+async function saveProfile() {
+  const msg       = document.getElementById('prof-msg');
+  const roleSel   = document.getElementById('prof-role');
+  const clubInput = document.getElementById('prof-club');
+  const extraInput= document.getElementById('prof-extra');
+
+  if (!currentUser) {
+    if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+    return;
+  }
+  if (isMinorLocked()) {
+    if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+    return;
+  }
+
+  let role = roleSel?.value || '';
+  if (!role && currentProfile && currentProfile.role) {
+    // Rolle kommt aus der Registrierung, Feld ist evtl. disabled
+    role = currentProfile.role;
+  }
+  if (!role) {
+    if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
+    return;
+  }
+
+  const club_name  = (clubInput?.value || '').trim();
+  const extra_info = (extraInput?.value || '').trim();
+
+  if ((role === 'spieler' || role === 'trainer') && !club_name) {
+    if (msg) msg.textContent = 'Bitte den Verein angeben (Pflicht für Spieler & Trainer).';
+    return;
+  }
+
+  try {
+    const c = await getClient();
+    const payload = {
+      user_id: currentUser.id,
+      role,
+      club_name:  club_name  || null,
+      extra_info: extra_info || null
+    };
+
+    const { data, error } = await c
+      .from('profile')
+      .upsert(payload, { onConflict: 'user_id' })
+      .select('user_id, role, club_name, extra_info')
+      .single();
+
+    if (error) {
+      console.error('saveProfile error', error);
+      if (msg) msg.textContent = 'Fehler beim Speichern des Profils.';
+      return;
+    }
+
+    currentProfile = data;
+    if (msg) msg.textContent = 'Profil gespeichert.';
+
+    updateProfileFormForRole();
+    if (window.npShowSection) {
+      window.npShowSection('sec-rating');
+    }
+  } catch (e) {
+    console.error('saveProfile', e);
+    if (msg) msg.textContent = 'Fehler beim Speichern.';
+  }
+}
+
+document.getElementById('btn-save-profile')?.addEventListener('click', saveProfile);
+
+async function loadProfile() {
+  if (!currentUser) {
+    currentProfile = null;
+    return;
+  }
+  try {
+    const c = await getClient();
+    const { data, error } = await c
+      .from('profile')
+      .select('user_id, role, club_name, extra_info')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    if (!error && data) {
+      currentProfile = data;
+
+      const roleSel    = document.getElementById('prof-role');
+      const clubInput  = document.getElementById('prof-club');
+      const extraInput = document.getElementById('prof-extra');
+
+      if (roleSel) {
+        roleSel.value = data.role || '';
+        if (data.role) {
+          roleSel.disabled = true; // Rolle ist fest; keine Änderung im UI
+        }
+      }
+      if (clubInput)  clubInput.value  = data.club_name  || '';
+      if (extraInput) extraInput.value = data.extra_info || '';
+
+      updateProfileFormForRole();
+    } else {
+      currentProfile = null;
+    }
+  } catch (e) {
+    console.error('loadProfile', e);
+    currentProfile = null;
+  }
+}
 
     // -----------------------------
     // Profil / Rolle (2b)
