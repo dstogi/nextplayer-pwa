@@ -981,14 +981,27 @@ $('#btn-login')?.addEventListener('click', async () => {
       currentUser = data?.user || null;
       const elUser = $('#auth-user');
       if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
-      msg.textContent = 'Login OK.';
 
+      // Profil & Meta laden
       await loadUserMeta();
       await loadProfile();
       await refreshAllData();
 
-      if (window.npShowSection) {
-        window.npShowSection('sec-rating');
+      const locked = isMinorLocked();
+
+      if (locked) {
+        // Konto ist noch gesperrt -> im Login-Bereich bleiben
+        if (msg) msg.textContent =
+          'Login OK, aber dein Konto ist noch gesperrt (Elternzustimmung fehlt).';
+        if (window.npShowSection) {
+          window.npShowSection('sec-auth');
+        }
+      } else {
+        // Konto freigeschaltet -> direkt zu Bewerten springen
+        if (msg) msg.textContent = 'Login OK.';
+        if (window.npShowSection) {
+          window.npShowSection('sec-rating');
+        }
       }
     }
   } catch (e) {
@@ -1005,16 +1018,53 @@ $('#btn-logout')?.addEventListener('click', async () => {
   } catch (e) {
     console.error(e);
   }
+
   currentUser = null;
   currentUserMeta = null;
   currentProfile = null;
-  const msg = $('#auth-msg');
+
+  const msg         = $('#auth-msg');
   const approvalBox = $('#auth-approval-link');
+  const elUser      = $('#auth-user');
+
   if (msg) msg.textContent = 'Abgemeldet.';
-  const elUser = $('#auth-user');
   if (elUser) elUser.textContent = '';
   if (approvalBox) approvalBox.innerHTML = '';
+
+  // Eingabefelder im Login-/Registrierungsbereich leeren
+  const idsToClear = [
+    'auth-email',
+    'auth-pass',
+    'reg-nick',
+    'reg-year',
+    'reg-parent-email'
+  ];
+  idsToClear.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  const regRoleSel = document.getElementById('reg-role');
+  if (regRoleSel) regRoleSel.value = '';
+
+  // Profil-Felder zurücksetzen
+  const profRoleSel = document.getElementById('prof-role');
+  const profClub    = document.getElementById('prof-club');
+  const profExtra   = document.getElementById('prof-extra');
+
+  if (profRoleSel) {
+    profRoleSel.value = '';
+    profRoleSel.disabled = false;
+  }
+  if (profClub)  profClub.value  = '';
+  if (profExtra) profExtra.value = '';
+
   updateAuthLockInfo();
+
+  // Nach Logout zurück auf den Login-Tab springen
+  if (window.npShowSection) {
+    window.npShowSection('sec-auth');
+  }
 });
 
 // -----------------------------
