@@ -855,11 +855,6 @@ $('#btn-test-conf')?.addEventListener('click', async () => {
 
     // Hilfsfunktion: Token generieren (für Elternfreigabe)
     function generateToken() {
-      const arr = new Uint8Array(16);
-      crypto.getRandomValues(arr);
-      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-// Sorgt dafür, dass es für den aktuellen User einen Eltern-Freigabelink gibt
 async function ensureApprovalLinkForCurrentUser() {
   const approvalBox = $('#auth-approval-link');
   if (!currentUser || !currentUserMeta || !approvalBox) return;
@@ -867,15 +862,12 @@ async function ensureApprovalLinkForCurrentUser() {
   const childId = currentUserMeta.id || currentUser.id;
   let email = currentUserMeta.parent_email || '';
 
-  if (!email) {
-    // ohne Eltern-Mail gibt es nichts zu tun
-    return;
-  }
+  if (!email) return;
 
   try {
     const c = await getClient();
 
-    // Gibt es schon einen Eintrag in parental_consent?
+    // vorhandenen Eintrag suchen
     const { data, error } = await c
       .from('parental_consent')
       .select('token, email')
@@ -883,27 +875,37 @@ async function ensureApprovalLinkForCurrentUser() {
       .maybeSingle();
 
     let token;
-    if (!error && data) {
+    if (data && data.token) {
       token = data.token;
-      // Falls im Datensatz eine andere Mail steht, diese nehmen
       email = data.email || email;
     } else {
-      // Noch kein Eintrag: neuen Token erzeugen
+      // neu erzeugen
       token = generateToken();
-      const { error: insErr } = await c
+      await c
         .from('parental_consent')
         .insert({
           child_id: childId,
           token,
           email
         });
-
-      if (insErr) {
-        console.error('ensureApprovalLink insert error', insErr);
-        return;
-      }
     }
 
+    const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+    const link = `${base}approve.html?token=${token}`;
+
+    const subject = encodeURIComponent('Einwilligung für NextPlayer™');
+    const body = encodeURIComponent(
+      `Hallo,\n\nbitte klicken Sie auf folgenden Link, um die Nutzung zu erlauben:\n\n${link}\n\nViele Grüße\nNextPlayer™`
+    );
+
+    approvalBox.innerHTML =
+      `Freigabelink: <a href="${link}" target="_blank">${link}</a><br>` +
+      `<a href="mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}">E-Mail mit diesem Link öffnen</a>`;
+  } catch (e) {
+    console.error('ensureApprovalLinkForCurrentUser', e);
+  }
+}
+      
     const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
     const approvalLink = `${base}approve.html?token=${token}`;
 
@@ -1073,40 +1075,49 @@ $('#btn-login')?.addEventListener('click', async () => {
     if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
     return;
   }
+
   try {
     const c = await getClient();
     const { data, error } = await c.auth.signInWithPassword({ email, password: pwd });
+
     if (error) {
       if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
-    } else {
-      currentUser = data?.user || null;
-      const elUser = $('#auth-user');
-      if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
-
-      // Profil & Meta laden
-      await loadUserMeta();
-      await loadProfile();
-      await refreshAllData();
-
-      const locked = isMinorLocked();
-
-      if (locked) {
-        if (msg) msg.textContent =
-          'Login OK, aber dein Konto ist noch gesperrt (Elternzustimmung fehlt).';
-
-        // HIER: Freigabelink erzeugen/anzeigen
-        await ensureApprovalLinkForCurrentUser();
-
-        if (window.npShowSection) {
-          window.npShowSection('sec-auth');
-        }
-      } else {
-        if (msg) msg.textContent = 'Login OK.';
-        if (window.npShowSection) {
-          window.npShowSection('sec-rating');
-        }
-      }
+      return;
     }
+
+    // Login erfolgreich
+    currentUser = data?.user || null;
+    const elUser = $('#auth-user');
+    if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
+
+    // Profil & Alter laden
+    await loadUserMeta();
+    await loadProfile();
+    await refreshAllData();
+
+    // Konto gesperrt?
+    const locked = isMinorLocked();
+
+    if (locked) {
+      if (msg) msg.textContent =
+        'Login OK, aber dein Konto ist noch gesperrt (Elternzustimmung fehlt).';
+
+      // 🔥 HIER Freigabelink erzeugen/anzeigen:
+      await ensureApprovalLinkForCurrentUser();
+
+      // auf Login-Tab bleiben
+      if (window.npShowSection) {
+        window.npShowSection('sec-auth');
+      }
+      return;
+    }
+
+    // Konto freigeschaltet
+    if (msg) msg.textContent = 'Login OK.';
+    if (window.npShowSection) {
+      window.npShowSection('sec-rating');
+    }
+
   } catch (e) {
     console.error(e);
     if (msg) msg.textContent = 'Fehler beim Login.';
