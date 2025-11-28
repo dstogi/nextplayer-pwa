@@ -861,18 +861,31 @@ function generateToken() {
 }
 
 // Sorgt dafür, dass es für den aktuellen User einen Eltern-Freigabelink gibt
+// Sorgt dafür, dass es für den aktuellen User einen Eltern-Freigabelink gibt
 async function ensureApprovalLinkForCurrentUser() {
   const approvalBox = $('#auth-approval-link');
   if (!currentUser || !currentUserMeta || !approvalBox) return;
 
   const childId = currentUserMeta.id || currentUser.id;
-  let email = currentUserMeta.parent_email || '';
 
-  if (!email) return;
+  // 1. Versuch: parent_email aus user_profile
+  let email =
+    currentUserMeta.parent_email
+    // 2. Versuch: was im Formular steht (falls der Elternteil es frisch eingibt)
+    || ($('#reg-parent-email')?.value || '').trim()
+    // 3. Versuch: Login-Mail
+    || currentUser.email
+    || '';
+
+  if (!email) {
+    console.warn('ensureApprovalLinkForCurrentUser: keine Eltern-Mail gefunden.');
+    return;
+  }
 
   try {
     const c = await getClient();
 
+    // vorhandenen Eintrag in parental_consent suchen
     const { data, error } = await c
       .from('parental_consent')
       .select('token, email')
@@ -882,8 +895,10 @@ async function ensureApprovalLinkForCurrentUser() {
     let token;
     if (!error && data && data.token) {
       token = data.token;
+      // Mail ggf. aus Datensatz übernehmen
       email = data.email || email;
     } else {
+      // noch kein Eintrag -> neuen Token erzeugen
       token = generateToken();
       const { error: insErr } = await c
         .from('parental_consent')
@@ -893,7 +908,7 @@ async function ensureApprovalLinkForCurrentUser() {
           email
         });
       if (insErr) {
-        console.error('ensureApprovalLink insert error', insErr);
+        console.error('ensureApprovalLinkForCurrentUser insert error', insErr);
         return;
       }
     }
@@ -904,7 +919,8 @@ async function ensureApprovalLinkForCurrentUser() {
     const subject = encodeURIComponent('Einwilligung für NextPlayer™');
     const body = encodeURIComponent(
       `Hallo,\n\n` +
-      `bitte klicken Sie auf folgenden Link, um die Nutzung zu erlauben:\n\n${link}\n\n` +
+      `bitte klicken Sie auf folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
+      `${link}\n\n` +
       `Viele Grüße\nNextPlayer™`
     );
 
