@@ -815,6 +815,13 @@ function generateToken() {
       updateAuthLockInfo();
     }
 
+// Hilfsfunktion: Token generieren (für Elternfreigabe)
+function generateToken() {
+  const arr = new Uint8Array(16);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
 $('#btn-signup')?.addEventListener('click', async () => {
   const email       = ($('#auth-email')?.value || '').trim();
@@ -1156,151 +1163,6 @@ async function loadProfile() {
     currentProfile = null;
   }
 }
-
-    // -----------------------------
-    // Profil / Rolle (2b)
-    // -----------------------------
-    function updateProfileFormForRole() {
-      const roleSel   = document.getElementById('prof-role');
-      const clubLabel = document.getElementById('prof-club-label');
-      const extraLabel= document.getElementById('prof-extra-label');
-
-      if (!roleSel || !clubLabel || !extraLabel) return;
-
-      const role = roleSel.value;
-
-      clubLabel.textContent  = 'Verein (optional)';
-      extraLabel.textContent = 'Zusatzinfo (optional)';
-
-      if (role === 'spieler') {
-        clubLabel.textContent  = 'Aktueller Verein (Pflicht)';
-        extraLabel.textContent = 'Zusatzinfo Spieler (z.B. Position, Liga, optional)';
-      } else if (role === 'trainer') {
-        clubLabel.textContent  = 'Verein als Trainer (Pflicht)';
-        extraLabel.textContent = 'Lizenzangabe (optional, z.B. „UEFA B“)';
-      } else if (role === 'scout') {
-        clubLabel.textContent  = 'Verein / Organisation als Scout (optional)';
-        extraLabel.textContent = 'Weitere Infos (optional)';
-      } else if (role === 'eltern') {
-        clubLabel.textContent  = 'Verein des Kindes (optional)';
-        extraLabel.textContent = 'Weitere Infos (optional)';
-      } else if (role === 'zuschauer') {
-        clubLabel.textContent  = 'Lieblingsverein (optional)';
-        extraLabel.textContent = 'Weitere Infos (optional)';
-      }
-    }
-
-    document.getElementById('prof-role')?.addEventListener('change', updateProfileFormForRole);
-
-    async function saveProfile() {
-      const msg       = document.getElementById('prof-msg');
-      const roleSel   = document.getElementById('prof-role');
-      const clubInput = document.getElementById('prof-club');
-      const extraInput= document.getElementById('prof-extra');
-
-      if (!currentUser) {
-        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
-        return;
-      }
-      if (isMinorLocked()) {
-        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
-        return;
-      }
-
-      let role = roleSel?.value || '';
-
-if (!role && currentProfile && currentProfile.role) {
-  // Rolle kommt aus der Registrierung, Feld ist evtl. disabled
-  role = currentProfile.role;
-}
-
-if (!role) {
-  if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
-  return;
-}
-
-      const club_name  = (clubInput?.value || '').trim();
-      const extra_info = (extraInput?.value || '').trim();
-
-      if ((role === 'spieler' || role === 'trainer') && !club_name) {
-        if (msg) msg.textContent = 'Bitte den Verein angeben (Pflicht für Spieler & Trainer).';
-        return;
-      }
-
-      try {
-        const c = await getClient();
-        const payload = {
-          user_id: currentUser.id,
-          role,
-          club_name:  club_name  || null,
-          extra_info: extra_info || null
-        };
-
-        const { data, error } = await c
-          .from('profile')
-          .upsert(payload, { onConflict: 'user_id' })
-          .select('user_id, role, club_name, extra_info')
-          .single();
-
-        if (error) {
-          console.error('saveProfile error', error);
-          if (msg) msg.textContent = 'Fehler beim Speichern des Profils.';
-          return;
-        }
-
-        currentProfile = data;
-        if (msg) msg.textContent = 'Profil gespeichert.';
-
-        updateProfileFormForRole();
-        if (window.npShowSection) {
-          window.npShowSection('sec-rating');
-        }
-      } catch (e) {
-        console.error('saveProfile', e);
-        if (msg) msg.textContent = 'Fehler beim Speichern.';
-      }
-    }
-
-    document.getElementById('btn-save-profile')?.addEventListener('click', saveProfile);
-
-    async function loadProfile() {
-      if (!currentUser) {
-        currentProfile = null;
-        return;
-      }
-      try {
-        const c = await getClient();
-        const { data, error } = await c
-          .from('profile')
-          .select('user_id, role, club_name, extra_info')
-          .eq('user_id', currentUser.id)
-          .maybeSingle();
-
-        if (!error && data) {
-          currentProfile = data;
-
-          const roleSel    = document.getElementById('prof-role');
-          const clubInput  = document.getElementById('prof-club');
-          const extraInput = document.getElementById('prof-extra');
-
-          if (roleSel)    roleSel.value    = data.role       || '';
-          if (roleSel && data.role) {
-  roleSel.disabled = true; // Rolle ist fest; keine Änderung im UI
-}
-
-          if (clubInput)  clubInput.value  = data.club_name  || '';
-          if (extraInput) extraInput.value = data.extra_info || '';
-
-          updateProfileFormForRole();
-        } else {
-          currentProfile = null;
-        }
-      } catch (e) {
-        console.error('loadProfile', e);
-        currentProfile = null;
-      }
-    }
-
     // -----------------------------
     // Rating UI
     // -----------------------------
