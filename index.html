@@ -2244,9 +2244,33 @@ async function loadProfile() {
 
   if (cfg.url && cfg.key) {
     try {
-      await getClient();
+      const c = await getClient();
+
+      // WICHTIG: Beim Laden immer abmelden, damit Demos "frisch" starten
+      await c.auth.signOut();
+      currentUser = null;
+      currentUserMeta = null;
+      currentProfile = null;
+
+      const elUser   = $('#auth-user');
+      const lockInfo = $('#auth-lock-info');
+      const authMsg  = $('#auth-msg');
+      const apprBox  = $('#auth-approval-link');
+
+      if (elUser)   elUser.textContent = '';
+      if (lockInfo) lockInfo.textContent = '';
+      if (authMsg)  authMsg.textContent  = '';
+      if (apprBox)  apprBox.innerHTML    = '';
+
+      updateAuthLockInfo();
+
       const rankMsg = $('#rank-msg');
       if (rankMsg) rankMsg.textContent = 'Bereit (bitte einloggen).';
+
+      // Optional: direkt auf Login-Reiter schalten
+      if (window.npShowSection) {
+        window.npShowSection('sec-auth');
+      }
     } catch (e) {
       console.error('init', e);
     }
