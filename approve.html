@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>NextPlayer™ – Eltern-Freigabe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --np-bg: #050608;
+      --np-card: #ffffff;
+      --np-accent: #f5b642;
+      --np-text: #111111;
+      --np-muted: #666666;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f1f1f1;
+      color: var(--np-text);
+    }
+    header {
+      background: linear-gradient(135deg, #000000, #151515);
+      color: #fff;
+      padding: 14px 18px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+    }
+    header h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    header .subtitle {
+      margin-top: 4px;
+      font-size: 0.8rem;
+      color: #c0c0c0;
+    }
+    main {
+      max-width: 700px;
+      margin: 20px auto 40px;
+      padding: 0 12px;
+    }
+    .card {
+      background: var(--np-card);
+      border-radius: 10px;
+      padding: 16px 18px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.15);
+      border: 1px solid rgba(0,0,0,0.04);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1rem;
+      border-bottom: 2px solid rgba(0,0,0,0.06);
+      padding-bottom: 4px;
+    }
+    p {
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+    .muted {
+      font-size: 0.8rem;
+      color: var(--np-muted);
+    }
+    .info-box {
+      background: #fff9e6;
+      border: 1px solid #ffe08a;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      margin: 10px 0;
+    }
+    .error-box {
+      background: #ffe6e6;
+      border: 1px solid #ff9a9a;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      margin: 10px 0;
+      color: #b00020;
+    }
+    .ok-box {
+      background: #e6ffe9;
+      border: 1px solid #8fd19e;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 0.85rem;
+      margin: 10px 0;
+      color: #1b5e20;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .label {
+      min-width: 130px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+    .value {
+      font-size: 0.9rem;
+    }
+    button {
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    button.primary {
+      background: var(--np-accent);
+      color: #111;
+    }
+    button.secondary {
+      background: #e0e0e0;
+      color: #333;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NextPlayer™ – Eltern-Freigabe</h1>
+    <div class="subtitle">Einwilligung für die Nutzung der Scouting-App durch ein minderjähriges Kind.</div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Einwilligung prüfen & erteilen</h2>
+
+      <div id="state-loading" class="info-box">
+        Wir prüfen Ihren Freigabe-Link …
+      </div>
+
+      <div id="state-error" class="error-box" style="display:none;"></div>
+      <div id="state-ok" class="ok-box" style="display:none;"></div>
+
+      <div id="child-info" style="display:none; margin-top:10px;">
+        <div class="row">
+          <div class="label">Künstlername des Kindes</div>
+          <div class="value" id="child-nickname">–</div>
+        </div>
+        <div class="row">
+          <div class="label">Geburtsjahr</div>
+          <div class="value" id="child-birthyear">–</div>
+        </div>
+        <div class="row">
+          <div class="label">Ihre E-Mail (Kontakt)</div>
+          <div class="value" id="parent-email">–</div>
+        </div>
+
+        <p class="muted">
+          Mit Ihrer Einwilligung erlauben Sie Ihrem Kind die Nutzung der App „NextPlayer™“, um
+          Spielleistungen zu dokumentieren und in Form von Noten (z. B. Technik, Taktik, Physis) zu bewerten.
+          Die Daten werden nur für Trainer, Scouts und Verantwortliche sichtbar und nicht an Dritte verkauft.
+          Die Einwilligung kann jederzeit widerrufen werden.
+        </p>
+
+        <div class="row" style="margin-top:14px;">
+          <button id="btn-approve" class="primary">Einwilligung erteilen</button>
+          <button id="btn-decline" class="secondary">Keine Einwilligung</button>
+        </div>
+
+        <div id="action-msg" class="muted"></div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // TODO: HIER deine Supabase-Daten eintragen:
+    const SB_URL = 'https://DEINPROJEKT.supabase.co';  // <- ersetzen
+    const SB_KEY = 'DEIN_ANON_KEY_HIER';              // <- ersetzen
+
+    const $ = (sel) => document.querySelector(sel);
+
+    const stateLoading = $('#state-loading');
+    const stateError   = $('#state-error');
+    const stateOk      = $('#state-ok');
+    const childInfo    = $('#child-info');
+    const childNickname= $('#child-nickname');
+    const childBirth   = $('#child-birthyear');
+    const parentEmail  = $('#parent-email');
+    const btnApprove   = $('#btn-approve');
+    const btnDecline   = $('#btn-decline');
+    const actionMsg    = $('#action-msg');
+
+    let supa = null;
+    let currentConsent = null;  // Datensatz aus parental_consent
+    let currentChildId = null;  // user_profile.id
+
+    function showError(msg) {
+      if (stateLoading) stateLoading.style.display = 'none';
+      if (stateOk)      stateOk.style.display = 'none';
+      if (childInfo)    childInfo.style.display = 'none';
+      if (stateError) {
+        stateError.textContent = msg;
+        stateError.style.display = 'block';
+      }
+    }
+
+    function showLoading(msg) {
+      if (stateError)   stateError.style.display = 'none';
+      if (stateOk)      stateOk.style.display = 'none';
+      if (childInfo)    childInfo.style.display = 'none';
+      if (stateLoading) {
+        stateLoading.textContent = msg;
+        stateLoading.style.display = 'block';
+      }
+    }
+
+    function showChild(data) {
+      if (stateLoading) stateLoading.style.display = 'none';
+      if (stateError)   stateError.style.display = 'none';
+      if (stateOk)      stateOk.style.display = 'none';
+
+      if (childNickname) childNickname.textContent = data.nickname || '–';
+      if (childBirth)    childBirth.textContent    = data.birth_year || '–';
+      if (parentEmail)   parentEmail.textContent   = data.parent_email || data.email || '–';
+
+      if (childInfo)     childInfo.style.display   = 'block';
+    }
+
+    function showOk(msg) {
+      if (stateLoading) stateLoading.style.display = 'none';
+      if (stateError)   stateError.style.display = 'none';
+      if (childInfo)    childInfo.style.display = 'none';
+      if (stateOk) {
+        stateOk.textContent = msg;
+        stateOk.style.display = 'block';
+      }
+    }
+
+    function disableActions() {
+      if (btnApprove) btnApprove.disabled = true;
+      if (btnDecline) btnDecline.disabled = true;
+    }
+
+    async function init() {
+      if (!SB_URL || !SB_KEY || SB_URL.includes('DEINPROJEKT')) {
+        showError('Konfiguration fehlt. Bitte Supabase-URL und Anon-Key in approve.html eintragen.');
+        return;
+      }
+      supa = createClient(SB_URL, SB_KEY);
+
+      const params = new URLSearchParams(window.location.search);
+      const token  = params.get('token');
+
+      if (!token) {
+        showError('Dieser Freigabe-Link ist ungültig. (Kein Token übermittelt)');
+        return;
+      }
+
+      showLoading('Freigabe-Link wird geprüft …');
+
+      try {
+        // parental_consent + user_profile zusammen abfragen
+        const { data, error } = await supa
+          .from('parental_consent')
+          .select(`
+            id,
+            token,
+            email,
+            created_at,
+            used_at,
+            child_id,
+            user_profile (
+              id,
+              nickname,
+              birth_year,
+              parent_email,
+              parent_required,
+              parent_approved
+            )
+          `)
+          .eq('token', token)
+          .maybeSingle();
+
+        if (error || !data) {
+          console.error(error);
+          showError('Der Freigabe-Link ist ungültig oder wurde nicht gefunden.');
+          return;
+        }
+
+        currentConsent = data;
+        const child = data.user_profile;
+        if (!child) {
+          showError('Zu diesem Freigabe-Link wurde kein Kinderprofil gefunden.');
+          return;
+        }
+
+        currentChildId = child.id;
+
+        // Bereits benutzt?
+        if (data.used_at || child.parent_approved) {
+          showOk('Die Einwilligung wurde bereits erteilt. Es ist keine weitere Aktion erforderlich.');
+          disableActions();
+          return;
+        }
+
+        showChild({
+          nickname: child.nickname,
+          birth_year: child.birth_year,
+          parent_email: child.parent_email || data.email
+        });
+      } catch (e) {
+        console.error(e);
+        showError('Beim Prüfen des Links ist ein Fehler aufgetreten.');
+      }
+    }
+
+    async function approve() {
+      if (!supa || !currentChildId || !currentConsent) return;
+      if (actionMsg) actionMsg.textContent = '';
+      disableActions();
+      if (actionMsg) actionMsg.textContent = 'Bitte warten, Einwilligung wird gespeichert …';
+
+      try {
+        const now = new Date().toISOString();
+
+        // 1) Kind freischalten
+        const { error: upErr1 } = await supa
+          .from('user_profile')
+          .update({ parent_approved: true })
+          .eq('id', currentChildId);
+
+        if (upErr1) {
+          console.error(upErr1);
+          if (actionMsg) actionMsg.textContent = 'Fehler: Einwilligung konnte nicht gespeichert werden.';
+          return;
+        }
+
+        // 2) Token als benutzt markieren
+        const { error: upErr2 } = await supa
+          .from('parental_consent')
+          .update({ used_at: now })
+          .eq('id', currentConsent.id);
+
+        if (upErr2) {
+          console.error(upErr2);
+          if (actionMsg) actionMsg.textContent = 'Hinweis: Einwilligung ist aktiv, aber der Status des Links konnte nicht aktualisiert werden.';
+        }
+
+        showOk('Vielen Dank. Die Einwilligung wurde gespeichert. Das Konto Ihres Kindes ist jetzt freigeschaltet.');
+      } catch (e) {
+        console.error(e);
+        if (actionMsg) actionMsg.textContent = 'Es ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.';
+      }
+    }
+
+    function decline() {
+      disableActions();
+      showOk('Sie haben der Nutzung nicht zugestimmt. Das Konto bleibt gesperrt. Eine erneute Freigabe ist später über einen neuen Link möglich.');
+    }
+
+    btnApprove?.addEventListener('click', approve);
+    btnDecline?.addEventListener('click', decline);
+
+    init();
+  </script>
+</body>
+</html>
