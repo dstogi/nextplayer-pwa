@@ -237,6 +237,8 @@
     <!-- 2. Login / Registrierung -->
     <section id="sec-auth" class="section-card">
       <h2><span>2. Login / Registrierung</span></h2>
+
+      <h3>Login & Grunddaten</h3>
       <div class="row">
         <label for="auth-email">E-Mail</label>
         <input id="auth-email" type="email" size="30">
@@ -245,14 +247,35 @@
         <label for="auth-pass">Passwort</label>
         <input id="auth-pass" type="password" size="20">
       </div>
+
+      <h3>Nur für Registrierung (Konto anlegen)</h3>
+      <div class="row">
+        <label for="reg-nick">Künstlername</label>
+        <input id="reg-nick" type="text" size="20" placeholder="z.B. NextLeo10">
+      </div>
+      <div class="row">
+        <label for="reg-year">Geburtsjahr</label>
+        <input id="reg-year" type="number" min="2000" max="2100" size="6" placeholder="z.B. 2010">
+      </div>
+      <div class="row">
+        <label for="reg-parent-email">Eltern-E-Mail</label>
+        <input id="reg-parent-email" type="email" size="30" placeholder="Pflicht bei U16, optional sonst">
+      </div>
+      <div class="status-line">
+        Unter 16 Jahren ist eine Zustimmung eines Erziehungsberechtigten erforderlich.  
+        Ein Konto ist bis zur Zustimmung „gesperrt“.
+      </div>
+
       <div class="row">
         <button id="btn-signup">Registrieren</button>
         <button id="btn-login">Login</button>
         <button id="btn-logout">Logout</button>
       </div>
+
       <div class="status-line">
         <span id="auth-user"></span>
       </div>
+      <div id="auth-lock-info" class="status-line"></div>
       <div id="auth-msg" class="status-line"></div>
     </section>
 
@@ -438,7 +461,7 @@
           <option value="MST">MST</option>
         </select>
 
-        <!-- NEU: starker Fuß Filter -->
+        <!-- starker Fuß Filter -->
         <label for="rank-foot">Starker Fuß</label>
         <select id="rank-foot">
           <option value="">Alle</option>
@@ -583,7 +606,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
-      // global verfügbar machen
       window.npShowSection = showSection;
       
       buttons.forEach(btn => {
@@ -593,7 +615,6 @@
         });
       });
 
-      // initial: nur Setup anzeigen
       showSection('sec-config');
     });
   </script>
@@ -606,6 +627,7 @@
 
     let supa = null;
     let currentUser = null;
+    let currentUserMeta = null;   // NEU: Alter / Eltern
     let currentProfile = null;
     let currentEvent = null;
     let allEvents = [];
@@ -687,8 +709,53 @@
     });
 
     // -----------------------------
-    // Auth
+    // Auth & Jugendschutz
     // -----------------------------
+    function updateAuthLockInfo() {
+      const el = $('#auth-lock-info');
+      if (!el) return;
+
+      if (!currentUser) {
+        el.textContent = '';
+        return;
+      }
+      if (!currentUserMeta) {
+        el.textContent = 'Kein Altersprofil hinterlegt. Konto gilt als voll freigeschaltet (Testmodus).';
+        return;
+      }
+
+      const year = currentUserMeta.birth_year;
+      if (!year) {
+        el.textContent = 'Geburtsjahr fehlt im Profil.';
+        return;
+      }
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      const minor = age < 16;
+
+      if (minor && currentUserMeta.parent_required) {
+        if (currentUserMeta.parent_approved) {
+          el.textContent = `Minderjährig (ca. ${age}) – Elternzustimmung liegt vor.`;
+        } else {
+          el.textContent = `Minderjährig (ca. ${age}) – Konto ist gesperrt, bis ein Erziehungsberechtigter zustimmt.`;
+        }
+      } else if (minor) {
+        el.textContent = `Minderjährig (ca. ${age}) – Elternzustimmung nicht als Pflicht markiert.`;
+      } else {
+        el.textContent = `Alter ca. ${age} – keine Elternzustimmung erforderlich.`;
+      }
+    }
+
+    function isMinorLocked() {
+      if (!currentUserMeta) return false;
+      if (!currentUserMeta.parent_required) return false;
+      const year = currentUserMeta.birth_year;
+      if (!year) return false;
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      return age < 16 && !currentUserMeta.parent_approved;
+    }
+
     async function loadCurrentUser() {
       try {
         const c = await getClient();
@@ -704,18 +771,100 @@
       }
     }
 
-    $('#btn-signup')?.addEventListener('click', async () => {
-      const email = ($('#auth-email')?.value || '').trim();
-      const pwd   = ($('#auth-pass')?.value || '').trim();
-      const msg   = $('#auth-msg');
-      if (!email || !pwd) {
-        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+    async function loadUserMeta() {
+      if (!currentUser) {
+        currentUserMeta = null;
+        updateAuthLockInfo();
         return;
       }
       try {
         const c = await getClient();
-        const { error } = await c.auth.signUp({ email, password: pwd });
-        if (msg) msg.textContent = error ? ('Fehler: ' + error.message) : 'Registriert – jetzt einloggen.';
+        const { data, error } = await c
+          .from('user_profile')
+          .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          currentUserMeta = data;
+        } else {
+          currentUserMeta = null;
+        }
+      } catch (e) {
+        console.error('loadUserMeta', e);
+        currentUserMeta = null;
+      }
+      updateAuthLockInfo();
+    }
+
+    // Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
+    $('#btn-signup')?.addEventListener('click', async () => {
+      const email = ($('#auth-email')?.value || '').trim();
+      const pwd   = ($('#auth-pass')?.value || '').trim();
+      const nick  = ($('#reg-nick')?.value || '').trim();
+      const yearStr = ($('#reg-year')?.value || '').trim();
+      const parentEmail = ($('#reg-parent-email')?.value || '').trim();
+      const msg   = $('#auth-msg');
+
+      if (!email || !pwd) {
+        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+        return;
+      }
+      if (!nick || !yearStr) {
+        if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
+        return;
+      }
+
+      const birthYear = parseInt(yearStr, 10);
+      const nowYear = new Date().getFullYear();
+      if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
+        if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
+        return;
+      }
+      const age = nowYear - birthYear;
+      const parentRequired = age < 16;
+      if (parentRequired && !parentEmail) {
+        if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c.auth.signUp({ email, password: pwd });
+
+        if (error) {
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+          return;
+        }
+
+        const user = data?.user;
+        if (!user) {
+          if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
+          return;
+        }
+
+        const { error: profErr } = await c
+          .from('user_profile')
+          .insert({
+            id: user.id,
+            nickname: nick,
+            birth_year: birthYear,
+            parent_email: parentEmail || null,
+            parent_required: parentRequired,
+            parent_approved: parentRequired ? false : true
+          });
+
+        if (profErr) {
+          console.error('user_profile insert', profErr);
+          if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
+          return;
+        }
+
+        if (parentRequired) {
+          msg.textContent = 'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
+        } else {
+          msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
+        }
       } catch (e) {
         console.error(e);
         if (msg) msg.textContent = 'Fehler bei Registrierung.';
@@ -737,13 +886,14 @@
           if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
         } else {
           currentUser = data?.user || null;
-          if (msg) msg.textContent = 'Login OK.';
           const elUser = $('#auth-user');
           if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
+          msg.textContent = 'Login OK.';
 
+          await loadUserMeta();
           await loadProfile();
           await refreshAllData();
-          // nach Login direkt zur Bewertung springen
+
           if (window.npShowSection) {
             window.npShowSection('sec-rating');
           }
@@ -762,11 +912,13 @@
         console.error(e);
       }
       currentUser = null;
+      currentUserMeta = null;
       currentProfile = null;
       const msg = $('#auth-msg');
       if (msg) msg.textContent = 'Abgemeldet.';
       const elUser = $('#auth-user');
       if (elUser) elUser.textContent = '';
+      updateAuthLockInfo();
     });
 
     // -----------------------------
@@ -814,6 +966,10 @@
         if (msg) msg.textContent = 'Bitte zuerst einloggen.';
         return;
       }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
 
       const role = roleSel?.value || '';
       if (!role) {
@@ -854,7 +1010,6 @@
         if (msg) msg.textContent = 'Profil gespeichert.';
 
         updateProfileFormForRole();
-        // nach Profil-Speichern zur Bewertung wechseln
         if (window.npShowSection) {
           window.npShowSection('sec-rating');
         }
@@ -945,6 +1100,15 @@
     // -----------------------------
     async function createPlayer() {
       const msg = document.getElementById('player-create-msg');
+
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
 
       const first = (document.getElementById('pl-first')?.value || '').trim();
       const last  = (document.getElementById('pl-last')?.value  || '').trim();
@@ -1108,6 +1272,10 @@
           if (m) m.textContent = 'Bitte zuerst einloggen.';
           return;
         }
+        if (isMinorLocked()) {
+          if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+          return;
+        }
 
         if (!currentProfile || !currentProfile.role) {
           if (msg) msg.textContent = 'Bitte zuerst im Profil (2b) deine Rolle auswählen und speichern.';
@@ -1199,9 +1367,9 @@
     }
     let favSet   = loadFavSet();
     let lastRows = [];
-    let ratingsByPlayer = new Map();  // NEU: Detailratings
+    let ratingsByPlayer = new Map();
 
-        async function refreshRanking() {
+    async function refreshRanking() {
       try {
         const c = await getClient();
         const [pRes, eRes, rRes] = await Promise.all([
@@ -1238,10 +1406,9 @@
         const favMode = document.querySelector('#fav-filter')?.value || 'all';
 
         const agg = new Map();
-        ratingsByPlayer = new Map();    // globale Map neu aufbauen
-        let rows = [];                  // HIER ist rows sauber definiert
+        ratingsByPlayer = new Map();
+        let rows = [];
 
-        // Ratings aggregieren und Detail-Liste aufbauen
         for (const r of ratings) {
           const ev = eMap.get(r.event_id);
           const pl = pMap.get(r.player_id);
@@ -1265,7 +1432,6 @@
 
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
 
-          // Detail-Eintrag für Popup
           let list = ratingsByPlayer.get(r.player_id);
           if (!list) {
             list = [];
@@ -1281,7 +1447,6 @@
             rater:      critObj._rater || ''
           });
 
-          // Aggregation für Ranking-Zeile
           const key = r.player_id;
           let stat = agg.get(key);
           if (!stat) {
@@ -1293,7 +1458,6 @@
           agg.set(key, stat);
         }
 
-                // rows aus Aggregation aufbauen
         rows = [];
         for (const [playerId, st] of agg.entries()) {
           const pl = pMap.get(playerId) || {
@@ -1317,7 +1481,6 @@
           });
         }
 
-        // Filter anwenden
         rows = rows.filter(r => {
           const matchClub = !clubF || r.club === clubF;
 
@@ -1336,14 +1499,12 @@
           return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
         });
 
-        // Sortierung & Top 10
         rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
         const top = document.querySelector('#rank-top10')?.checked;
         if (top) rows = rows.slice(0, 10);
 
         lastRows = rows.slice();
 
-        // Tabelle rendern
         const tb = document.querySelector('#rank-table tbody');
         if (!tb) return;
 
@@ -1368,7 +1529,6 @@
             }).join('')
           : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
 
-        // Watchlist-Toggles
         tb.querySelectorAll('.fav-toggle').forEach(el => {
           el.addEventListener('click', (ev) => {
             ev.stopPropagation();
@@ -1381,7 +1541,6 @@
           });
         });
 
-        // Klick auf Zeile: Popup mit Details
         tb.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
@@ -1643,6 +1802,15 @@
       const locEl    = document.getElementById('event-location');
       const msg      = document.getElementById('event-create-msg');
 
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
+
       const event_date = (dateEl?.value || '').trim();
       const type       = (typeEl?.value || '').trim();
 
@@ -1886,6 +2054,7 @@
         try {
           await getClient();
           await loadCurrentUser();
+          await loadUserMeta();
           await loadProfile();
           await refreshAllData();
           const rankMsg = $('#rank-msg');
