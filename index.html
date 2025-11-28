@@ -815,6 +815,7 @@
       const pwd   = ($('#auth-pass')?.value || '').trim();
       const nick  = ($('#reg-nick')?.value || '').trim();
       const yearStr = ($('#reg-year')?.value || '').trim();
+      const regRole = ($('#reg-role')?.value || '').trim();
       const parentEmail = ($('#reg-parent-email')?.value || '').trim();
       const msg   = $('#auth-msg');
 
@@ -826,7 +827,16 @@
         if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
         return;
       }
+if (!nick || !yearStr) {
+  if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
+  return;
+}
 
+if (!regRole) {
+  if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
+  return;
+}
+      
       const birthYear = parseInt(yearStr, 10);
       const nowYear = new Date().getFullYear();
       if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
@@ -871,7 +881,23 @@
           if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
           return;
         }
+// NEU: Profil mit Rolle direkt anlegen
+const { error: prof2Err } = await c
+  .from('profile')
+  .upsert({
+    user_id: user.id,
+    role: regRole,
+    club_name: null,
+    extra_info: null
+  }, { onConflict: 'user_id' });
 
+if (prof2Err) {
+  console.error('profile insert error', prof2Err);
+  // kein harter Abbruch, aber Hinweis für dich:
+  if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
+  return;
+}
+        
         if (parentRequired) {
           msg.textContent = 'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
         } else {
@@ -983,11 +1009,17 @@
         return;
       }
 
-      const role = roleSel?.value || '';
-      if (!role) {
-        if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
-        return;
-      }
+      let role = roleSel?.value || '';
+
+if (!role && currentProfile && currentProfile.role) {
+  // Rolle kommt aus der Registrierung, Feld ist evtl. disabled
+  role = currentProfile.role;
+}
+
+if (!role) {
+  if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
+  return;
+}
 
       const club_name  = (clubInput?.value || '').trim();
       const extra_info = (extraInput?.value || '').trim();
@@ -1054,6 +1086,10 @@
           const extraInput = document.getElementById('prof-extra');
 
           if (roleSel)    roleSel.value    = data.role       || '';
+          if (roleSel && data.role) {
+  roleSel.disabled = true; // Rolle ist fest; keine Änderung im UI
+}
+
           if (clubInput)  clubInput.value  = data.club_name  || '';
           if (extraInput) extraInput.value = data.extra_info || '';
 
