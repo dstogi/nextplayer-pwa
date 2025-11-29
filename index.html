@@ -20,9 +20,7 @@
       --np-muted: #666666;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
@@ -54,7 +52,6 @@
       color: #c0c0c0;
     }
 
-    /* Top-Navigation */
     .top-nav {
       margin-top: 10px;
       display: flex;
@@ -261,18 +258,19 @@
         <label for="reg-parent-email">Eltern-E-Mail</label>
         <input id="reg-parent-email" type="email" size="30" placeholder="Pflicht bei U16, optional sonst">
       </div>
-     <div class="row">
-  <label for="reg-role">Rolle</label>
-  <select id="reg-role">
-    <option value="">Bitte wählen…</option>
-    <option value="spieler">Aktiver Spieler</option>
-    <option value="trainer">Trainer</option>
-    <option value="scout">Scout</option>
-    <option value="eltern">Elternteil</option>
-    <option value="zuschauer">Zuschauer / Fan</option>
-    <option value="sonstige">Sonstige</option>
-  </select>
-</div>
+      <div class="row">
+        <label for="reg-role">Rolle</label>
+        <select id="reg-role">
+          <option value="">Bitte wählen…</option>
+          <option value="spieler">Aktiver Spieler</option>
+          <option value="trainer">Trainer</option>
+          <option value="scout">Scout</option>
+          <option value="eltern">Elternteil</option>
+          <option value="zuschauer">Zuschauer / Fan</option>
+          <option value="sonstige">Sonstige</option>
+        </select>
+      </div>
+
       <div class="status-line">
         Unter 16 Jahren ist eine Zustimmung eines Erziehungsberechtigten erforderlich.  
         Ein Konto ist bis zur Zustimmung „gesperrt“.
@@ -289,7 +287,7 @@
       </div>
       <div id="auth-lock-info" class="status-line"></div>
       <div id="auth-msg" class="status-line"></div>
-    <div id="auth-approval-link" class="status-line"></div>
+      <div id="auth-approval-link" class="status-line"></div>
     </section>
 
     <!-- 2b. Profil / Rolle -->
@@ -359,7 +357,6 @@
         <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
       </div>
 
-      <!-- NEU: starker Fuß -->
       <div class="row">
         <label for="pl-foot">Starker Fuß</label>
         <select id="pl-foot">
@@ -474,7 +471,6 @@
           <option value="MST">MST</option>
         </select>
 
-        <!-- starker Fuß Filter -->
         <label for="rank-foot">Starker Fuß</label>
         <select id="rank-foot">
           <option value="">Alle</option>
@@ -586,7 +582,6 @@
     </section>
   </main>
 
-  <!-- Service Worker Registrierung -->
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js')
@@ -594,7 +589,7 @@
     }
   </script>
 
-  <!-- Navigation: Sections je nach Tab anzeigen -->
+  <!-- Navigation -->
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
@@ -620,7 +615,7 @@
       }
 
       window.npShowSection = showSection;
-      
+
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
           const target = btn.dataset.target;
@@ -631,7 +626,8 @@
       showSection('sec-config');
     });
   </script>
- <!-- Supabase-Logik -->
+
+  <!-- Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
@@ -639,7 +635,7 @@
 
     let supa = null;
     let currentUser = null;
-    let currentUserMeta = null;   // Alter / Eltern
+    let currentUserMeta = null;
     let currentProfile = null;
     let currentEvent = null;
     let allEvents = [];
@@ -694,32 +690,416 @@
       if (msg) msg.textContent = 'Konfiguration gespeichert.';
     });
 
-$('#btn-test-conf')?.addEventListener('click', async () => {
-  const msg = $('#conf-msg');
-  if (msg) msg.textContent = 'Teste Verbindung…';
+    $('#btn-test-conf')?.addEventListener('click', async () => {
+      const msg = $('#conf-msg');
+      if (msg) msg.textContent = 'Teste Verbindung…';
 
-  const url = ($('#sb-url')?.value || '').trim();
-  const key = ($('#sb-key')?.value || '').trim();
-  if (url && key) {
-    saveConfig(url, key);
-    resetClient();
-  }
+      const url = ($('#sb-url')?.value || '').trim();
+      const key = ($('#sb-key')?.value || '').trim();
+      if (url && key) {
+        saveConfig(url, key);
+        resetClient();
+      }
 
-  try {
-    const c = await getClient();
-    const { error } = await c.auth.getSession();
-    if (error) {
-      if (msg) msg.textContent = 'Fehler: ' + error.message;
-    } else {
-      if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
+      try {
+        const c = await getClient();
+        const { error } = await c.auth.getSession();
+        if (error) {
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+        } else {
+          if (msg) msg.textContent = 'OK: Verbindung funktioniert.';
+        }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
+        resetClient();
+      }
+    });
 
-      // Alte Session sauber abmelden, damit Demo "frisch" ist
-      await c.auth.signOut();
+    // -----------------------------
+    // Auth & Jugendschutz
+    // -----------------------------
+    function updateAuthLockInfo() {
+      const el = $('#auth-lock-info');
+      const approvalBox = $('#auth-approval-link');
+      if (!el) return;
+
+      if (!currentUser) {
+        el.innerHTML = '';
+        if (approvalBox) approvalBox.innerHTML = '';
+        return;
+      }
+      if (!currentUserMeta) {
+        el.innerHTML = 'ℹ️ Kein Altersprofil hinterlegt. Konto gilt als freigeschaltet (Testmodus).';
+        return;
+      }
+
+      const year = currentUserMeta.birth_year;
+      if (!year) {
+        el.innerHTML = 'ℹ️ Geburtsjahr fehlt im Profil.';
+        return;
+      }
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      const minor = age < 16;
+
+      if (minor && currentUserMeta.parent_required) {
+        if (currentUserMeta.parent_approved) {
+          el.innerHTML = `✅ Konto freigeschaltet (minderjährig, ca. ${age} Jahre, Elternzustimmung liegt vor).`;
+        } else {
+          el.innerHTML =
+            `🔒 Konto gesperrt (minderjährig, ca. ${age} Jahre). ` +
+            `Bitte Freigabelink an einen Erziehungsberechtigten senden.`;
+        }
+      } else if (minor) {
+        el.innerHTML =
+          `ℹ️ Minderjährig (ca. ${age} Jahre) – Elternzustimmung ist derzeit nicht als Pflicht markiert.`;
+      } else {
+        el.innerHTML =
+          `✅ Konto freigeschaltet (ca. ${age} Jahre, keine Elternzustimmung erforderlich).`;
+      }
+    }
+
+    function isMinorLocked() {
+      if (!currentUserMeta) return false;
+      if (!currentUserMeta.parent_required) return false;
+      const year = currentUserMeta.birth_year;
+      if (!year) return false;
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      return age < 16 && !currentUserMeta.parent_approved;
+    }
+
+    async function loadCurrentUser() {
+      try {
+        const c = await getClient();
+        const { data } = await c.auth.getSession();
+        currentUser = data?.session?.user || null;
+        const elUser = $('#auth-user');
+        if (elUser) {
+          elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
+        }
+      } catch (e) {
+        console.error('loadCurrentUser', e);
+        currentUser = null;
+      }
+    }
+
+    async function loadUserMeta() {
+      if (!currentUser) {
+        currentUserMeta = null;
+        updateAuthLockInfo();
+        return;
+      }
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('user_profile')
+          .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
+          .eq('id', currentUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          currentUserMeta = data;
+        } else {
+          currentUserMeta = null;
+        }
+      } catch (e) {
+        console.error('loadUserMeta', e);
+        currentUserMeta = null;
+      }
+      updateAuthLockInfo();
+    }
+
+    function generateToken() {
+      const arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function ensureApprovalLinkForCurrentUser() {
+      const approvalBox = $('#auth-approval-link');
+      if (!currentUser || !currentUserMeta || !approvalBox) return;
+
+      const childId = currentUserMeta.id || currentUser.id;
+
+      let email =
+        currentUserMeta.parent_email ||
+        ($('#reg-parent-email')?.value || '').trim() ||
+        currentUser.email ||
+        '';
+
+      if (!email) {
+        console.warn('ensureApprovalLinkForCurrentUser: keine Eltern-Mail gefunden.');
+        return;
+      }
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('parental_consent')
+          .select('token, email')
+          .eq('child_id', childId)
+          .maybeSingle();
+
+        let token;
+        if (!error && data && data.token) {
+          token = data.token;
+          email = data.email || email;
+        } else {
+          token = generateToken();
+          const { error: insErr } = await c
+            .from('parental_consent')
+            .insert({
+              child_id: childId,
+              token,
+              email
+            });
+          if (insErr) {
+            console.error('ensureApprovalLinkForCurrentUser insert error', insErr);
+            return;
+          }
+        }
+
+        const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+        const link = `${base}approve.html?token=${token}`;
+
+        const subject = encodeURIComponent('Einwilligung für NextPlayer™');
+        const body = encodeURIComponent(
+          `Hallo,\n\n` +
+          `bitte klicken Sie auf folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
+          `${link}\n\n` +
+          `Viele Grüße\nNextPlayer™`
+        );
+
+        approvalBox.innerHTML =
+          `Freigabelink: <a href="${link}" target="_blank">${link}</a><br>` +
+          `<a href="mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}">` +
+          `E-Mail mit diesem Link öffnen</a>`;
+      } catch (e) {
+        console.error('ensureApprovalLinkForCurrentUser', e);
+      }
+    }
+
+    // Registrierung
+    $('#btn-signup')?.addEventListener('click', async () => {
+      const email       = ($('#auth-email')?.value || '').trim();
+      const pwd         = ($('#auth-pass')?.value || '').trim();
+      const nick        = ($('#reg-nick')?.value || '').trim();
+      const yearStr     = ($('#reg-year')?.value || '').trim();
+      const regRole     = ($('#reg-role')?.value || '').trim();
+      const parentEmail = ($('#reg-parent-email')?.value || '').trim();
+      const msg         = $('#auth-msg');
+      const approvalBox = $('#auth-approval-link');
+
+      if (msg) msg.textContent = '';
+      if (approvalBox) approvalBox.innerHTML = '';
+
+      if (!email || !pwd) {
+        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+        return;
+      }
+      if (!nick || !yearStr) {
+        if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
+        return;
+      }
+      if (!regRole) {
+        if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
+        return;
+      }
+
+      const birthYear = parseInt(yearStr, 10);
+      const nowYear   = new Date().getFullYear();
+      if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
+        if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
+        return;
+      }
+      const age            = nowYear - birthYear;
+      const parentRequired = age < 16;
+
+      if (parentRequired && !parentEmail) {
+        if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c.auth.signUp({ email, password: pwd });
+        if (error) {
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+          return;
+        }
+
+        const user = data?.user;
+        if (!user) {
+          if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
+          return;
+        }
+
+        const { error: profErr } = await c
+          .from('user_profile')
+          .insert({
+            id: user.id,
+            nickname: nick,
+            birth_year: birthYear,
+            parent_email: parentEmail || null,
+            parent_required: parentRequired,
+            parent_approved: parentRequired ? false : true
+          });
+
+        if (profErr) {
+          console.error('user_profile insert', profErr);
+          if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
+          return;
+        }
+
+        const { error: prof2Err } = await c
+          .from('profile')
+          .upsert({
+            user_id: user.id,
+            role: regRole,
+            club_name: null,
+            extra_info: null
+          }, { onConflict: 'user_id' });
+
+        if (prof2Err) {
+          console.error('profile insert error', prof2Err);
+          if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
+          return;
+        }
+
+        if (parentRequired) {
+          const token = generateToken();
+          const contactEmail = parentEmail || email;
+
+          const { error: consentErr } = await c
+            .from('parental_consent')
+            .insert({
+              child_id: user.id,
+              token,
+              email: contactEmail
+            });
+
+          if (consentErr) {
+            console.error('parental_consent insert error', consentErr);
+            if (msg) msg.textContent =
+              'Registrierung erfolgreich. Konto ist gesperrt, aber Freigabelink konnte nicht gespeichert werden.';
+            return;
+          }
+
+          const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+          const link = `${base}approve.html?token=${token}`;
+
+          const subject = encodeURIComponent('Einwilligung für NextPlayer™');
+          const body = encodeURIComponent(
+            `Hallo,\n\n` +
+            `bitte klicken Sie auf folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
+            `${link}\n\n` +
+            `Viele Grüße\nNextPlayer™`
+          );
+
+          if (approvalBox) {
+            approvalBox.innerHTML =
+              `Freigabelink: <a href="${link}" target="_blank">${link}</a><br>` +
+              `<a href="mailto:${encodeURIComponent(contactEmail)}?subject=${subject}&body=${body}">` +
+              `E-Mail mit diesem Link öffnen</a>`;
+          }
+
+          if (msg) msg.textContent =
+            'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
+        } else {
+          if (msg) msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
+        }
+
+      } catch (e) {
+        console.error(e);
+        const msg = $('#auth-msg');
+        if (msg) msg.textContent = 'Fehler bei Registrierung.';
+      }
+    });
+
+    // Login
+    $('#btn-login')?.addEventListener('click', async () => {
+      const email = ($('#auth-email')?.value || '').trim();
+      const pwd   = ($('#auth-pass')?.value || '').trim();
+      const msg   = $('#auth-msg');
+      const approvalBox = $('#auth-approval-link');
+
+      if (approvalBox) approvalBox.innerHTML = '';
+
+      if (!email || !pwd) {
+        if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c.auth.signInWithPassword({ email, password: pwd });
+
+        if (error) {
+          if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
+          return;
+        }
+
+        currentUser = data?.user || null;
+        const elUser = $('#auth-user');
+        if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
+
+        await loadUserMeta();
+        await loadProfile();
+        await refreshAllData();
+
+        const locked = isMinorLocked();
+
+        if (locked) {
+          if (msg) msg.textContent =
+            'Login OK, aber dein Konto ist noch gesperrt (Elternzustimmung fehlt).';
+
+          await ensureApprovalLinkForCurrentUser();
+
+          if (window.npShowSection) {
+            window.npShowSection('sec-auth');
+          }
+          return;
+        }
+
+        if (msg) msg.textContent = 'Login OK.';
+        if (window.npShowSection) {
+          window.npShowSection('sec-rating');
+        }
+
+      } catch (e) {
+        console.error(e);
+        const msg = $('#auth-msg');
+        if (msg) msg.textContent = 'Fehler beim Login.';
+      }
+    });
+
+    // Logout
+    $('#btn-logout')?.addEventListener('click', async () => {
+      try {
+        const c = await getClient();
+        await c.auth.signOut();
+      } catch (e) {
+        console.error('logout error', e);
+      }
+
       currentUser = null;
       currentUserMeta = null;
       currentProfile = null;
+      currentEvent = null;
 
-      // Login-UI zurücksetzen
+      const msg         = $('#auth-msg');
+      const approvalBox = $('#auth-approval-link');
+      const elUser      = $('#auth-user');
+      const lockInfo    = $('#auth-lock-info');
+
+      if (msg)        msg.textContent = 'Abgemeldet.';
+      if (elUser)     elUser.textContent = '';
+      if (approvalBox) approvalBox.innerHTML = '';
+      if (lockInfo)  lockInfo.textContent = '';
+
       const idsToClear = [
         'auth-email',
         'auth-pass',
@@ -734,643 +1114,168 @@ $('#btn-test-conf')?.addEventListener('click', async () => {
       const regRoleSel = document.getElementById('reg-role');
       if (regRoleSel) regRoleSel.value = '';
 
-      const elUser   = $('#auth-user');
-      const lockInfo = $('#auth-lock-info');
-      const authMsg  = $('#auth-msg');
-      const apprBox  = $('#auth-approval-link');
+      const profRoleSel = document.getElementById('prof-role');
+      const profClub    = document.getElementById('prof-club');
+      const profExtra   = document.getElementById('prof-extra');
 
-      if (elUser)   elUser.textContent = '';
-      if (lockInfo) lockInfo.textContent = '';
-      if (authMsg)  authMsg.textContent  = '';
-      if (apprBox)  apprBox.innerHTML    = '';
+      if (profRoleSel) {
+        profRoleSel.value = '';
+        profRoleSel.disabled = false;
+      }
+      if (profClub)  profClub.value  = '';
+      if (profExtra) profExtra.value = '';
 
       updateAuthLockInfo();
 
-      // Automatisch auf den Login-Tab springen
       if (window.npShowSection) {
         window.npShowSection('sec-auth');
       }
-    }
-  } catch (e) {
-    console.error(e);
-    if (msg) msg.textContent = 'Verbindung fehlgeschlagen: ' + (e.message || e);
-    resetClient();
-  }
-});
-
-// -----------------------------
-// Auth & Jugendschutz
-// -----------------------------
-function updateAuthLockInfo() {
-  const el = $('#auth-lock-info');
-  const approvalBox = $('#auth-approval-link');
-  if (!el) return;
-
-  if (!currentUser) {
-    el.innerHTML = '';
-    if (approvalBox) approvalBox.innerHTML = '';
-    return;
-  }
-  if (!currentUserMeta) {
-    el.innerHTML = 'ℹ️ Kein Altersprofil hinterlegt. Konto gilt als freigeschaltet (Testmodus).';
-    return;
-  }
-
-  const year = currentUserMeta.birth_year;
-  if (!year) {
-    el.innerHTML = 'ℹ️ Geburtsjahr fehlt im Profil.';
-    return;
-  }
-  const nowYear = new Date().getFullYear();
-  const age = nowYear - year;
-  const minor = age < 16;
-
-  if (minor && currentUserMeta.parent_required) {
-    if (currentUserMeta.parent_approved) {
-      el.innerHTML = `✅ Konto freigeschaltet (minderjährig, ca. ${age} Jahre, Elternzustimmung liegt vor).`;
-    } else {
-      el.innerHTML =
-        `🔒 Konto gesperrt (minderjährig, ca. ${age} Jahre). ` +
-        `Bitte Freigabelink an einen Erziehungsberechtigten senden.`;
-    }
-  } else if (minor) {
-    el.innerHTML =
-      `ℹ️ Minderjährig (ca. ${age} Jahre) – Elternzustimmung ist derzeit nicht als Pflicht markiert.`;
-  } else {
-    el.innerHTML =
-      `✅ Konto freigeschaltet (ca. ${age} Jahre, keine Elternzustimmung erforderlich).`;
-  }
-}
-
-function isMinorLocked() {
-  if (!currentUserMeta) return false;
-  if (!currentUserMeta.parent_required) return false;
-  const year = currentUserMeta.birth_year;
-  if (!year) return false;
-  const nowYear = new Date().getFullYear();
-  const age = nowYear - year;
-  return age < 16 && !currentUserMeta.parent_approved;
-}
-
-async function loadCurrentUser() {
-  try {
-    const c = await getClient();
-    const { data } = await c.auth.getSession();
-    currentUser = data?.session?.user || null;
-    const elUser = $('#auth-user');
-    if (elUser) {
-      elUser.textContent = currentUser ? `Angemeldet: ${currentUser.email}` : '';
-    }
-  } catch (e) {
-    console.error('loadCurrentUser', e);
-    currentUser = null;
-  }
-}
-
-async function loadUserMeta() {
-  if (!currentUser) {
-    currentUserMeta = null;
-    updateAuthLockInfo();
-    return;
-  }
-  try {
-    const c = await getClient();
-    const { data, error } = await c
-      .from('user_profile')
-      .select('id, nickname, birth_year, parent_email, parent_required, parent_approved')
-      .eq('id', currentUser.id)
-      .maybeSingle();
-
-    if (!error && data) {
-      currentUserMeta = data;
-    } else {
-      currentUserMeta = null;
-    }
-  } catch (e) {
-    console.error('loadUserMeta', e);
-    currentUserMeta = null;
-  }
-  updateAuthLockInfo();
-}
-
-// Hilfsfunktion: Token generieren (für Elternfreigabe)
-function generateToken() {
-  const arr = new Uint8Array(16);
-  crypto.getRandomValues(arr);
-  return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Sorgt dafür, dass es für den aktuellen User einen Eltern-Freigabelink gibt
-// Sorgt dafür, dass es für den aktuellen User einen Eltern-Freigabelink gibt
-async function ensureApprovalLinkForCurrentUser() {
-  const approvalBox = $('#auth-approval-link');
-  if (!currentUser || !currentUserMeta || !approvalBox) return;
-
-  const childId = currentUserMeta.id || currentUser.id;
-
-  // 1. Versuch: parent_email aus user_profile
-  let email =
-    currentUserMeta.parent_email
-    // 2. Versuch: was im Formular steht (falls der Elternteil es frisch eingibt)
-    || ($('#reg-parent-email')?.value || '').trim()
-    // 3. Versuch: Login-Mail
-    || currentUser.email
-    || '';
-
-  if (!email) {
-    console.warn('ensureApprovalLinkForCurrentUser: keine Eltern-Mail gefunden.');
-    return;
-  }
-
-  try {
-    const c = await getClient();
-
-    // vorhandenen Eintrag in parental_consent suchen
-    const { data, error } = await c
-      .from('parental_consent')
-      .select('token, email')
-      .eq('child_id', childId)
-      .maybeSingle();
-
-    let token;
-    if (!error && data && data.token) {
-      token = data.token;
-      // Mail ggf. aus Datensatz übernehmen
-      email = data.email || email;
-    } else {
-      // noch kein Eintrag -> neuen Token erzeugen
-      token = generateToken();
-      const { error: insErr } = await c
-        .from('parental_consent')
-        .insert({
-          child_id: childId,
-          token,
-          email
-        });
-      if (insErr) {
-        console.error('ensureApprovalLinkForCurrentUser insert error', insErr);
-        return;
-      }
-    }
-
-    const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
-    const link = `${base}approve.html?token=${token}`;
-
-    const subject = encodeURIComponent('Einwilligung für NextPlayer™');
-    const body = encodeURIComponent(
-      `Hallo,\n\n` +
-      `bitte klicken Sie auf folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
-      `${link}\n\n` +
-      `Viele Grüße\nNextPlayer™`
-    );
-
-    approvalBox.innerHTML =
-      `Freigabelink: <a href="${link}" target="_blank">${link}</a><br>` +
-      `<a href="mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}">` +
-      `E-Mail mit diesem Link öffnen</a>`;
-  } catch (e) {
-    console.error('ensureApprovalLinkForCurrentUser', e);
-  }
-}
-
-// Registrierung mit Künstlername, Geburtsjahr, Eltern-E-Mail
-$('#btn-signup')?.addEventListener('click', async () => {
-  const email       = ($('#auth-email')?.value || '').trim();
-  const pwd         = ($('#auth-pass')?.value || '').trim();
-  const nick        = ($('#reg-nick')?.value || '').trim();
-  const yearStr     = ($('#reg-year')?.value || '').trim();
-  const regRole     = ($('#reg-role')?.value || '').trim();
-  const parentEmail = ($('#reg-parent-email')?.value || '').trim();
-  const msg         = $('#auth-msg');
-  const approvalBox = $('#auth-approval-link');
-
-  if (msg) msg.textContent = '';
-  if (approvalBox) approvalBox.innerHTML = '';
-
-  // Pflichtfelder prüfen
-  if (!email || !pwd) {
-    if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
-    return;
-  }
-  if (!nick || !yearStr) {
-    if (msg) msg.textContent = 'Bitte Künstlername und Geburtsjahr ausfüllen.';
-    return;
-  }
-  if (!regRole) {
-    if (msg) msg.textContent = 'Bitte eine Rolle für das Konto auswählen.';
-    return;
-  }
-
-  const birthYear = parseInt(yearStr, 10);
-  const nowYear   = new Date().getFullYear();
-  if (isNaN(birthYear) || birthYear < 2000 || birthYear > nowYear) {
-    if (msg) msg.textContent = 'Geburtsjahr ist nicht plausibel.';
-    return;
-  }
-  const age            = nowYear - birthYear;
-  const parentRequired = age < 16; // <16 braucht Eltern
-
-  if (parentRequired && !parentEmail) {
-    if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
-    return;
-  }
-
-  try {
-    const c = await getClient();
-
-    // 1) Supabase-User anlegen
-    const { data, error } = await c.auth.signUp({ email, password: pwd });
-    if (error) {
-      if (msg) msg.textContent = 'Fehler: ' + error.message;
-      return;
-    }
-
-    const user = data?.user;
-    if (!user) {
-      if (msg) msg.textContent = 'Registrierung gestartet – bitte E-Mail bestätigen.';
-      return;
-    }
-
-    // 2) Alters-/Elternprofil speichern
-    const { error: profErr } = await c
-      .from('user_profile')
-      .insert({
-        id: user.id,
-        nickname: nick,
-        birth_year: birthYear,
-        parent_email: parentEmail || null,
-        parent_required: parentRequired,
-        parent_approved: parentRequired ? false : true
-      });
-
-    if (profErr) {
-      console.error('user_profile insert', profErr);
-      if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
-      return;
-    }
-
-    // 3) Profil mit Rolle direkt anlegen
-    const { error: prof2Err } = await c
-      .from('profile')
-      .upsert({
-        user_id: user.id,
-        role: regRole,
-        club_name: null,
-        extra_info: null
-      }, { onConflict: 'user_id' });
-
-    if (prof2Err) {
-      console.error('profile insert error', prof2Err);
-      if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
-      return;
-    }
-
-    // 4) Bei Minderjährigen: Token in parental_consent + Freigabelink anzeigen
-    if (parentRequired) {
-      const token = generateToken();
-      const contactEmail = parentEmail || email;
-
-      const { error: consentErr } = await c
-        .from('parental_consent')
-        .insert({
-          child_id: user.id,
-          token,
-          email: contactEmail
-        });
-
-      if (consentErr) {
-        console.error('parental_consent insert error', consentErr);
-        if (msg) msg.textContent =
-          'Registrierung erfolgreich. Konto ist gesperrt, aber Freigabelink konnte nicht gespeichert werden.';
-        return;
-      }
-
-      // Link bauen
-      const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
-      const link = `${base}approve.html?token=${token}`;
-
-      const subject = encodeURIComponent('Einwilligung für NextPlayer™');
-      const body = encodeURIComponent(
-        `Hallo,\n\n` +
-        `bitte klicken Sie auf folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
-        `${link}\n\n` +
-        `Viele Grüße\nNextPlayer™`
-      );
-
-      if (approvalBox) {
-        approvalBox.innerHTML =
-          `Freigabelink: <a href="${link}" target="_blank">${link}</a><br>` +
-          `<a href="mailto:${encodeURIComponent(contactEmail)}?subject=${subject}&body=${body}">` +
-          `E-Mail mit diesem Link öffnen</a>`;
-      }
-
-      if (msg) msg.textContent =
-        'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
-    } else {
-      // Volljährig / keine Elternpflicht
-      if (msg) msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
-    }
-
-  } catch (e) {
-    console.error(e);
-    if (msg) msg.textContent = 'Fehler bei Registrierung.';
-  }
-});
-
-    if (profErr) {
-      console.error('user_profile insert', profErr);
-      if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
-      return;
-    }
-
-    // 2) Profil mit Rolle direkt anlegen
-    const { error: prof2Err } = await c
-      .from('profile')
-      .upsert({
-        user_id: user.id,
-        role: regRole,
-        club_name: null,
-        extra_info: null
-      }, { onConflict: 'user_id' });
-
-    if (prof2Err) {
-      console.error('profile insert error', prof2Err);
-      if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
-      return;
-    }
-
-    // 3) Bei Minderjährigen direkt Freigabelink erzeugen
-    if (parentRequired) {
-      await loadUserMeta(); // damit currentUserMeta gefüllt ist (falls nötig)
-      await ensureApprovalLinkForCurrentUser();
-      if (msg) msg.textContent =
-        'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
-    } else {
-      if (msg) msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
-    }
-
-  } catch (e) {
-    console.error(e);
-    if (msg) msg.textContent = 'Fehler bei Registrierung.';
-  }
-});
-
-// Login
-$('#btn-login')?.addEventListener('click', async () => {
-  const email = ($('#auth-email')?.value || '').trim();
-  const pwd   = ($('#auth-pass')?.value || '').trim();
-  const msg   = $('#auth-msg');
-  const approvalBox = $('#auth-approval-link');
-
-  if (approvalBox) approvalBox.innerHTML = '';
-
-  if (!email || !pwd) {
-    if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
-    return;
-  }
-
-  try {
-    const c = await getClient();
-    const { data, error } = await c.auth.signInWithPassword({ email, password: pwd });
-
-    if (error) {
-      if (msg) msg.textContent = 'Login fehlgeschlagen: ' + error.message;
-      return;
-    }
-
-    currentUser = data?.user || null;
-    const elUser = $('#auth-user');
-    if (elUser) elUser.textContent = `Angemeldet: ${currentUser?.email || email}`;
-
-    await loadUserMeta();
-    await loadProfile();
-    await refreshAllData();
-
-    const locked = isMinorLocked();
-
-    if (locked) {
-      if (msg) msg.textContent =
-        'Login OK, aber dein Konto ist noch gesperrt (Elternzustimmung fehlt).';
-
-      await ensureApprovalLinkForCurrentUser();
-
-      if (window.npShowSection) {
-        window.npShowSection('sec-auth');
-      }
-      return;
-    }
-
-    if (msg) msg.textContent = 'Login OK.';
-    if (window.npShowSection) {
-      window.npShowSection('sec-rating');
-    }
-
-  } catch (e) {
-    console.error(e);
-    if (msg) msg.textContent = 'Fehler beim Login.';
-  }
-});
-
-// Logout
-$('#btn-logout')?.addEventListener('click', async () => {
-  try {
-    const c = await getClient();
-    await c.auth.signOut();
-  } catch (e) {
-    console.error('logout error', e);
-  }
-
-  currentUser = null;
-  currentUserMeta = null;
-  currentProfile = null;
-  currentEvent = null;
-
-  const msg         = $('#auth-msg');
-  const approvalBox = $('#auth-approval-link');
-  const elUser      = $('#auth-user');
-  const lockInfo    = $('#auth-lock-info');
-
-  if (msg)        msg.textContent = 'Abgemeldet.';
-  if (elUser)     elUser.textContent = '';
-  if (approvalBox) approvalBox.innerHTML = '';
-  if (lockInfo)  lockInfo.textContent = '';
-
-  const idsToClear = [
-    'auth-email',
-    'auth-pass',
-    'reg-nick',
-    'reg-year',
-    'reg-parent-email'
-  ];
-  idsToClear.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const regRoleSel = document.getElementById('reg-role');
-  if (regRoleSel) regRoleSel.value = '';
-
-  const profRoleSel = document.getElementById('prof-role');
-  const profClub    = document.getElementById('prof-club');
-  const profExtra   = document.getElementById('prof-extra');
-
-  if (profRoleSel) {
-    profRoleSel.value = '';
-    profRoleSel.disabled = false;
-  }
-  if (profClub)  profClub.value  = '';
-  if (profExtra) profExtra.value = '';
-
-  updateAuthLockInfo();
-
-  if (window.npShowSection) {
-    window.npShowSection('sec-auth');
-  }
-});
-
-// -----------------------------
-// Profil / Rolle (2b)
-// -----------------------------
-function updateProfileFormForRole() {
-  const roleSel   = document.getElementById('prof-role');
-  const clubLabel = document.getElementById('prof-club-label');
-  const extraLabel= document.getElementById('prof-extra-label');
-
-  if (!roleSel || !clubLabel || !extraLabel) return;
-
-  const role = roleSel.value;
-
-  clubLabel.textContent  = 'Verein (optional)';
-  extraLabel.textContent = 'Zusatzinfo (optional)';
-
-  if (role === 'spieler') {
-    clubLabel.textContent  = 'Aktueller Verein (Pflicht)';
-    extraLabel.textContent = 'Zusatzinfo Spieler (z.B. Position, Liga, optional)';
-  } else if (role === 'trainer') {
-    clubLabel.textContent  = 'Verein als Trainer (Pflicht)';
-    extraLabel.textContent = 'Lizenzangabe (optional, z.B. „UEFA B“)';
-  } else if (role === 'scout') {
-    clubLabel.textContent  = 'Verein / Organisation als Scout (optional)';
-    extraLabel.textContent = 'Weitere Infos (optional)';
-  } else if (role === 'eltern') {
-    clubLabel.textContent  = 'Verein des Kindes (optional)';
-    extraLabel.textContent = 'Weitere Infos (optional)';
-  } else if (role === 'zuschauer') {
-    clubLabel.textContent  = 'Lieblingsverein (optional)';
-    extraLabel.textContent = 'Weitere Infos (optional)';
-  }
-}
-
-document.getElementById('prof-role')?.addEventListener('change', updateProfileFormForRole);
-
-async function saveProfile() {
-  const msg       = document.getElementById('prof-msg');
-  const roleSel   = document.getElementById('prof-role');
-  const clubInput = document.getElementById('prof-club');
-  const extraInput= document.getElementById('prof-extra');
-
-  if (!currentUser) {
-    if (msg) msg.textContent = 'Bitte zuerst einloggen.';
-    return;
-  }
-  if (isMinorLocked()) {
-    if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
-    return;
-  }
-
-  let role = roleSel?.value || '';
-  if (!role && currentProfile && currentProfile.role) {
-    role = currentProfile.role;
-  }
-  if (!role) {
-    if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
-    return;
-  }
-
-  const club_name  = (clubInput?.value || '').trim();
-  const extra_info = (extraInput?.value || '').trim();
-
-  if ((role === 'spieler' || role === 'trainer') && !club_name) {
-    if (msg) msg.textContent = 'Bitte den Verein angeben (Pflicht für Spieler & Trainer).';
-    return;
-  }
-
-  try {
-    const c = await getClient();
-    const payload = {
-      user_id: currentUser.id,
-      role,
-      club_name:  club_name  || null,
-      extra_info: extra_info || null
-    };
-
-    const { data, error } = await c
-      .from('profile')
-      .upsert(payload, { onConflict: 'user_id' })
-      .select('user_id, role, club_name, extra_info')
-      .single();
-
-    if (error) {
-      console.error('saveProfile error', error);
-      if (msg) msg.textContent = 'Fehler beim Speichern des Profils.';
-      return;
-    }
-
-    currentProfile = data;
-    if (msg) msg.textContent = 'Profil gespeichert.';
-
-    updateProfileFormForRole();
-    if (window.npShowSection) {
-      window.npShowSection('sec-rating');
-    }
-  } catch (e) {
-    console.error('saveProfile', e);
-    if (msg) msg.textContent = 'Fehler beim Speichern.';
-  }
-}
-
-document.getElementById('btn-save-profile')?.addEventListener('click', saveProfile);
-
-async function loadProfile() {
-  if (!currentUser) {
-    currentProfile = null;
-    return;
-  }
-  try {
-    const c = await getClient();
-    const { data, error } = await c
-      .from('profile')
-      .select('user_id, role, club_name, extra_info')
-      .eq('user_id', currentUser.id)
-      .maybeSingle();
-
-    if (!error && data) {
-      currentProfile = data;
-
-      const roleSel    = document.getElementById('prof-role');
-      const clubInput  = document.getElementById('prof-club');
-      const extraInput = document.getElementById('prof-extra');
-
-      if (roleSel) {
-        roleSel.value = data.role || '';
-        if (data.role) {
-          roleSel.disabled = true; // Rolle ist fest; keine Änderung im UI
-        }
-      }
-      if (clubInput)  clubInput.value  = data.club_name  || '';
-      if (extraInput) extraInput.value = data.extra_info || '';
-
-      updateProfileFormForRole();
-    } else {
-      currentProfile = null;
-    }
-  } catch (e) {
-    console.error('loadProfile', e);
-    currentProfile = null;
-  }
-}
+    });
 
     // -----------------------------
-    // Rating UI
+    // Profil / Rolle (2b)
+    // -----------------------------
+    function updateProfileFormForRole() {
+      const roleSel   = document.getElementById('prof-role');
+      const clubLabel = document.getElementById('prof-club-label');
+      const extraLabel= document.getElementById('prof-extra-label');
+
+      if (!roleSel || !clubLabel || !extraLabel) return;
+
+      const role = roleSel.value;
+
+      clubLabel.textContent  = 'Verein (optional)';
+      extraLabel.textContent = 'Zusatzinfo (optional)';
+
+      if (role === 'spieler') {
+        clubLabel.textContent  = 'Aktueller Verein (Pflicht)';
+        extraLabel.textContent = 'Zusatzinfo Spieler (z.B. Position, Liga, optional)';
+      } else if (role === 'trainer') {
+        clubLabel.textContent  = 'Verein als Trainer (Pflicht)';
+        extraLabel.textContent = 'Lizenzangabe (optional, z.B. „UEFA B“)';
+      } else if (role === 'scout') {
+        clubLabel.textContent  = 'Verein / Organisation als Scout (optional)';
+        extraLabel.textContent = 'Weitere Infos (optional)';
+      } else if (role === 'eltern') {
+        clubLabel.textContent  = 'Verein des Kindes (optional)';
+        extraLabel.textContent = 'Weitere Infos (optional)';
+      } else if (role === 'zuschauer') {
+        clubLabel.textContent  = 'Lieblingsverein (optional)';
+        extraLabel.textContent = 'Weitere Infos (optional)';
+      }
+    }
+
+    document.getElementById('prof-role')?.addEventListener('change', updateProfileFormForRole);
+
+    async function saveProfile() {
+      const msg       = document.getElementById('prof-msg');
+      const roleSel   = document.getElementById('prof-role');
+      const clubInput = document.getElementById('prof-club');
+      const extraInput= document.getElementById('prof-extra');
+
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
+
+      let role = roleSel?.value || '';
+      if (!role && currentProfile && currentProfile.role) {
+        role = currentProfile.role;
+      }
+      if (!role) {
+        if (msg) msg.textContent = 'Bitte eine Rolle auswählen.';
+        return;
+      }
+
+      const club_name  = (clubInput?.value || '').trim();
+      const extra_info = (extraInput?.value || '').trim();
+
+      if ((role === 'spieler' || role === 'trainer') && !club_name) {
+        if (msg) msg.textContent = 'Bitte den Verein angeben (Pflicht für Spieler & Trainer).';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const payload = {
+          user_id: currentUser.id,
+          role,
+          club_name:  club_name  || null,
+          extra_info: extra_info || null
+        };
+
+        const { data, error } = await c
+          .from('profile')
+          .upsert(payload, { onConflict: 'user_id' })
+          .select('user_id, role, club_name, extra_info')
+          .single();
+
+        if (error) {
+          console.error('saveProfile error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern des Profils.';
+          return;
+        }
+
+        currentProfile = data;
+        if (msg) msg.textContent = 'Profil gespeichert.';
+
+        updateProfileFormForRole();
+        if (window.npShowSection) {
+          window.npShowSection('sec-rating');
+        }
+      } catch (e) {
+        console.error('saveProfile', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    }
+
+    document.getElementById('btn-save-profile')?.addEventListener('click', saveProfile);
+
+    async function loadProfile() {
+      if (!currentUser) {
+        currentProfile = null;
+        return;
+      }
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('profile')
+          .select('user_id, role, club_name, extra_info')
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (!error && data) {
+          currentProfile = data;
+
+          const roleSel    = document.getElementById('prof-role');
+          const clubInput  = document.getElementById('prof-club');
+          const extraInput = document.getElementById('prof-extra');
+
+          if (roleSel) {
+            roleSel.value = data.role || '';
+            if (data.role) {
+              roleSel.disabled = true;
+            }
+          }
+          if (clubInput)  clubInput.value  = data.club_name  || '';
+          if (extraInput) extraInput.value = data.extra_info || '';
+
+          updateProfileFormForRole();
+        } else {
+          currentProfile = null;
+        }
+      } catch (e) {
+        console.error('loadProfile', e);
+        currentProfile = null;
+      }
+    }
+
+    // -----------------------------
+    // Rating / Spieler / Events / Ranking / ICS / Verlauf
     // -----------------------------
     const ratingKeys = [
       ['technik','Technik'],
@@ -1409,9 +1314,6 @@ async function loadProfile() {
     }
     buildCriteriaUI();
 
-    // -----------------------------
-    // Spieler anlegen (2a)
-    // -----------------------------
     async function createPlayer() {
       const msg = document.getElementById('player-create-msg');
 
@@ -1461,8 +1363,6 @@ async function loadProfile() {
           .single();
 
         if (error && error.code === '23505') {
-          console.warn('createPlayer duplicate, suche bestehenden Datensatz…', error);
-
           const { data: existing } = await c
             .from('player')
             .select('id')
@@ -1571,9 +1471,6 @@ async function loadProfile() {
       }
     }
 
-    // -----------------------------
-    // Bewertung speichern
-    // -----------------------------
     document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
       try {
         const c = await getClient();
@@ -1664,9 +1561,6 @@ async function loadProfile() {
       }
     });
 
-    // -----------------------------
-    // Ranking & Watchlist
-    // -----------------------------
     function loadFavSet() {
       try {
         const raw = localStorage.getItem('fav_players') || '[]';
@@ -1965,9 +1859,6 @@ async function loadProfile() {
       URL.revokeObjectURL(url);
     });
 
-    // -----------------------------
-    // ICS-Import
-    // -----------------------------
     function parseICS(txt) {
       const out = [];
       const blocks = txt.split(/BEGIN:VEVENT/).slice(1).map(s => 'BEGIN:VEVENT' + s);
@@ -2021,6 +1912,7 @@ async function loadProfile() {
         else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
       } catch (e) {
         console.error(e);
+        const msg = document.getElementById('ics-msg');
         if (msg) msg.textContent = 'Fehler beim Import.';
       }
     });
@@ -2050,9 +1942,6 @@ async function loadProfile() {
       }
     });
 
-    // -----------------------------
-    // Letzte Bewertungen
-    // -----------------------------
     async function refreshLastComments() {
       try {
         const c = await getClient();
@@ -2104,9 +1993,6 @@ async function loadProfile() {
       }
     }
 
-    // -----------------------------
-    // Events anlegen & suchen
-    // -----------------------------
     async function createEvent() {
       const dateEl   = document.getElementById('event-date');
       const typeEl   = document.getElementById('event-type');
@@ -2345,59 +2231,32 @@ async function loadProfile() {
       });
     }
 
-    // -----------------------------
-    // Initial-Ladevorgang
-    // -----------------------------
     async function refreshAllData() {
       await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
       await refreshRanking();
       await refreshLastComments();
     }
 
-(async function init() {
-  const cfg = {
-    url: localStorage.getItem('sb_url') || '',
-    key: localStorage.getItem('sb_key') || ''
-  };
-  const urlInput = document.getElementById('sb-url');
-  const keyInput = document.getElementById('sb-key');
-  if (urlInput) urlInput.value = cfg.url;
-  if (keyInput) keyInput.value = cfg.key;
+    (async function init() {
+      const cfg = loadConfig();
+      const urlInput = document.getElementById('sb-url');
+      const keyInput = document.getElementById('sb-key');
+      if (urlInput) urlInput.value = cfg.url;
+      if (keyInput) keyInput.value = cfg.key;
 
-  if (cfg.url && cfg.key) {
-    try {
-      const c = await getClient();
-
-      // WICHTIG: Beim Laden immer abmelden, damit Demos "frisch" starten
-      await c.auth.signOut();
-      currentUser = null;
-      currentUserMeta = null;
-      currentProfile = null;
-
-      const elUser   = $('#auth-user');
-      const lockInfo = $('#auth-lock-info');
-      const authMsg  = $('#auth-msg');
-      const apprBox  = $('#auth-approval-link');
-
-      if (elUser)   elUser.textContent = '';
-      if (lockInfo) lockInfo.textContent = '';
-      if (authMsg)  authMsg.textContent  = '';
-      if (apprBox)  apprBox.innerHTML    = '';
-
-      updateAuthLockInfo();
-
-      const rankMsg = $('#rank-msg');
-      if (rankMsg) rankMsg.textContent = 'Bereit (bitte einloggen).';
-
-      // Optional: direkt auf Login-Reiter schalten
-      if (window.npShowSection) {
-        window.npShowSection('sec-auth');
+      if (cfg.url && cfg.key) {
+        try {
+          await getClient();
+          const rankMsg = $('#rank-msg');
+          if (rankMsg) rankMsg.textContent = 'Bereit (bitte einloggen).';
+          if (window.npShowSection) {
+            window.npShowSection('sec-auth');
+          }
+        } catch (e) {
+          console.error('init', e);
+        }
       }
-    } catch (e) {
-      console.error('init', e);
-    }
-  }
-})();
+    })();
   </script>
 </body>
 </html>
