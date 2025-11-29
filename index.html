@@ -947,6 +947,7 @@ $('#btn-signup')?.addEventListener('click', async () => {
   if (msg) msg.textContent = '';
   if (approvalBox) approvalBox.innerHTML = '';
 
+  // Pflichtfelder prüfen
   if (!email || !pwd) {
     if (msg) msg.textContent = 'Bitte E-Mail & Passwort eingeben.';
     return;
@@ -967,7 +968,7 @@ $('#btn-signup')?.addEventListener('click', async () => {
     return;
   }
   const age            = nowYear - birthYear;
-  const parentRequired = age < 16;
+  const parentRequired = age < 16; // <16 braucht Eltern
 
   if (parentRequired && !parentEmail) {
     if (msg) msg.textContent = 'Für U16 ist eine Eltern-E-Mail erforderlich.';
@@ -976,8 +977,9 @@ $('#btn-signup')?.addEventListener('click', async () => {
 
   try {
     const c = await getClient();
-    const { data, error } = await c.auth.signUp({ email, password: pwd });
 
+    // 1) Supabase-User anlegen
+    const { data, error } = await c.auth.signUp({ email, password: pwd });
     if (error) {
       if (msg) msg.textContent = 'Fehler: ' + error.message;
       return;
@@ -989,7 +991,7 @@ $('#btn-signup')?.addEventListener('click', async () => {
       return;
     }
 
-    // 1) Alters-/Elternprofil
+    // 2) Alters-/Elternprofil speichern
     const { error: profErr } = await c
       .from('user_profile')
       .insert({
@@ -1000,6 +1002,80 @@ $('#btn-signup')?.addEventListener('click', async () => {
         parent_required: parentRequired,
         parent_approved: parentRequired ? false : true
       });
+
+    if (profErr) {
+      console.error('user_profile insert', profErr);
+      if (msg) msg.textContent = 'Konto erstellt, aber Profil (Alter) konnte nicht gespeichert werden.';
+      return;
+    }
+
+    // 3) Profil mit Rolle direkt anlegen
+    const { error: prof2Err } = await c
+      .from('profile')
+      .upsert({
+        user_id: user.id,
+        role: regRole,
+        club_name: null,
+        extra_info: null
+      }, { onConflict: 'user_id' });
+
+    if (prof2Err) {
+      console.error('profile insert error', prof2Err);
+      if (msg) msg.textContent = 'Konto angelegt, aber Profil-Rolle konnte nicht gespeichert werden.';
+      return;
+    }
+
+    // 4) Bei Minderjährigen: Token in parental_consent + Freigabelink anzeigen
+    if (parentRequired) {
+      const token = generateToken();
+      const contactEmail = parentEmail || email;
+
+      const { error: consentErr } = await c
+        .from('parental_consent')
+        .insert({
+          child_id: user.id,
+          token,
+          email: contactEmail
+        });
+
+      if (consentErr) {
+        console.error('parental_consent insert error', consentErr);
+        if (msg) msg.textContent =
+          'Registrierung erfolgreich. Konto ist gesperrt, aber Freigabelink konnte nicht gespeichert werden.';
+        return;
+      }
+
+      // Link bauen
+      const base = window.location.origin + window.location.pathname.replace(/index\.html$/, '');
+      const link = `${base}approve.html?token=${token}`;
+
+      const subject = encodeURIComponent('Einwilligung für NextPlayer™');
+      const body = encodeURIComponent(
+        `Hallo,\n\n` +
+        `bitte klicken Sie auf folgenden Link, um die Nutzung der App NextPlayer™ für Ihr Kind zu erlauben:\n\n` +
+        `${link}\n\n` +
+        `Viele Grüße\nNextPlayer™`
+      );
+
+      if (approvalBox) {
+        approvalBox.innerHTML =
+          `Freigabelink: <a href="${link}" target="_blank">${link}</a><br>` +
+          `<a href="mailto:${encodeURIComponent(contactEmail)}?subject=${subject}&body=${body}">` +
+          `E-Mail mit diesem Link öffnen</a>`;
+      }
+
+      if (msg) msg.textContent =
+        'Registrierung erfolgreich. Konto ist gesperrt, bis ein Erziehungsberechtigter zugestimmt hat.';
+    } else {
+      // Volljährig / keine Elternpflicht
+      if (msg) msg.textContent = 'Registrierung erfolgreich. Du kannst dich jetzt einloggen.';
+    }
+
+  } catch (e) {
+    console.error(e);
+    if (msg) msg.textContent = 'Fehler bei Registrierung.';
+  }
+});
 
     if (profErr) {
       console.error('user_profile insert', profErr);
