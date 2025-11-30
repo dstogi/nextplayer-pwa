@@ -627,7 +627,7 @@
     });
   </script>
 
-  <!-- Supabase-Logik -->
+    <!-- Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
     const $  = (sel) => document.querySelector(sel);
@@ -664,7 +664,7 @@
       if (!url || !key) {
         const msg = $('#conf-msg');
         if (msg) msg.textContent = 'Bitte Supabase-URL und Anon-Key speichern.';
-        throw new Error('Supabase-Konfiguration fehlt');
+        throw new Error('Supabase-Konfiguration fehlt';
       }
       supa = createClient(url, key, {
         auth: { storageKey: 'scout-app-auth', multiTab: false }
@@ -1322,7 +1322,7 @@
         return;
       }
       if (isMinorLocked()) {
-        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternenzustimmung fehlt).';
         return;
       }
 
@@ -1452,6 +1452,7 @@
       }
     }
 
+    // Events aus echter DB (für Ranking / Verlauf), aber NICHT für Karte 3-Dropdown
     async function refreshEvents() {
       try {
         const c = await getClient();
@@ -1461,14 +1462,52 @@
           .order('event_date', { ascending: false });
         if (error) throw error;
         allEvents = data || [];
-        const sel = document.querySelector('#r-event');
-        if (!sel) return;
-        sel.innerHTML = allEvents.map(e =>
-          `<option value="${e.id}">${e.event_date} ${e.type}</option>`
-        ).join('');
       } catch (e) {
         console.error('refreshEvents', e);
       }
+    }
+
+    // -----------------------------
+    // Mock-Events für Karte 3 (20 Spiele + 5 Turniere)
+    // -----------------------------
+    const MOCK_EVENTS = [
+      // Spiele
+      { id: 'E001', event_date: '2025-03-01', type: 'match', competition: 'FC 08 Villingen U17', opponent: 'SV Zimmern U17',       subtype: 'Verbandsliga',  location: 'Villingen' },
+      { id: 'E002', event_date: '2025-03-08', type: 'match', competition: 'FC 08 Villingen U15', opponent: 'SC Freiburg U15',      subtype: 'Landesliga',    location: 'Villingen' },
+      { id: 'E003', event_date: '2025-03-15', type: 'match', competition: 'FC 08 Villingen U19', opponent: 'FV Ravensburg U19',    subtype: 'Bezirksliga',   location: 'Villingen' },
+      { id: 'E004', event_date: '2025-03-22', type: 'match', competition: 'FC 08 Villingen U13', opponent: 'DJK Villingen U13',    subtype: 'Freundschaft',  location: 'Villingen' },
+      { id: 'E005', event_date: '2025-03-29', type: 'match', competition: 'FC 08 Villingen U17', opponent: 'SV Schwenningen U17',  subtype: 'Testspiel',     location: 'Schwenningen' },
+      { id: 'E006', event_date: '2025-04-05', type: 'match', competition: 'SV Schwenningen U15', opponent: 'FC 08 Villingen U15',  subtype: 'Kreisliga',     location: 'Schwenningen' },
+      { id: 'E007', event_date: '2025-04-12', type: 'match', competition: 'FC 08 Villingen U19', opponent: 'SC Pfullendorf U19',   subtype: 'Pokal',         location: 'Villingen' },
+      { id: 'E008', event_date: '2025-04-19', type: 'match', competition: 'FC 08 Villingen U17', opponent: 'SSV Reutlingen U17',   subtype: 'Verbandsliga',  location: 'Villingen' },
+      { id: 'E009', event_date: '2025-04-26', type: 'match', competition: 'SV Zimmern U17',      opponent: 'FC 08 Villingen U17',  subtype: 'Landesliga',    location: 'Zimmern' },
+      { id: 'E010', event_date: '2025-05-03', type: 'match', competition: 'FC 08 Villingen U13', opponent: 'SC Freiburg U13',      subtype: 'Freundschaft',  location: 'Freiburg' },
+      { id: 'E011', event_date: '2025-05-10', type: 'match', competition: 'FC 08 Villingen U15', opponent: 'Bahlinger SC U15',     subtype: 'Testspiel',     location: 'Bahlingen' },
+      { id: 'E012', event_date: '2025-05-17', type: 'match', competition: 'SV Schwenningen U19', opponent: 'FC 08 Villingen U19',  subtype: 'Pokal',         location: 'Schwenningen' },
+      { id: 'E013', event_date: '2025-05-24', type: 'match', competition: 'FC 08 Villingen U17', opponent: 'TSG Balingen U17',     subtype: 'Verbandsliga',  location: 'Villingen' },
+      { id: 'E014', event_date: '2025-05-31', type: 'match', competition: 'SV Villingen U11',    opponent: 'DJK Villingen U11',    subtype: 'Kreisliga',     location: 'Villingen' },
+      { id: 'E015', event_date: '2025-06-07', type: 'match', competition: 'FC 08 Villingen',     opponent: 'DJK Villingen',        subtype: 'Freundschaft',  location: 'Villingen' },
+      { id: 'E016', event_date: '2025-06-14', type: 'match', competition: 'FC 08 Villingen U19', opponent: 'FC Singen U19',        subtype: 'Testspiel',     location: 'Villingen' },
+      { id: 'E017', event_date: '2025-06-21', type: 'match', competition: 'SC Freiburg U17',     opponent: 'FC 08 Villingen U17',  subtype: 'Pokal',         location: 'Freiburg' },
+      { id: 'E018', event_date: '2025-06-28', type: 'match', competition: 'FC Radolfzell U15',   opponent: 'FC 08 Villingen U15',  subtype: 'Landesliga',    location: 'Radolfzell' },
+      { id: 'E019', event_date: '2025-07-05', type: 'match', competition: 'FC 08 Villingen U17', opponent: 'SV Villingen U17',     subtype: 'Testspiel',     location: 'Villingen' },
+      { id: 'E020', event_date: '2025-07-12', type: 'match', competition: 'DJK Villingen U15',   opponent: 'FC 08 Villingen U15',  subtype: 'Freundschaft',  location: 'Villingen' },
+      // Turniere
+      { id: 'T001', event_date: '2025-08-01', type: 'tournament', competition: 'FC 08 Villingen U13', opponent: 'Mehrere Teams', subtype: 'Sommer-Cup U13',      location: 'Villingen' },
+      { id: 'T002', event_date: '2025-08-08', type: 'tournament', competition: 'FC 08 Villingen U15', opponent: 'Mehrere Teams', subtype: 'Kimmich-Cup',        location: 'Rottenburg' },
+      { id: 'T003', event_date: '2025-08-15', type: 'tournament', competition: 'FC 08 Villingen U11', opponent: 'Mehrere Teams', subtype: 'Hallenturnier',      location: 'Schwenningen' },
+      { id: 'T004', event_date: '2025-08-22', type: 'tournament', competition: 'FC 08 Villingen U17', opponent: 'Mehrere Teams', subtype: 'Elite-Cup U17',      location: 'Freiburg' },
+      { id: 'T005', event_date: '2025-08-29', type: 'tournament', competition: 'FC 08 Villingen U19', opponent: 'Mehrere Teams', subtype: 'International Cup',  location: 'Villingen' }
+    ];
+
+    function populateMockEventsSelect() {
+      const sel = document.getElementById('r-event');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Bitte Event wählen…</option>' +
+        MOCK_EVENTS.map(ev => {
+          const label = formatEventDisplayLine(ev);
+          return `<option value="${ev.id}">${label}</option>`;
+        }).join('');
     }
 
     document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
@@ -1507,7 +1546,10 @@
         }
 
         if (!currentEvent && dropdownEventId) {
-          const ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
+          let ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
+          if (!ev) {
+            ev = MOCK_EVENTS.find(e => String(e.id) === String(dropdownEventId));
+          }
           if (ev) {
             setCurrentEvent(ev);
             event_id = ev.id;
@@ -2064,35 +2106,22 @@
 
     document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
 
-    async function searchEventsByTerm(term) {
-      try {
-        const c = await getClient();
-
-        let query = c
-          .from('event')
-          .select('id, event_date, type, competition, opponent, subtype, location')
-          .order('event_date', { ascending: false })
-          .limit(50);
-
-        term = (term || '').trim();
-        if (term) {
-          const orFilter =
-            `competition.ilike.%${term}%,` +
-            `opponent.ilike.%${term}%,` +
-            `subtype.ilike.%${term}%,` +
-            `location.ilike.%${term}%`;
-          query = query.or(orFilter);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        renderEventResults(data || []);
-      } catch (e) {
-        console.error('searchEventsByTerm', e);
-        const box = document.querySelector('#event-results');
-        if (box) box.textContent = 'Fehler bei der Suche.';
-      }
+    // --- Suche jetzt auf MOCK_EVENTS ---
+    function searchEventsByTerm(term) {
+      const q = (term || '').trim().toLowerCase();
+      const list = !q
+        ? MOCK_EVENTS
+        : MOCK_EVENTS.filter(ev => {
+            const text = [
+              ev.competition || '',
+              ev.opponent || '',
+              ev.subtype || '',
+              ev.location || '',
+              ev.event_date || ''
+            ].join(' ').toLowerCase();
+            return text.includes(q);
+          });
+      renderEventResults(list);
     }
 
     function formatEventPairing(ev) {
@@ -2119,10 +2148,16 @@
 
     function renderEventResults(list) {
       const box = document.querySelector('#event-results');
+      const label = document.querySelector('#event-current');
+      const card  = document.querySelector('#event-card');
       if (!box) return;
 
       if (!list.length) {
         box.textContent = 'Keine Spiele gefunden.';
+        if (label) label.textContent = 'Kein Spiel ausgewählt.';
+        if (card) {
+          card.innerHTML = '<p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>';
+        }
         return;
       }
 
@@ -2139,6 +2174,8 @@
         btn.type = 'button';
         btn.style.padding = '4px 8px';
         btn.style.cursor = 'pointer';
+        btn.style.width = '100%';
+        btn.style.textAlign = 'left';
 
         btn.textContent = formatEventDisplayLine(ev);
 
@@ -2226,7 +2263,10 @@
     if (selEvent) {
       selEvent.addEventListener('change', () => {
         const id = selEvent.value;
-        const ev = allEvents.find(e => String(e.id) === id);
+        let ev = allEvents.find(e => String(e.id) === id);
+        if (!ev) {
+          ev = MOCK_EVENTS.find(e => String(e.id) === id);
+        }
         if (ev) setCurrentEvent(ev);
       });
     }
@@ -2243,6 +2283,10 @@
       const keyInput = document.getElementById('sb-key');
       if (urlInput) urlInput.value = cfg.url;
       if (keyInput) keyInput.value = cfg.key;
+
+      // Mock-Events für Karte 3 initial anzeigen
+      populateMockEventsSelect();
+      renderEventResults(MOCK_EVENTS);
 
       if (cfg.url && cfg.key) {
         try {
