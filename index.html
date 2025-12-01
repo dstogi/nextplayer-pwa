@@ -633,6 +633,11 @@
     const $  = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
+    function isUUID(v) {
+  return typeof v === 'string' &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+}
+
     let supa = null;
     let currentUser = null;
     let currentUserMeta = null;
@@ -1545,12 +1550,13 @@
           return;
         }
 
+        // falls currentEvent noch nicht gesetzt ist → aus Liste suchen
         if (!currentEvent && dropdownEventId) {
           let ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
           if (!ev) {
-            ev = MOCK_EVENTS.find(e => String(e.id) === String(dropdownEventId));
-          }
-          if (ev) {
+            // Falls irgendwo noch alte Demo-IDs wie „E007“ existieren, landen wir hier
+            console.warn('Kein DB-Event gefunden für ID', dropdownEventId);
+          } else {
             setCurrentEvent(ev);
             event_id = ev.id;
           }
@@ -1558,6 +1564,15 @@
 
         if (!player_id) {
           if (msg) msg.textContent = 'Bitte einen Spieler auswählen (oder in 2a neu anlegen).';
+          return;
+        }
+
+        // 🔴 WICHTIG: Nur echte UUIDs speichern, keine „E007“-Mock-IDs
+        if (!isUUID(String(event_id))) {
+          if (msg) msg.textContent =
+            'Fehler: Dieses Event hat keine gültige ID (z.B. Demo-Event „E007“). ' +
+            'Bitte ein Event aus der Datenbank auswählen oder in 3c neu anlegen.';
+          console.warn('Skip DB insert, invalid UUID for event_id:', event_id);
           return;
         }
 
