@@ -627,16 +627,17 @@
     });
   </script>
 
-    <!-- Supabase-Logik -->
+  <!-- Supabase-Logik -->
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-    const $  = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-function isUUID(v) {
-  return typeof v === 'string' &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-}
+    const $  = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    function isUUID(v) {
+      return typeof v === 'string' &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+    }
 
     let supa = null;
     let currentUser = null;
@@ -664,18 +665,18 @@ function isUUID(v) {
       supa = null;
     }
 
-  function ensureClient() {
-  const { url, key } = loadConfig();
-  if (!url || !key) {
-    const msg = $('#conf-msg');
-    if (msg) msg.textContent = 'Bitte Supabase-URL und Anon-Key speichern.';
-    throw new Error('Supabase-Konfiguration fehlt');
-  }
-  supa = createClient(url, key, {
-    auth: { storageKey: 'scout-app-auth', multiTab: false }
-  });
-  return supa;
-}
+    function ensureClient() {
+      const { url, key } = loadConfig();
+      if (!url || !key) {
+        const msg = $('#conf-msg');
+        if (msg) msg.textContent = 'Bitte Supabase-URL und Anon-Key speichern.';
+        throw new Error('Supabase-Konfiguration fehlt');
+      }
+      supa = createClient(url, key, {
+        auth: { storageKey: 'scout-app-auth', multiTab: false }
+      });
+      return supa;
+    }
 
     async function getClient() {
       if (supa) return supa;
@@ -1319,7 +1320,7 @@ function isUUID(v) {
     }
     buildCriteriaUI();
 
-    async function createPlayer() {
+    async function createPlayerRating() {
       const msg = document.getElementById('player-create-msg');
 
       if (!currentUser) {
@@ -1413,7 +1414,7 @@ function isUUID(v) {
       }
     }
 
-    document.getElementById('btn-create-player')?.addEventListener('click', createPlayer);
+    document.getElementById('btn-create-player')?.addEventListener('click', createPlayerRating);
 
     async function refreshPlayers() {
       try {
@@ -1583,7 +1584,7 @@ function isUUID(v) {
       }
     });
 
-        // -----------------------------
+    // -----------------------------
     // Event-Suche für 3b. Ereignis suchen
     // -----------------------------
     async function searchEventsByTerm(term) {
@@ -1778,7 +1779,516 @@ function isUUID(v) {
         if (ev) setCurrentEvent(ev);
       });
     }
-    
+
+    // -----------------------------
+    // Ranking / CSV / ICS / Verlauf / Event anlegen
+    // -----------------------------
+    function loadFavSet() {
+      try {
+        const raw = localStorage.getItem('fav_players') || '[]';
+        const arr = JSON.parse(raw);
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch {
+        return new Set();
+      }
+    }
+    function saveFavSet(set) {
+      localStorage.setItem('fav_players', JSON.stringify([...set]));
+    }
+    let favSet   = loadFavSet();
+    let lastRows = [];
+    let ratingsByPlayer = new Map();
+
+    async function refreshRanking() {
+      try {
+        const c = await getClient();
+        const [pRes, eRes, rRes] = await Promise.all([
+          c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
+          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
+          c.from('rating').select('player_id, event_id, criteria, created_at')
+            .order('created_at', { ascending: false })
+            .limit(2000)
+        ]);
+
+        if (pRes.error || eRes.error || rRes.error) {
+          console.error(pRes.error || eRes.error || rRes.error);
+          const msg = document.querySelector('#rank-msg');
+          if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+          return;
+        }
+
+        const players = pRes.data || [];
+        const events  = eRes.data || [];
+        const ratings = rRes.data || [];
+
+        const pMap = new Map(players.map(p => [p.id, p]));
+        const eMap = new Map(events.map(e => [e.id, e]));
+
+        const clubF   = document.querySelector('#club-filter')?.value || '';
+        const posF    = document.querySelector('#rank-pos')?.value || '';
+        const footF   = document.querySelector('#rank-foot')?.value || '';
+        const typeF   = document.querySelector('#rank-type')?.value || '';
+        const roleF   = (document.querySelector('#rank-role')?.value || '').toLowerCase();
+        const fromF   = document.querySelector('#rank-from')?.value || '';
+        const toF     = document.querySelector('#rank-to')?.value || '';
+        const q       = (document.querySelector('#rank-q')?.value || '').toLowerCase();
+        const minR    = parseInt(document.querySelector('#rank-min')?.value || '0', 10) || 0;
+        const favMode = document.querySelector('#fav-filter')?.value || 'all';
+
+        const agg = new Map();
+        ratingsByPlayer = new Map();
+        let rows = [];
+
+        for (const r of ratings) {
+          const ev = eMap.get(r.event_id);
+          const pl = pMap.get(r.player_id);
+          if (!ev || !pl) continue;
+
+          const critObj = r.criteria || {};
+          const roleVal = (critObj._role || '').toLowerCase();
+
+          if (roleF && roleF !== 'alle' && roleVal !== roleF) continue;
+
+          const d = (ev.event_date || '').slice(0, 10);
+
+          if (typeF && ev.type !== typeF) continue;
+          if (fromF && d < fromF) continue;
+          if (toF   && d > toF)   continue;
+
+          const vals = Object.entries(critObj)
+            .map(([k, v]) => k.startsWith('_') ? NaN : Number(v))
+            .filter(n => Number.isFinite(n));
+          if (!vals.length) continue;
+
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+          let list = ratingsByPlayer.get(r.player_id);
+          if (!list) {
+            list = [];
+            ratingsByPlayer.set(r.player_id, list);
+          }
+          list.push({
+            avg,
+            created_at: r.created_at || '',
+            event_date: ev.event_date || '',
+            event_type: ev.type || '',
+            event_name: formatEventPairing(ev),
+            role:       critObj._role  || '',
+            rater:      critObj._rater || ''
+          });
+
+          const key = r.player_id;
+          let stat = agg.get(key);
+          if (!stat) {
+            stat = { sum: 0, cnt: 0, last: '0000-00-00' };
+          }
+          stat.sum  += avg;
+          stat.cnt  += 1;
+          if (d > stat.last) stat.last = d;
+          agg.set(key, stat);
+        }
+
+        rows = [];
+        for (const [playerId, st] of agg.entries()) {
+          const pl = pMap.get(playerId) || {
+            full_name: playerId,
+            club_name: '',
+            positions: null,
+            dominant_foot: null,
+            birthdate: null
+          };
+          const avg = st.sum / st.cnt;
+          rows.push({
+            id:    playerId,
+            name:  pl.full_name,
+            club:  pl.club_name || '',
+            pos:   pl.positions || null,
+            foot:  pl.dominant_foot || '',
+            birth: pl.birthdate || '',
+            cnt:   st.cnt,
+            avg,
+            last:  st.last
+          });
+        }
+
+        rows = rows.filter(r => {
+          const matchClub = !clubF || r.club === clubF;
+
+          const posArr = Array.isArray(r.pos)
+            ? r.pos
+            : (typeof r.pos === 'string' && r.pos.length
+              ? r.pos.split(',').map(x => x.trim()).filter(Boolean)
+              : []);
+
+          const matchPos  = !posF || posArr.includes(posF);
+          const matchFoot = !footF || r.foot === footF;
+          const matchText = !q || r.name.toLowerCase().includes(q) || r.club.toLowerCase().includes(q);
+          const matchCnt  = r.cnt >= minR;
+          const matchFav  = (favMode !== 'fav' || favSet.has(r.id));
+
+          return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
+        });
+
+        rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
+        const top = document.querySelector('#rank-top10')?.checked;
+        if (top) rows = rows.slice(0, 10);
+
+        lastRows = rows.slice();
+
+        const tb = document.querySelector('#rank-table tbody');
+        if (!tb) return;
+
+        tb.innerHTML = rows.length
+          ? rows.map(r => {
+              const star   = favSet.has(r.id) ? '★' : '☆';
+              const posStr = Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || '');
+              const footLabel =
+                r.foot === 'left' ? 'links' :
+                r.foot === 'right' ? 'rechts' :
+                r.foot === 'both' ? 'beidfüßig' : '';
+              return `<tr data-pid="${r.id}">
+                        <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
+                        <td>${r.name}</td>
+                        <td>${r.club}</td>
+                        <td>${posStr}</td>
+                        <td>${footLabel}</td>
+                        <td>${r.cnt}</td>
+                        <td>${r.avg.toFixed(2)}</td>
+                        <td>${r.last || ''}</td>
+                      </tr>`;
+            }).join('')
+          : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
+
+        tb.querySelectorAll('.fav-toggle').forEach(el => {
+          el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const pid = el.getAttribute('data-pid');
+            if (!pid) return;
+            if (favSet.has(pid)) favSet.delete(pid);
+            else favSet.add(pid);
+            saveFavSet(favSet);
+            refreshRanking();
+          });
+        });
+
+        tb.onclick = (ev) => {
+          const tr = ev.target.closest('tr[data-pid]');
+          if (!tr) return;
+          if (ev.target.classList.contains('fav-toggle')) return;
+
+          const pid = tr.getAttribute('data-pid');
+          const row = lastRows.find(r => String(r.id) === String(pid));
+          if (!row) return;
+
+          const pl = pMap.get(row.id) || {};
+          const birthStr = pl.birthdate || '-';
+          const footVal  = pl.dominant_foot || row.foot || '';
+          const footLabel =
+            footVal === 'left' ? 'links' :
+            footVal === 'right' ? 'rechts' :
+            footVal === 'both' ? 'beidfüßig' : (footVal || '-');
+          const posStr   = Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '');
+
+          const details = ratingsByPlayer.get(row.id) || [];
+
+          let detailText = '';
+          if (details.length) {
+            detailText =
+              '\n\nEinzelbewertungen:\n' +
+              details.map(d => {
+                const date  = (d.event_date || '').slice(0,10);
+                const typeShort =
+                  d.event_type === 'match'      ? 'Sp.' :
+                  d.event_type === 'training'   ? 'Tr.' :
+                  d.event_type === 'tournament' ? 'Tu.' :
+                  (d.event_type || '');
+
+                const pairing = d.event_name || '';
+                const role    = d.role  || '';
+                const rater   = d.rater || '';
+                const raterShort = rater.includes('@') ? rater.split('@')[0] : rater;
+
+                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${raterShort}`;
+              }).join('\n');
+          } else {
+            detailText = '\n\nKeine Einzelbewertungen gefunden.';
+          }
+
+          alert(
+            'Spieler: '      + row.name + '\n' +
+            'Geb.: '         + birthStr + '\n' +
+            'Verein: '       + row.club + '\n' +
+            'Position(en): ' + posStr + '\n' +
+            'Fuß: '          + footLabel + '\n' +
+            'Bewertungen: '  + row.cnt + '\n' +
+            'Ø Note: '       + row.avg.toFixed(2) +
+            detailText
+          );
+        };
+
+        const rankMsgLocal = $('#rank-msg');
+        if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
+      } catch (e) {
+        console.error('refreshRanking', e);
+        const msg = $('#rank-msg');
+        if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+      }
+    }
+
+    ['change', 'input'].forEach(evt => {
+      [
+        'club-filter',
+        'rank-pos',
+        'rank-foot',
+        'rank-type',
+        'rank-role',
+        'rank-from',
+        'rank-to',
+        'rank-min',
+        'rank-q',
+        'fav-filter',
+        'rank-top10'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(evt, () => refreshRanking());
+      });
+    });
+    document.getElementById('btn-refresh-ranking')?.addEventListener('click', () => refreshRanking());
+
+    document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+      if (!lastRows.length) return;
+      const header = ['Spieler','Verein','Position(en)','Fuß','#Bewertungen','Ø Note','Letztes Event'];
+      const lines = [
+        header.join(';'),
+        ...lastRows.map(r =>
+          [
+            r.name,
+            r.club,
+            Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || ''),
+            (r.foot === 'left' ? 'links' : r.foot === 'right' ? 'rechts' : r.foot === 'both' ? 'beidfüßig' : ''),
+            r.cnt,
+            r.avg.toFixed(2),
+            r.last || ''
+          ].join(';')
+        )
+      ];
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ranking.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function parseICS(txt) {
+      const out = [];
+      const blocks = txt.split(/BEGIN:VEVENT/).slice(1).map(s => 'BEGIN:VEVENT' + s);
+      for (const block of blocks) {
+        const get = (k) => {
+          const re = new RegExp('^' + k + '(?:;[^:]+)?:\\s*(.+)$','m');
+          const m  = block.match(re);
+          return m ? m[1].trim() : null;
+        };
+        let dt = get('DTSTART');
+        if (!dt) {
+          const m = block.match(/^DTSTART(?:;TZID=[^:]+)?:([0-9T]+)/m);
+          if (m) dt = m[1];
+        }
+        if (!dt) continue;
+        const raw = dt.replace(/[^0-9]/g,'').slice(0,8);
+        if (raw.length < 8) continue;
+        const event_date = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+        const summary  = get('SUMMARY')  || '';
+        const location = get('LOCATION') || '';
+        out.push({
+          event_date,
+          type:'match',
+          subtype: summary.slice(0,120),
+          competition:null,
+          age_group:null,
+          opponent:null,
+          location:location.slice(0,120)
+        });
+      }
+      return out;
+    }
+
+    document.getElementById('btn-import-ics')?.addEventListener('click', async () => {
+      const c = await getClient().catch(e => {
+        const m = $('#ics-msg');
+        if (m) m.textContent = 'Nicht verbunden.';
+        return null;
+      });
+      if (!c) return;
+      const fileInput = document.getElementById('ics-file');
+      const msg = document.getElementById('ics-msg');
+      const file = fileInput?.files?.[0];
+      if (!file) { if (msg) msg.textContent = 'Bitte eine .ics-Datei wählen.'; return; }
+      try {
+        const txt = await file.text();
+        const events = parseICS(txt);
+        if (!events.length) { if (msg) msg.textContent = 'Keine VEVENTs gefunden.'; return; }
+        const { error } = await c.from('event').insert(events);
+        if (error) { console.error(error); if (msg) msg.textContent = 'Fehler: ' + error.message; }
+        else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
+      } catch (e) {
+        console.error(e);
+        const msg = document.getElementById('ics-msg');
+        if (msg) msg.textContent = 'Fehler beim Import.';
+      }
+    });
+
+    document.getElementById('btn-import-ics-url')?.addEventListener('click', async () => {
+      const c = await getClient().catch(e => {
+        const m = $('#ics-msg');
+        if (m) m.textContent = 'Nicht verbunden.';
+        return null;
+      });
+      if (!c) return;
+      const msg  = document.getElementById('ics-msg');
+      const url  = (document.getElementById('ics-url')?.value || '').trim();
+      if (!url) { if (msg) msg.textContent = 'Bitte eine ICS-URL eingeben.'; return; }
+      try {
+        const res = await fetch(url, { redirect:'follow' });
+        if (!res.ok) throw new Error(res.statusText);
+        const txt = await res.text();
+        const events = parseICS(txt);
+        if (!events.length) { if (msg) msg.textContent = 'Keine VEVENTs gefunden.'; return; }
+        const { error } = await c.from('event').insert(events);
+        if (error) { console.error(error); if (msg) msg.textContent = 'Fehler: ' + error.message; }
+        else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Fehler beim Laden. Nutze ggf. Download + Datei-Import.';
+      }
+    });
+
+    async function refreshLastComments() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('rating')
+          .select('id, player_id, event_id, comment, created_at')
+          .order('created_at', { ascending:false })
+          .limit(5);
+        if (error) throw error;
+        const pMap = new Map();
+        const eMap = new Map();
+        const idsP = Array.from(new Set((data||[]).map(r => r.player_id).filter(Boolean)));
+        const idsE = Array.from(new Set((data||[]).map(r => r.event_id).filter(Boolean)));
+        if (idsP.length) {
+          const pr = await c.from('player').select('id, full_name').in('id', idsP);
+          (pr.data||[]).forEach(p => pMap.set(p.id, p.full_name));
+        }
+        if (idsE.length) {
+          const er = await c.from('event').select('id, event_date, subtype, competition, opponent').in('id', idsE);
+          (er.data||[]).forEach(ev => {
+            let name = '';
+            if (ev.competition || ev.opponent) {
+              name = `${ev.competition || ''} - ${ev.opponent || ''}`.trim();
+            } else if (ev.subtype) {
+              name = ev.subtype;
+            } else {
+              name = ev.event_date || '';
+            }
+            eMap.set(ev.id, `${ev.event_date || ''} ${name}`);
+          });
+        }
+        const box = document.getElementById('last-ratings');
+        if (!box) return;
+        box.innerHTML = (data||[]).length
+          ? (data||[]).map(r => {
+              const pn = pMap.get(r.player_id) || r.player_id;
+              const en = eMap.get(r.event_id) || '';
+              const ctext = (r.comment || '').substring(0,120);
+              return `<tr>
+                        <td>${(r.created_at||'').slice(0,10)}</td>
+                        <td>${pn}</td>
+                        <td>${en}</td>
+                        <td>${ctext}</td>
+                      </tr>`;
+            }).join('')
+          : '<tr><td colspan="4">Noch keine Bewertungen.</td></tr>';
+      } catch (e) {
+        console.error('refreshLastComments', e);
+      }
+    }
+
+    async function createEvent() {
+      const dateEl   = document.getElementById('event-date');
+      const typeEl   = document.getElementById('event-type');
+      const homeEl   = document.getElementById('event-home');
+      const awayEl   = document.getElementById('event-away');
+      const nameEl   = document.getElementById('event-name');
+      const locEl    = document.getElementById('event-location');
+      const msg      = document.getElementById('event-create-msg');
+
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
+
+      const event_date = (dateEl?.value || '').trim();
+      const type       = (typeEl?.value || '').trim();
+
+      const competition = (homeEl?.value || '').trim();
+      const opponent    = (awayEl?.value || '').trim();
+      const subtype     = (nameEl?.value || '').trim();
+      const location    = (locEl?.value || '').trim();
+
+      if (!event_date || !type) {
+        if (msg) msg.textContent = 'Bitte mindestens Datum und Event-Typ eingeben.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('event')
+          .insert([{
+            event_date,
+            type,
+            competition,
+            opponent,
+            subtype,
+            location
+          }])
+          .select();
+
+        if (error) {
+          console.error('createEvent error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
+          return;
+        }
+
+        if (msg) msg.textContent = 'Event gespeichert.';
+
+        if (homeEl) homeEl.value = '';
+        if (awayEl) awayEl.value = '';
+        if (nameEl) nameEl.value = '';
+        if (locEl)  locEl.value  = '';
+
+        await refreshEvents();
+        if (data && data.length) {
+          setCurrentEvent(data[0]);
+        }
+      } catch (e) {
+        console.error('createEvent', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    }
+
+    document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
+
+    // -----------------------------
+    // Daten-Init nach Login
+    // -----------------------------
     async function refreshAllData() {
       await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
       await refreshRanking();
