@@ -2107,23 +2107,53 @@
     document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
 
     // --- Suche jetzt auf MOCK_EVENTS ---
-    function searchEventsByTerm(term) {
-      const q = (term || '').trim().toLowerCase();
-      const list = !q
-        ? MOCK_EVENTS
-        : MOCK_EVENTS.filter(ev => {
-            const text = [
-              ev.competition || '',
-              ev.opponent || '',
-              ev.subtype || '',
-              ev.location || '',
-              ev.event_date || ''
-            ].join(' ').toLowerCase();
-            return text.includes(q);
-          });
-      renderEventResults(list);
-    }
+    async function searchEventsByTerm(term) {
+      try {
+        const c = await getClient();
 
+        let query = c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: false })
+          .limit(50);
+
+        term = (term || '').trim();
+        if (term) {
+          const orFilter =
+            `competition.ilike.%${term}%,` +
+            `opponent.ilike.%${term}%,` +
+            `subtype.ilike.%${term}%,` +
+            `location.ilike.%${term}%`;
+          query = query.or(orFilter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // 🔹 Duplikate nach Inhalt entfernen
+        const unique = [];
+        const seen = new Set();
+        for (const ev of data || []) {
+          const key = [
+            ev.event_date || '',
+            ev.type || '',
+            ev.competition || '',
+            ev.opponent || '',
+            ev.location || ''
+          ].join('|');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          unique.push(ev);
+        }
+
+        renderEventResults(unique);
+      } catch (e) {
+        console.error('searchEventsByTerm', e);
+        const box = document.querySelector('#event-results');
+        if (box) box.textContent = 'Fehler bei der Suche.';
+      }
+    }
+    
     function formatEventPairing(ev) {
       if (ev.competition || ev.opponent) {
         const home = (ev.competition || '').trim();
