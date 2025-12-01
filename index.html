@@ -1056,6 +1056,13 @@
         await loadProfile();
         await refreshAllData();
 
+        // --- Platzhalter: Ranking aktualisieren ---
+// Wird nach dem Speichern einer Bewertung und in refreshAllData() aufgerufen.
+// Momentan macht sie nichts, verhindert aber die Fehlermeldung.
+function refreshRanking() {
+  // Wenn du später das Ranking automatisch neu laden willst,
+  // kannst du hier deine Ranking-Logik einbauen (z.B. loadRanking() o.ä.).
+}
         const locked = isMinorLocked();
 
         if (locked) {
