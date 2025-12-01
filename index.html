@@ -659,18 +659,18 @@
       supa = null;
     }
 
-    function ensureClient() {
-      const { url, key } = loadConfig();
-      if (!url || !key) {
-        const msg = $('#conf-msg');
-        if (msg) msg.textContent = 'Bitte Supabase-URL und Anon-Key speichern.';
-        throw new Error('Supabase-Konfiguration fehlt';
-      }
-      supa = createClient(url, key, {
-        auth: { storageKey: 'scout-app-auth', multiTab: false }
-      });
-      return supa;
-    }
+  function ensureClient() {
+  const { url, key } = loadConfig();
+  if (!url || !key) {
+    const msg = $('#conf-msg');
+    if (msg) msg.textContent = 'Bitte Supabase-URL und Anon-Key speichern.';
+    throw new Error('Supabase-Konfiguration fehlt');
+  }
+  supa = createClient(url, key, {
+    auth: { storageKey: 'scout-app-auth', multiTab: false }
+  });
+  return supa;
+}
 
     async function getClient() {
       if (supa) return supa;
