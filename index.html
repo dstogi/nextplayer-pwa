@@ -1600,7 +1600,8 @@ function isUUID(v) {
           await refreshRanking();
           await refreshLastComments();
         }
-      } catch (e) {
+      
+    catch (e) {
         console.error('save rating', e);
         const msg = document.querySelector('#rate-msg');
         if (msg) msg.textContent = 'Fehler beim Speichern.';
