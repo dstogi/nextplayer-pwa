@@ -1472,7 +1472,7 @@ function isUUID(v) {
       }
     }
  
-            document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
+    document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
       try {
         const c = await getClient();
         const sessionRes = await c.auth.getSession();
@@ -1507,9 +1507,9 @@ function isUUID(v) {
           return;
         }
 
-        // falls currentEvent noch nicht gesetzt ist → aus allEvents suchen
+        // falls currentEvent noch nicht gesetzt ist → aus allEvents nachladen
         if (!currentEvent && dropdownEventId) {
-          let ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
+          const ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
           if (ev) {
             setCurrentEvent(ev);
             event_id = ev.id;
@@ -1523,10 +1523,10 @@ function isUUID(v) {
           return;
         }
 
-        // 🔴 WICHTIG: nur echte UUIDs speichern – keine Demo-IDs wie "E013"
+        // Nur echte UUIDs speichern – keine Demo-IDs wie "E013"
         if (!isUUID(String(event_id))) {
           if (msg) msg.textContent =
-            'Fehler: Dieses Event hat keine gültige ID (z.B. Demo-Event „E013“). ' +
+            'Fehler: Dieses Event hat keine gültige ID (z.B. Demo-Event „E007“). ' +
             'Bitte ein Event aus der Datenbank auswählen oder in 3c neu anlegen.';
           console.warn('Skip DB insert, invalid UUID for event_id:', event_id);
           return;
@@ -1540,6 +1540,39 @@ function isUUID(v) {
           const v = parseFloat(sel?.value);
           crit[k] = isNaN(v) ? null : v;
         });
+
+        const roleForRating = currentProfile.role || '';
+        crit._role  = roleForRating;
+        crit._rater = user.email || '';
+
+        const payload = {
+          rater_id: user.id,
+          player_id,
+          event_id,
+          criteria: crit,
+          comment
+        };
+
+        const { error } = await c
+          .from('rating')
+          .upsert(payload, {
+            onConflict: 'rater_id,player_id,event_id'
+          });
+
+        if (error) {
+          console.error('upsert rating error', error);
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+        } else {
+          if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
+          await refreshRanking();
+          await refreshLastComments();
+        }
+      } catch (e) {
+        console.error('save rating', e);
+        const msg = document.querySelector('#rate-msg');
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    });
 
         const roleForRating = currentProfile.role || '';
         crit._role  = roleForRating;
