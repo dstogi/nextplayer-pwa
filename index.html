@@ -2374,8 +2374,12 @@
     let currentRadar = null;
     let currentRadarPlayerId = null;
 
+    // Drei feste Farben für die Watchlist-Slots
+    const radarColors = ['#fff4db', '#e3f3ff', '#e8ffe5'];
+
     // Watchlist (max. 3 Spieler)
-    let radarWatchlist = []; // [{ playerId, playerName, teamName }]
+    // Struktur: { playerId, playerName, teamName, colorIndex }
+    let radarWatchlist = [];
     const wlBox = () => document.getElementById('radar-watchlist');
 
     async function radarLoadEventsForRadar() {
@@ -2437,7 +2441,7 @@
       }
     }
 
-    // Watchlist-Tab-Rendering
+    // Watchlist-Tabs rendern
     function radarRenderWatchlist() {
       const box = wlBox();
       if (!box) return;
@@ -2447,17 +2451,26 @@
         const btn = document.createElement('button');
         btn.textContent = item.playerName;
         btn.className = 'radar-tab';
+
+        const color = radarColors[item.colorIndex] || radarColors[0];
+        btn.style.backgroundColor = color;
+
         if (item.playerId === currentRadarPlayerId) {
           btn.classList.add('active');
+          btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.08)';
+        } else {
+          btn.style.boxShadow = 'none';
         }
+
         btn.addEventListener('click', () => {
           radarLoadPlayerFromWatchlist(item.playerId);
         });
+
         box.appendChild(btn);
       });
     }
 
-    // Spieler in Watchlist laden → Dropdown setzen → Radar starten
+    // Spieler aus Watchlist wählen → Dropdown setzen → Radar starten
     function radarLoadPlayerFromWatchlist(playerId) {
       const playerSel = document.getElementById('radar-player-select');
       if (!playerSel) return;
@@ -2468,7 +2481,7 @@
       radarStartOrLoad();
     }
 
-    // Spieler zur Watchlist hinzufügen
+    // Spieler zur Watchlist hinzufügen (max. 3)
     function radarAddToWatchlist() {
       const playerSel = document.getElementById('radar-player-select');
       const eventSel = document.getElementById('radar-event-select');
@@ -2496,7 +2509,9 @@
         return;
       }
 
-      radarWatchlist.push({ playerId, playerName, teamName });
+      const colorIndex = radarWatchlist.length % radarColors.length;
+
+      radarWatchlist.push({ playerId, playerName, teamName, colorIndex });
       radarRenderWatchlist();
       if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
     }
@@ -2586,12 +2601,18 @@
         currentRadarPlayerId = playerId;
 
         radarUpdateScoresUI();
-        radarRenderWatchlist();
 
+        // Panel + Tabs farblich anpassen
+        const activeItem = radarWatchlist.find(p => p.playerId === playerId);
+        const panelColor = activeItem ? radarColors[activeItem.colorIndex] : 'rgba(245,182,66,0.10)';
         if (panel) {
           panel.style.display = 'block';
           panel.classList.add('active');
+          panel.style.backgroundColor = panelColor;
         }
+
+        radarRenderWatchlist();
+
         if (playerLabel) {
           playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
         }
