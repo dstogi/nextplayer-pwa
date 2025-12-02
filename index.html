@@ -200,7 +200,7 @@
     <h1>NextPlayer™ – Scouting App</h1>
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
-     <div class="top-nav">
+    <div class="top-nav">
       <button data-target="sec-config"  class="active">Setup</button>
       <button data-target="sec-auth">Login</button>
       <button data-target="sec-profile">Profil</button>
@@ -419,9 +419,9 @@
       </div>
 
       <div id="event-create-msg" class="status-line"></div>
-</section>
+    </section>
 
-       <!-- 7. SpielerRadar -->
+    <!-- 7. SpielerRadar -->
     <section id="sec-radar" class="section-card">
       <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
       <p style="font-size:0.85rem; color:#555;">
@@ -505,7 +505,7 @@
         </div>
       </div>
     </section>
- 
+
     <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
       <h2><span>4. Ranking</span></h2>
@@ -600,92 +600,7 @@
         </tbody>
       </table>
     </section>
-   
-    <!-- 7. SpielerRadar -->
-    <section id="sec-radar" class="section-card">
-      <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
-      <p style="font-size:0.85rem; color:#555;">
-        Wähle ein Event und einen Spieler. Danach kannst du mit großen + / − Buttons
-        Live-Aktionen erfassen (Ballsicherheit, Zweikampf, Laufduell, Abschluss, Standards, Mentalität, Fair Play).
-      </p>
 
-      <div class="row">
-        <label for="radar-event-select">Event / Spiel</label>
-        <select id="radar-event-select">
-          <option value="">Bitte wählen …</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <label for="radar-player-select">Spieler</label>
-        <select id="radar-player-select">
-          <option value="">Bitte wählen …</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <button id="radar-start-btn" type="button">Radar starten / laden</button>
-      </div>
-
-      <div id="radar-status" class="status-line"></div>
-
-      <div id="radar-panel" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-        <h3>Live-Aktionen</h3>
-        <p style="font-size:0.8rem; color:#555;">
-          Während des Spiels einfach + (gute Aktion) oder − (nicht so gute) tippen.
-        </p>
-
-        <div class="radar-row" data-field="ballsicherheit" style="margin-bottom:8px;">
-          <strong>Ballsicherheit</strong><br>
-          <button class="radar-btn-plus" data-field="ballsicherheit">+ ballsicher</button>
-          <button class="radar-btn-minus" data-field="ballsicherheit">− Ballverlust</button>
-          <span class="radar-score" data-field="ballsicherheit"></span>
-        </div>
-
-        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px;">
-          <strong>Zweikampf</strong><br>
-          <button class="radar-btn-plus" data-field="zweikampf">+ gewonnen</button>
-          <button class="radar-btn-minus" data-field="zweikampf">− verloren</button>
-          <span class="radar-score" data-field="zweikampf"></span>
-        </div>
-
-        <div class="radar-row" data-field="laufduell" style="margin-bottom:8px;">
-          <strong>Laufduell</strong><br>
-          <button class="radar-btn-plus" data-field="laufduell">+ gewonnen</button>
-          <button class="radar-btn-minus" data-field="laufduell">− verloren</button>
-          <span class="radar-score" data-field="laufduell"></span>
-        </div>
-
-        <div class="radar-row" data-field="abschluss" style="margin-bottom:8px;">
-          <strong>Abschluss</strong><br>
-          <button class="radar-btn-plus" data-field="abschluss">+ guter Abschluss</button>
-          <button class="radar-btn-minus" data-field="abschluss">− schlechter Abschluss</button>
-          <span class="radar-score" data-field="abschluss"></span>
-        </div>
-
-        <div class="radar-row" data-field="standard" style="margin-bottom:8px;">
-          <strong>Standards</strong><br>
-          <button class="radar-btn-plus" data-field="standard">+ gut ausgeführt</button>
-          <button class="radar-btn-minus" data-field="standard">− schwach</button>
-          <span class="radar-score" data-field="standard"></span>
-        </div>
-
-        <div class="radar-row" data-field="mentalitaet" style="margin-bottom:8px;">
-          <strong>Mentalität</strong><br>
-          <button class="radar-btn-plus" data-field="mentalitaet">+ gezeigt</button>
-          <button class="radar-btn-minus" data-field="mentalitaet">− gefehlt</button>
-          <span class="radar-score" data-field="mentalitaet"></span>
-        </div>
-
-        <div class="radar-row" data-field="fairplay" style="margin-bottom:8px;">
-          <strong>Fair Play</strong><br>
-          <button class="radar-btn-plus" data-field="fairplay">+ fair</button>
-          <button class="radar-btn-minus" data-field="fairplay">− unsportlich</button>
-          <span class="radar-score" data-field="fairplay"></span>
-        </div>
-      </div>
-    </section>
-    
     <!-- 5. Kalender-Import (ICS) -->
     <section id="sec-events" class="section-card">
       <h2><span>5. Kalender-Import (ICS)</span></h2>
@@ -732,7 +647,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
-            const sections = {
+      const sections = {
         'sec-config':  document.getElementById('sec-config'),
         'sec-auth':    document.getElementById('sec-auth'),
         'sec-profile': document.getElementById('sec-profile'),
