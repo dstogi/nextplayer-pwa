@@ -428,6 +428,29 @@
         Wähle ein Event und einen Spieler. Danach kannst du mit großen + / − Buttons
         Live-Aktionen erfassen (Ballsicherheit, Zweikampf, Laufduell, Abschluss, Standards, Mentalität, Fair Play).
       </p>
+      <!-- Watchlist -->
+      <div id="radar-watchlist" style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <!-- Tabs werden dynamisch erzeugt -->
+      </div>
+
+      <div class="row">
+        <label for="radar-event-select">Event / Spiel</label>
+        <select id="radar-event-select">
+          <option value="">Bitte wählen …</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="radar-player-select">Spieler</label>
+        <select id="radar-player-select">
+          <option value="">Bitte wählen …</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button id="radar-add-to-watchlist" type="button">Zur Watchlist hinzufügen</button>
+        <button id="radar-start-btn" type="button">Radar starten</button>
+      </div>
 
       <div class="row">
         <label for="radar-event-select">Event / Spiel</label>
@@ -2343,6 +2366,85 @@
     // SpielerRadar™ – Live-Aktionen
     // -----------------------------
     let currentRadar = null;
+// === Watchlist (max 3 Spieler) ===
+let radarWatchlist = []; // [{ playerId, playerName, teamName }]
+
+// UI-Element
+const wlBox = () => document.getElementById('radar-watchlist');
+
+// Spieler zur Watchlist hinzufügen
+function radarAddToWatchlist() {
+  const playerSel = document.getElementById('radar-player-select');
+  const eventSel = document.getElementById('radar-event-select');
+  const status = document.getElementById('radar-status');
+
+  if (!eventSel.value) {
+    status.textContent = 'Bitte zuerst ein Event wählen.';
+    return;
+  }
+  if (!playerSel.value) {
+    status.textContent = 'Bitte einen Spieler wählen.';
+    return;
+  }
+
+  const playerId = playerSel.value;
+  const playerName = playerSel.options[playerSel.selectedIndex].textContent;
+  const teamName = playerSel.options[playerSel.selectedIndex].dataset.club || null;
+
+  // Maximal 3 Spieler
+  if (radarWatchlist.length >= 3) {
+    status.textContent = 'Maximal 3 Spieler in Watchlist.';
+    return;
+  }
+
+  // Nicht doppelt einfügen
+  if (radarWatchlist.some(p => p.playerId === playerId)) {
+    status.textContent = 'Spieler ist bereits in der Watchlist.';
+    return;
+  }
+
+  radarWatchlist.push({ playerId, playerName, teamName });
+  radarRenderWatchlist();
+
+  status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
+}
+
+// Tabs rendern
+function radarRenderWatchlist() {
+  const box = wlBox();
+  if (!box) return;
+
+  box.innerHTML = '';
+
+  radarWatchlist.forEach(item => {
+    const btn = document.createElement('button');
+    btn.textContent = item.playerName;
+    btn.style.padding = '6px 12px';
+    btn.style.borderRadius = '6px';
+    btn.style.cursor = 'pointer';
+    btn.style.border = '1px solid #ccc';
+    btn.style.background = '#eee';
+
+    btn.addEventListener('click', () => {
+      radarLoadPlayerFromWatchlist(item.playerId);
+    });
+
+    box.appendChild(btn);
+  });
+}
+
+
+// Spieler aus Watchlist wählen → Radar-Datensatz laden
+function radarLoadPlayerFromWatchlist(playerId) {
+  const sel = document.getElementById('radar-player-select');
+
+  // Dropdown auf richtigen Spieler setzen
+  const opt = sel.querySelector(`option[value="${playerId}"]`);
+  if (opt) sel.value = playerId;
+
+  // Radar starten
+  radarStartOrLoad();
+}
 
     async function radarLoadEventsForRadar() {
       const sel = document.getElementById('radar-event-select');
@@ -2531,7 +2633,11 @@
       const playerSel = document.getElementById('radar-player-select');
       const startBtn = document.getElementById('radar-start-btn');
       if (!eventSel || !playerSel || !startBtn) return;
+const addBtn = document.getElementById('radar-add-to-watchlist');
 
+if (addBtn) {
+  addBtn.addEventListener('click', radarAddToWatchlist);
+}
       startBtn.addEventListener('click', radarStartOrLoad);
 
       document.querySelectorAll('.radar-btn-plus').forEach(btn => {
