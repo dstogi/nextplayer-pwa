@@ -29,6 +29,27 @@
       background: #f1f1f1;
       color: var(--np-text);
     }
+   
+    .radar-tab {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #ccc;
+      background: #eee;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .radar-tab.active {
+      background: var(--np-accent);
+      border-color: var(--np-accent);
+      color: #111;
+      font-weight: 600;
+    }
+
+    #radar-panel.active {
+      background: rgba(245, 182, 66, 0.10); /* leichter Goldschimmer */
+      border-top-color: var(--np-accent);
+    }
 
     header {
       background: linear-gradient(135deg, #000000, #151515);
@@ -421,7 +442,7 @@
       <div id="event-create-msg" class="status-line"></div>
     </section>
 
-       <!-- 7. SpielerRadar -->
+        <!-- 7. SpielerRadar -->
     <section id="sec-radar" class="section-card">
       <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
       <p style="font-size:0.85rem; color:#555;">
@@ -458,9 +479,9 @@
 
       <div id="radar-panel"
            style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-        <h3>Live-Aktionen</h3>
+        <h3 id="radar-player-label">Live-Aktionen</h3>
         <p style="font-size:0.8rem; color:#555;">
-          Während des Spiels einfach + (gute Aktion) oder − (nicht so gute) tippen.
+          Während des Spiels einfach + (gute Aktionen) oder − (nicht so gute) tippen.
         </p>
 
         <div class="radar-row" data-field="ballsicherheit" style="margin-bottom:8px;">
@@ -470,7 +491,7 @@
           <span class="radar-score" data-field="ballsicherheit"></span>
         </div>
 
-        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px%;">
+        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px;">
           <strong>Zweikampf</strong><br>
           <button class="radar-btn-plus" data-field="zweikampf">+ gewonnen</button>
           <button class="radar-btn-minus" data-field="zweikampf">− verloren</button>
@@ -2351,85 +2372,11 @@
     // SpielerRadar™ – Live-Aktionen
     // -----------------------------
     let currentRadar = null;
-// === Watchlist (max 3 Spieler) ===
-let radarWatchlist = []; // [{ playerId, playerName, teamName }]
+    let currentRadarPlayerId = null;
 
-// UI-Element
-const wlBox = () => document.getElementById('radar-watchlist');
-
-// Spieler zur Watchlist hinzufügen
-function radarAddToWatchlist() {
-  const playerSel = document.getElementById('radar-player-select');
-  const eventSel = document.getElementById('radar-event-select');
-  const status = document.getElementById('radar-status');
-
-  if (!eventSel.value) {
-    status.textContent = 'Bitte zuerst ein Event wählen.';
-    return;
-  }
-  if (!playerSel.value) {
-    status.textContent = 'Bitte einen Spieler wählen.';
-    return;
-  }
-
-  const playerId = playerSel.value;
-  const playerName = playerSel.options[playerSel.selectedIndex].textContent;
-  const teamName = playerSel.options[playerSel.selectedIndex].dataset.club || null;
-
-  // Maximal 3 Spieler
-  if (radarWatchlist.length >= 3) {
-    status.textContent = 'Maximal 3 Spieler in Watchlist.';
-    return;
-  }
-
-  // Nicht doppelt einfügen
-  if (radarWatchlist.some(p => p.playerId === playerId)) {
-    status.textContent = 'Spieler ist bereits in der Watchlist.';
-    return;
-  }
-
-  radarWatchlist.push({ playerId, playerName, teamName });
-  radarRenderWatchlist();
-
-  status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
-}
-
-// Tabs rendern
-function radarRenderWatchlist() {
-  const box = wlBox();
-  if (!box) return;
-
-  box.innerHTML = '';
-
-  radarWatchlist.forEach(item => {
-    const btn = document.createElement('button');
-    btn.textContent = item.playerName;
-    btn.style.padding = '6px 12px';
-    btn.style.borderRadius = '6px';
-    btn.style.cursor = 'pointer';
-    btn.style.border = '1px solid #ccc';
-    btn.style.background = '#eee';
-
-    btn.addEventListener('click', () => {
-      radarLoadPlayerFromWatchlist(item.playerId);
-    });
-
-    box.appendChild(btn);
-  });
-}
-
-
-// Spieler aus Watchlist wählen → Radar-Datensatz laden
-function radarLoadPlayerFromWatchlist(playerId) {
-  const sel = document.getElementById('radar-player-select');
-
-  // Dropdown auf richtigen Spieler setzen
-  const opt = sel.querySelector(`option[value="${playerId}"]`);
-  if (opt) sel.value = playerId;
-
-  // Radar starten
-  radarStartOrLoad();
-}
+    // Watchlist (max. 3 Spieler)
+    let radarWatchlist = []; // [{ playerId, playerName, teamName }]
+    const wlBox = () => document.getElementById('radar-watchlist');
 
     async function radarLoadEventsForRadar() {
       const sel = document.getElementById('radar-event-select');
@@ -2490,6 +2437,70 @@ function radarLoadPlayerFromWatchlist(playerId) {
       }
     }
 
+    // Watchlist-Tab-Rendering
+    function radarRenderWatchlist() {
+      const box = wlBox();
+      if (!box) return;
+      box.innerHTML = '';
+
+      radarWatchlist.forEach(item => {
+        const btn = document.createElement('button');
+        btn.textContent = item.playerName;
+        btn.className = 'radar-tab';
+        if (item.playerId === currentRadarPlayerId) {
+          btn.classList.add('active');
+        }
+        btn.addEventListener('click', () => {
+          radarLoadPlayerFromWatchlist(item.playerId);
+        });
+        box.appendChild(btn);
+      });
+    }
+
+    // Spieler in Watchlist laden → Dropdown setzen → Radar starten
+    function radarLoadPlayerFromWatchlist(playerId) {
+      const playerSel = document.getElementById('radar-player-select');
+      if (!playerSel) return;
+      const opt = playerSel.querySelector(`option[value="${playerId}"]`);
+      if (opt) {
+        playerSel.value = playerId;
+      }
+      radarStartOrLoad();
+    }
+
+    // Spieler zur Watchlist hinzufügen
+    function radarAddToWatchlist() {
+      const playerSel = document.getElementById('radar-player-select');
+      const eventSel = document.getElementById('radar-event-select');
+      const status = document.getElementById('radar-status');
+
+      if (!eventSel.value) {
+        if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
+        return;
+      }
+      if (!playerSel.value) {
+        if (status) status.textContent = 'Bitte einen Spieler wählen.';
+        return;
+      }
+
+      const playerId = playerSel.value;
+      const playerName = playerSel.options[playerSel.selectedIndex].textContent;
+      const teamName = playerSel.options[playerSel.selectedIndex].dataset.club || null;
+
+      if (radarWatchlist.length >= 3) {
+        if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
+        return;
+      }
+      if (radarWatchlist.some(p => p.playerId === playerId)) {
+        if (status) status.textContent = 'Spieler ist bereits in der Watchlist.';
+        return;
+      }
+
+      radarWatchlist.push({ playerId, playerName, teamName });
+      radarRenderWatchlist();
+      if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
+    }
+
     function radarUpdateScoresUI() {
       if (!currentRadar) return;
       const fields = [
@@ -2517,6 +2528,7 @@ function radarLoadPlayerFromWatchlist(playerId) {
       const panel = document.getElementById('radar-panel');
       const eventSel = document.getElementById('radar-event-select');
       const playerSel = document.getElementById('radar-player-select');
+      const playerLabel = document.getElementById('radar-player-label');
       if (!eventSel || !playerSel) return;
 
       const eventId = eventSel.value || '';
@@ -2571,14 +2583,24 @@ function radarLoadPlayerFromWatchlist(playerId) {
         }
 
         currentRadar = data;
+        currentRadarPlayerId = playerId;
+
         radarUpdateScoresUI();
-        if (panel) panel.style.display = 'block';
+        radarRenderWatchlist();
+
+        if (panel) {
+          panel.style.display = 'block';
+          panel.classList.add('active');
+        }
+        if (playerLabel) {
+          playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
+        }
         if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
       } catch (e) {
         console.error('radarStartOrLoad', e);
         if (statusEl) statusEl.textContent = 'Fehler beim Starten des SpielerRadars.';
-        const panel = document.getElementById('radar-panel');
-        if (panel) panel.style.display = 'none';
+        const panel2 = document.getElementById('radar-panel');
+        if (panel2) panel2.style.display = 'none';
       }
     }
 
@@ -2617,13 +2639,14 @@ function radarLoadPlayerFromWatchlist(playerId) {
       const eventSel = document.getElementById('radar-event-select');
       const playerSel = document.getElementById('radar-player-select');
       const startBtn = document.getElementById('radar-start-btn');
+      const addBtn = document.getElementById('radar-add-to-watchlist');
       if (!eventSel || !playerSel || !startBtn) return;
-const addBtn = document.getElementById('radar-add-to-watchlist');
 
-if (addBtn) {
-  addBtn.addEventListener('click', radarAddToWatchlist);
-}
+      radarLoadEventsForRadar();
+      radarLoadPlayersForRadar();
+
       startBtn.addEventListener('click', radarStartOrLoad);
+      if (addBtn) addBtn.addEventListener('click', radarAddToWatchlist);
 
       document.querySelectorAll('.radar-btn-plus').forEach(btn => {
         btn.addEventListener('click', () => {
