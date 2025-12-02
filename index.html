@@ -421,16 +421,18 @@
       <div id="event-create-msg" class="status-line"></div>
     </section>
 
-    <!-- 7. SpielerRadar -->
+       <!-- 7. SpielerRadar -->
     <section id="sec-radar" class="section-card">
       <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
       <p style="font-size:0.85rem; color:#555;">
         Wähle ein Event und einen Spieler. Danach kannst du mit großen + / − Buttons
         Live-Aktionen erfassen (Ballsicherheit, Zweikampf, Laufduell, Abschluss, Standards, Mentalität, Fair Play).
       </p>
-      <!-- Watchlist -->
-      <div id="radar-watchlist" style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
-        <!-- Tabs werden dynamisch erzeugt -->
+
+      <!-- Watchlist-Tabs -->
+      <div id="radar-watchlist"
+           style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+        <!-- Tabs werden per JS eingefügt -->
       </div>
 
       <div class="row">
@@ -452,27 +454,10 @@
         <button id="radar-start-btn" type="button">Radar starten</button>
       </div>
 
-      <div class="row">
-        <label for="radar-event-select">Event / Spiel</label>
-        <select id="radar-event-select">
-          <option value="">Bitte wählen …</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <label for="radar-player-select">Spieler</label>
-        <select id="radar-player-select">
-          <option value="">Bitte wählen …</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <button id="radar-start-btn" type="button">Radar starten / laden</button>
-      </div>
-
       <div id="radar-status" class="status-line"></div>
 
-      <div id="radar-panel" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+      <div id="radar-panel"
+           style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
         <h3>Live-Aktionen</h3>
         <p style="font-size:0.8rem; color:#555;">
           Während des Spiels einfach + (gute Aktion) oder − (nicht so gute) tippen.
@@ -485,7 +470,7 @@
           <span class="radar-score" data-field="ballsicherheit"></span>
         </div>
 
-        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px;">
+        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px%;">
           <strong>Zweikampf</strong><br>
           <button class="radar-btn-plus" data-field="zweikampf">+ gewonnen</button>
           <button class="radar-btn-minus" data-field="zweikampf">− verloren</button>
