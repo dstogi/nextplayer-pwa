@@ -200,11 +200,12 @@
     <h1>NextPlayer™ – Scouting App</h1>
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
-    <div class="top-nav">
+     <div class="top-nav">
       <button data-target="sec-config"  class="active">Setup</button>
       <button data-target="sec-auth">Login</button>
       <button data-target="sec-profile">Profil</button>
       <button data-target="sec-rating">Bewerten</button>
+      <button data-target="sec-radar">Radar</button>
       <button data-target="sec-ranking">Ranking</button>
       <button data-target="sec-events">Events</button>
       <button data-target="sec-last">Verlauf</button>
@@ -631,7 +632,92 @@
         </tbody>
       </table>
     </section>
+   
+    <!-- 7. SpielerRadar -->
+    <section id="sec-radar" class="section-card">
+      <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
+      <p style="font-size:0.85rem; color:#555;">
+        Wähle ein Event und einen Spieler. Danach kannst du mit großen + / − Buttons
+        Live-Aktionen erfassen (Ballsicherheit, Zweikampf, Laufduell, Abschluss, Standards, Mentalität, Fair Play).
+      </p>
 
+      <div class="row">
+        <label for="radar-event-select">Event / Spiel</label>
+        <select id="radar-event-select">
+          <option value="">Bitte wählen …</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="radar-player-select">Spieler</label>
+        <select id="radar-player-select">
+          <option value="">Bitte wählen …</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <button id="radar-start-btn" type="button">Radar starten / laden</button>
+      </div>
+
+      <div id="radar-status" class="status-line"></div>
+
+      <div id="radar-panel" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+        <h3>Live-Aktionen</h3>
+        <p style="font-size:0.8rem; color:#555;">
+          Während des Spiels einfach + (gute Aktion) oder − (nicht so gute) tippen.
+        </p>
+
+        <div class="radar-row" data-field="ballsicherheit" style="margin-bottom:8px;">
+          <strong>Ballsicherheit</strong><br>
+          <button class="radar-btn-plus" data-field="ballsicherheit">+ ballsicher</button>
+          <button class="radar-btn-minus" data-field="ballsicherheit">− Ballverlust</button>
+          <span class="radar-score" data-field="ballsicherheit"></span>
+        </div>
+
+        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px;">
+          <strong>Zweikampf</strong><br>
+          <button class="radar-btn-plus" data-field="zweikampf">+ gewonnen</button>
+          <button class="radar-btn-minus" data-field="zweikampf">− verloren</button>
+          <span class="radar-score" data-field="zweikampf"></span>
+        </div>
+
+        <div class="radar-row" data-field="laufduell" style="margin-bottom:8px;">
+          <strong>Laufduell</strong><br>
+          <button class="radar-btn-plus" data-field="laufduell">+ gewonnen</button>
+          <button class="radar-btn-minus" data-field="laufduell">− verloren</button>
+          <span class="radar-score" data-field="laufduell"></span>
+        </div>
+
+        <div class="radar-row" data-field="abschluss" style="margin-bottom:8px;">
+          <strong>Abschluss</strong><br>
+          <button class="radar-btn-plus" data-field="abschluss">+ guter Abschluss</button>
+          <button class="radar-btn-minus" data-field="abschluss">− schlechter Abschluss</button>
+          <span class="radar-score" data-field="abschluss"></span>
+        </div>
+
+        <div class="radar-row" data-field="standard" style="margin-bottom:8px;">
+          <strong>Standards</strong><br>
+          <button class="radar-btn-plus" data-field="standard">+ gut ausgeführt</button>
+          <button class="radar-btn-minus" data-field="standard">− schwach</button>
+          <span class="radar-score" data-field="standard"></span>
+        </div>
+
+        <div class="radar-row" data-field="mentalitaet" style="margin-bottom:8px;">
+          <strong>Mentalität</strong><br>
+          <button class="radar-btn-plus" data-field="mentalitaet">+ gezeigt</button>
+          <button class="radar-btn-minus" data-field="mentalitaet">− gefehlt</button>
+          <span class="radar-score" data-field="mentalitaet"></span>
+        </div>
+
+        <div class="radar-row" data-field="fairplay" style="margin-bottom:8px;">
+          <strong>Fair Play</strong><br>
+          <button class="radar-btn-plus" data-field="fairplay">+ fair</button>
+          <button class="radar-btn-minus" data-field="fairplay">− unsportlich</button>
+          <span class="radar-score" data-field="fairplay"></span>
+        </div>
+      </div>
+    </section>
+    
     <!-- 5. Kalender-Import (ICS) -->
     <section id="sec-events" class="section-card">
       <h2><span>5. Kalender-Import (ICS)</span></h2>
@@ -678,11 +764,12 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
-      const sections = {
+           const sections = {
         'sec-config':  document.getElementById('sec-config'),
         'sec-auth':    document.getElementById('sec-auth'),
         'sec-profile': document.getElementById('sec-profile'),
         'sec-rating':  document.getElementById('sec-rating'),
+        'sec-radar':   document.getElementById('sec-radar'),
         'sec-ranking': document.getElementById('sec-ranking'),
         'sec-events':  document.getElementById('sec-events'),
         'sec-last':    document.getElementById('sec-last')
@@ -2368,7 +2455,7 @@
     }
 
     document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
-
+   
     // -----------------------------
     // SpielerRadar™ – Live-Aktionen
     // -----------------------------
@@ -2394,9 +2481,7 @@
           sel.appendChild(opt);
         });
 
-        if (statusEl) {
-          statusEl.textContent = 'Events für SpielerRadar geladen.';
-        }
+        if (statusEl) statusEl.textContent = 'Events für SpielerRadar geladen.';
       } catch (e) {
         console.error('radarLoadEventsForRadar', e);
         if (statusEl) statusEl.textContent = 'Fehler beim Laden der Events für SpielerRadar.';
@@ -2428,9 +2513,7 @@
           sel.appendChild(opt);
         });
 
-        if (statusEl) {
-          statusEl.textContent = 'Spieler für SpielerRadar geladen.';
-        }
+        if (statusEl) statusEl.textContent = 'Spieler für SpielerRadar geladen.';
       } catch (e) {
         console.error('radarLoadPlayersForRadar', e);
         if (statusEl) statusEl.textContent = 'Fehler beim Laden der Spieler für SpielerRadar.';
@@ -2464,7 +2547,6 @@
       const panel = document.getElementById('radar-panel');
       const eventSel = document.getElementById('radar-event-select');
       const playerSel = document.getElementById('radar-player-select');
-
       if (!eventSel || !playerSel) return;
 
       const eventId = eventSel.value || '';
@@ -2480,7 +2562,6 @@
         if (panel) panel.style.display = 'none';
         return;
       }
-
       if (!eventId || !playerId) {
         if (statusEl) statusEl.textContent = 'Bitte Event und Spieler auswählen.';
         if (panel) panel.style.display = 'none';
@@ -2501,20 +2582,18 @@
           .eq('rated_player_id', playerId)
           .eq('evaluator_user_id', evaluatorId)
           .maybeSingle();
-
         if (error) throw error;
 
         if (!data) {
-          const insertObj = {
-            event_id: eventId,
-            rated_player_id: playerId,
-            evaluator_user_id: evaluatorId,
-            player_team_name: playerTeamName,
-            evaluator_team_name: evaluatorTeamName
-          };
           const ins = await c
             .from('player_radar')
-            .insert(insertObj)
+            .insert({
+              event_id: eventId,
+              rated_player_id: playerId,
+              evaluator_user_id: evaluatorId,
+              player_team_name: playerTeamName,
+              evaluator_team_name: evaluatorTeamName
+            })
             .select('*')
             .single();
           if (ins.error) throw ins.error;
@@ -2536,7 +2615,6 @@
     async function radarHandleButtonClick(field, isPlus) {
       if (!currentRadar) return;
       const statusEl = document.getElementById('radar-status');
-
       const plusField = `${field}_plus`;
       const minusField = `${field}_minus`;
       const updates = {};
@@ -2570,9 +2648,6 @@
       const playerSel = document.getElementById('radar-player-select');
       const startBtn = document.getElementById('radar-start-btn');
       if (!eventSel || !playerSel || !startBtn) return;
-
-      radarLoadEventsForRadar();
-      radarLoadPlayersForRadar();
 
       startBtn.addEventListener('click', radarStartOrLoad);
 
