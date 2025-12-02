@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="de">
 <head>
   <meta charset="utf-8" />
@@ -450,6 +450,91 @@
         <button id="btn-create-event" type="button">Event speichern</button>
       </div>
       <div id="event-create-msg" class="status-line"></div>
+
+      <!-- 3e. SpielerRadar™ (Live-Aktionen) -->
+      <div id="radar-block" style="margin-top:16px; padding-top:10px; border-top:1px solid #ddd;">
+        <h3>3e. SpielerRadar™ (Live-Aktionen)</h3>
+        <p style="font-size:0.85rem; color:#555;">
+          Wähle ein Event und einen Spieler. Danach kannst du mit großen + / − Buttons
+          Live-Aktionen erfassen (Ballsicherheit, Zweikampf, Laufduell, Abschluss, Standards, Mentalität, Fair Play).
+        </p>
+
+        <div class="row">
+          <label for="radar-event-select">Event / Spiel</label>
+          <select id="radar-event-select">
+            <option value="">Bitte wählen …</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <label for="radar-player-select">Spieler</label>
+          <select id="radar-player-select">
+            <option value="">Bitte wählen …</option>
+          </select>
+        </div>
+
+        <div class="row">
+          <button id="radar-start-btn" type="button">Radar starten / laden</button>
+        </div>
+
+        <div id="radar-status" class="status-line"></div>
+
+        <div id="radar-panel" style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+          <h3>Live-Aktionen</h3>
+          <p style="font-size:0.8rem; color:#555;">
+            Während des Spiels einfach + (gute Aktion) oder − (nicht so gute) tippen.
+          </p>
+
+          <div class="radar-row" data-field="ballsicherheit" style="margin-bottom:8px;">
+            <strong>Ballsicherheit</strong><br>
+            <button class="radar-btn-plus" data-field="ballsicherheit">+ ballsicher</button>
+            <button class="radar-btn-minus" data-field="ballsicherheit">− Ballverlust</button>
+            <span class="radar-score" data-field="ballsicherheit"></span>
+          </div>
+
+          <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px;">
+            <strong>Zweikampf</strong><br>
+            <button class="radar-btn-plus" data-field="zweikampf">+ gewonnen</button>
+            <button class="radar-btn-minus" data-field="zweikampf">− verloren</button>
+            <span class="radar-score" data-field="zweikampf"></span>
+          </div>
+
+          <div class="radar-row" data-field="laufduell" style="margin-bottom:8px;">
+            <strong>Laufduell</strong><br>
+            <button class="radar-btn-plus" data-field="laufduell">+ gewonnen</button>
+            <button class="radar-btn-minus" data-field="laufduell">− verloren</button>
+            <span class="radar-score" data-field="laufduell"></span>
+          </div>
+
+          <div class="radar-row" data-field="abschluss" style="margin-bottom:8px;">
+            <strong>Abschluss</strong><br>
+            <button class="radar-btn-plus" data-field="abschluss">+ guter Abschluss</button>
+            <button class="radar-btn-minus" data-field="abschluss">− schlechter Abschluss</button>
+            <span class="radar-score" data-field="abschluss"></span>
+          </div>
+
+          <div class="radar-row" data-field="standard" style="margin-bottom:8px;">
+            <strong>Standards</strong><br>
+            <button class="radar-btn-plus" data-field="standard">+ gut ausgeführt</button>
+            <button class="radar-btn-minus" data-field="standard">− schwach</button>
+            <span class="radar-score" data-field="standard"></span>
+          </div>
+
+          <div class="radar-row" data-field="mentalitaet" style="margin-bottom:8px;">
+            <strong>Mentalität</strong><br>
+            <button class="radar-btn-plus" data-field="mentalitaet">+ gezeigt</button>
+            <button class="radar-btn-minus" data-field="mentalitaet">− gefehlt</button>
+            <span class="radar-score" data-field="mentalitaet"></span>
+          </div>
+
+          <div class="radar-row" data-field="fairplay" style="margin-bottom:8px;">
+            <strong>Fair Play</strong><br>
+            <button class="radar-btn-plus" data-field="fairplay">+ fair</button>
+            <button class="radar-btn-minus" data-field="fairplay">− unsportlich</button>
+            <span class="radar-score" data-field="fairplay"></span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- 4. Ranking -->
@@ -1056,13 +1141,6 @@
         await loadProfile();
         await refreshAllData();
 
-        // --- Platzhalter: Ranking aktualisieren ---
-// Wird nach dem Speichern einer Bewertung und in refreshAllData() aufgerufen.
-// Momentan macht sie nichts, verhindert aber die Fehlermeldung.
-function refreshRanking() {
-  // Wenn du später das Ranking automatisch neu laden willst,
-  // kannst du hier deine Ranking-Logik einbauen (z.B. loadRanking() o.ä.).
-}
         const locked = isMinorLocked();
 
         if (locked) {
@@ -1701,7 +1779,8 @@ function refreshRanking() {
         });
 
         li.appendChild(btn);
-        ul.appendChild(li);
+        ul.appendChild(ul.lastChild || li);
+        if (li.parentNode !== ul) ul.appendChild(li);
       });
 
       box.innerHTML = '';
@@ -2205,17 +2284,14 @@ function refreshRanking() {
         const box = document.getElementById('last-ratings');
         if (!box) return;
         box.innerHTML = (data||[]).length
-          ? (data||[]).map(r => {
-              const pn = pMap.get(r.player_id) || r.player_id;
-              const en = eMap.get(r.event_id) || '';
-              const ctext = (r.comment || '').substring(0,120);
-              return `<tr>
-                        <td>${(r.created_at||'').slice(0,10)}</td>
-                        <td>${pn}</td>
-                        <td>${en}</td>
-                        <td>${ctext}</td>
-                      </tr>`;
-            }).join('')
+          ? (data||[]).map(r =>
+              `<tr>
+                <td>${(r.created_at||'').slice(0,10)}</td>
+                <td>${pMap.get(r.player_id) || r.player_id}</td>
+                <td>${eMap.get(r.event_id) || ''}</td>
+                <td>${(r.comment || '').substring(0,120)}</td>
+              </tr>`
+            ).join('')
           : '<tr><td colspan="4">Noch keine Bewertungen.</td></tr>';
       } catch (e) {
         console.error('refreshLastComments', e);
@@ -2294,12 +2370,243 @@ function refreshRanking() {
     document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
 
     // -----------------------------
+    // SpielerRadar™ – Live-Aktionen
+    // -----------------------------
+    let currentRadar = null;
+
+    async function radarLoadEventsForRadar() {
+      const sel = document.getElementById('radar-event-select');
+      const statusEl = document.getElementById('radar-status');
+      if (!sel) return;
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: true });
+        if (error) throw error;
+
+        sel.innerHTML = '<option value="">Bitte wählen …</option>';
+        (data || []).forEach(ev => {
+          const opt = document.createElement('option');
+          opt.value = ev.id;
+          opt.textContent = formatEventDisplayLine(ev);
+          sel.appendChild(opt);
+        });
+
+        if (statusEl) {
+          statusEl.textContent = 'Events für SpielerRadar geladen.';
+        }
+      } catch (e) {
+        console.error('radarLoadEventsForRadar', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Laden der Events für SpielerRadar.';
+      }
+    }
+
+    async function radarLoadPlayersForRadar() {
+      const sel = document.getElementById('radar-player-select');
+      const statusEl = document.getElementById('radar-status');
+      if (!sel) return;
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player')
+          .select('id, full_name, club_name, positions')
+          .order('full_name', { ascending: true });
+        if (error) throw error;
+
+        sel.innerHTML = '<option value="">Bitte wählen …</option>';
+        (data || []).forEach(pl => {
+          const club = pl.club_name || '';
+          const pos = (pl.positions && pl.positions.length)
+            ? ` [${pl.positions.join(', ')}]`
+            : '';
+          const opt = document.createElement('option');
+          opt.value = pl.id;
+          opt.textContent = `${pl.full_name} (${club})${pos}`;
+          if (club) opt.dataset.club = club;
+          sel.appendChild(opt);
+        });
+
+        if (statusEl) {
+          statusEl.textContent = 'Spieler für SpielerRadar geladen.';
+        }
+      } catch (e) {
+        console.error('radarLoadPlayersForRadar', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Laden der Spieler für SpielerRadar.';
+      }
+    }
+
+    function radarUpdateScoresUI() {
+      if (!currentRadar) return;
+      const fields = [
+        'ballsicherheit',
+        'zweikampf',
+        'laufduell',
+        'abschluss',
+        'standard',
+        'mentalitaet',
+        'fairplay'
+      ];
+      fields.forEach(field => {
+        const plus = currentRadar[`${field}_plus`] || 0;
+        const minus = currentRadar[`${field}_minus`] || 0;
+        const netto = plus - minus;
+        const span = document.querySelector(`.radar-score[data-field="${field}"]`);
+        if (span) {
+          span.textContent = `Netto: ${netto} ( +${plus} / −${minus} )`;
+        }
+      });
+    }
+
+    async function radarStartOrLoad() {
+      const statusEl = document.getElementById('radar-status');
+      const panel = document.getElementById('radar-panel');
+      const eventSel = document.getElementById('radar-event-select');
+      const playerSel = document.getElementById('radar-player-select');
+
+      if (!eventSel || !playerSel) return;
+
+      const eventId = eventSel.value || '';
+      const playerId = playerSel.value || '';
+
+      if (!currentUser) {
+        if (statusEl) statusEl.textContent = 'Bitte zuerst einloggen.';
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (statusEl) statusEl.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+
+      if (!eventId || !playerId) {
+        if (statusEl) statusEl.textContent = 'Bitte Event und Spieler auswählen.';
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const evaluatorId = currentUser.id;
+        const playerOption = playerSel.options[playerSel.selectedIndex];
+        const playerTeamName = playerOption?.dataset?.club || null;
+        const evaluatorTeamName = currentProfile?.club_name || null;
+
+        let { data, error } = await c
+          .from('player_radar')
+          .select('*')
+          .eq('event_id', eventId)
+          .eq('rated_player_id', playerId)
+          .eq('evaluator_user_id', evaluatorId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (!data) {
+          const insertObj = {
+            event_id: eventId,
+            rated_player_id: playerId,
+            evaluator_user_id: evaluatorId,
+            player_team_name: playerTeamName,
+            evaluator_team_name: evaluatorTeamName
+          };
+          const ins = await c
+            .from('player_radar')
+            .insert(insertObj)
+            .select('*')
+            .single();
+          if (ins.error) throw ins.error;
+          data = ins.data;
+        }
+
+        currentRadar = data;
+        radarUpdateScoresUI();
+        if (panel) panel.style.display = 'block';
+        if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
+      } catch (e) {
+        console.error('radarStartOrLoad', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Starten des SpielerRadars.';
+        const panel = document.getElementById('radar-panel');
+        if (panel) panel.style.display = 'none';
+      }
+    }
+
+    async function radarHandleButtonClick(field, isPlus) {
+      if (!currentRadar) return;
+      const statusEl = document.getElementById('radar-status');
+
+      const plusField = `${field}_plus`;
+      const minusField = `${field}_minus`;
+      const updates = {};
+
+      if (isPlus) {
+        updates[plusField] = (currentRadar[plusField] || 0) + 1;
+      } else {
+        updates[minusField] = (currentRadar[minusField] || 0) + 1;
+      }
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player_radar')
+          .update(updates)
+          .eq('id', currentRadar.id)
+          .select('*')
+          .single();
+        if (error) throw error;
+        currentRadar = data;
+        radarUpdateScoresUI();
+        if (statusEl) statusEl.textContent = 'Aktion erfasst.';
+      } catch (e) {
+        console.error('radarHandleButtonClick', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Speichern der Aktion.';
+      }
+    }
+
+    function radarInitUI() {
+      const eventSel = document.getElementById('radar-event-select');
+      const playerSel = document.getElementById('radar-player-select');
+      const startBtn = document.getElementById('radar-start-btn');
+      if (!eventSel || !playerSel || !startBtn) return;
+
+      radarLoadEventsForRadar();
+      radarLoadPlayersForRadar();
+
+      startBtn.addEventListener('click', radarStartOrLoad);
+
+      document.querySelectorAll('.radar-btn-plus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = btn.getAttribute('data-field');
+          radarHandleButtonClick(field, true);
+        });
+      });
+      document.querySelectorAll('.radar-btn-minus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = btn.getAttribute('data-field');
+          radarHandleButtonClick(field, false);
+        });
+      });
+    }
+
+    async function radarRefreshData() {
+      await Promise.all([
+        radarLoadEventsForRadar(),
+        radarLoadPlayersForRadar()
+      ]);
+    }
+
+    radarInitUI();
+
+    // -----------------------------
     // Daten-Init nach Login
     // -----------------------------
     async function refreshAllData() {
       await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
       await refreshRanking();
       await refreshLastComments();
+      await radarRefreshData();
     }
 
     (async function init() {
