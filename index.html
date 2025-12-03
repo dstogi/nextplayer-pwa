@@ -2503,42 +2503,49 @@
     }
 
     // Watchlist-Tabs rendern
-    const btn = document.createElement('button');
-    btn.className = 'radar-tab';
+    function radarRenderWatchlist() {
+      const box = wlBox();
+      if (!box) return;
+      box.innerHTML = '';
 
-    const color = radarColors[item.colorIndex] || radarColors[0];
-    btn.style.backgroundColor = color;
+      radarWatchlist.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'radar-tab';
 
-    // Inhalt leeren, dann Badge + Text anhängen
-    btn.innerHTML = '';
+        const color = radarColors[item.colorIndex] || radarColors[0];
+        btn.style.backgroundColor = color;
 
-    if (item.jerseyNumber) {
-      const badge = document.createElement('span');
-      badge.className = 'jersey-badge';
-      badge.textContent = item.jerseyNumber;
-      badge.style.marginRight = '6px';
-      btn.appendChild(badge);
-    }
+        // Inhalt des Buttons: Badge + Name
+        btn.innerHTML = '';
 
-    const textSpan = document.createElement('span');
-    textSpan.textContent = item.playerName;
-    btn.appendChild(textSpan);
+        if (item.jerseyNumber) {
+          const badge = document.createElement('span');
+          badge.className = 'jersey-badge';
+          badge.textContent = item.jerseyNumber;
+          badge.style.marginRight = '6px';
+          btn.appendChild(badge);
+        }
 
-    if (item.playerId === currentRadarPlayerId) {
-      btn.classList.add('active');
-      btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.08)';
-    } else {
-      btn.classList.remove('active');
-      btn.style.boxShadow = 'none';
-    }
+        const textSpan = document.createElement('span');
+        textSpan.textContent = item.playerName;
+        btn.appendChild(textSpan);
 
-    btn.addEventListener('click', () => {
-      radarLoadPlayerFromWatchlist(item.playerId);
-    });
+        if (item.playerId === currentRadarPlayerId) {
+          btn.classList.add('active');
+          btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.08)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.boxShadow = 'none';
+        }
 
-    box.appendChild(btn);
+        btn.addEventListener('click', () => {
+          radarLoadPlayerFromWatchlist(item.playerId);
+        });
+
+        box.appendChild(btn);
       });
-   }
+    }
+
     // Spieler aus Watchlist wählen → Dropdown setzen → Radar starten
     function radarLoadPlayerFromWatchlist(playerId) {
       const playerSel = document.getElementById('radar-player-select');
