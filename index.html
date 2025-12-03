@@ -2560,8 +2560,8 @@
     // Spieler zur Watchlist hinzufügen (max. 3)
     function radarAddToWatchlist() {
       const playerSel = document.getElementById('radar-player-select');
-      const eventSel = document.getElementById('radar-event-select');
-      const status = document.getElementById('radar-status');
+      const eventSel  = document.getElementById('radar-event-select');
+      const status    = document.getElementById('radar-status');
 
       if (!eventSel.value) {
         if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
@@ -2571,27 +2571,29 @@
         if (status) status.textContent = 'Bitte einen Spieler wählen.';
         return;
       }
-  const playerId = playerSel.value;
-  const opt = playerSel.options[playerSel.selectedIndex];
-  const playerId = opt.value;
-  const playerName = opt.textContent;
-  const teamName = opt.dataset.club || null;
-  const jerseyNumber = opt.dataset.number ? parseInt(opt.dataset.number, 10) : null;
 
-  if (radarWatchlist.length >= 3) {
-    if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
-    return;
-  }
-  if (radarWatchlist.some(p => p.playerId === playerId)) {
-    if (status) status.textContent = 'Spieler ist bereits in der Watchlist.';
-    return;
-  }
+      // NEU: alles aus der ausgewählten Option holen
+      const opt = playerSel.options[playerSel.selectedIndex];
+      const playerId = opt.value;
+      const playerName = opt.textContent;
+      const teamName = opt.dataset.club || null;
+      const jerseyNumber = opt.dataset.number ? parseInt(opt.dataset.number, 10) : null;
 
-  const colorIndex = radarWatchlist.length % radarColors.length;
+      if (radarWatchlist.length >= 3) {
+        if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
+        return;
+      }
+      if (radarWatchlist.some(p => p.playerId === playerId)) {
+        if (status) status.textContent = 'Spieler ist bereits in der Watchlist.';
+        return;
+      }
 
-  radarWatchlist.push({ playerId, playerName, teamName, colorIndex, jerseyNumber });
-  radarRenderWatchlist();
-if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
+      const colorIndex = radarWatchlist.length % radarColors.length;
+
+      radarWatchlist.push({ playerId, playerName, teamName, colorIndex, jerseyNumber });
+      radarRenderWatchlist();
+
+      if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
     }
 
     function radarUpdateScoresUI() {
