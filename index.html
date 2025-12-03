@@ -208,7 +208,7 @@
       font-size: 1rem;
     }
   
-        .jersey-badge {
+            .jersey-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -2503,51 +2503,51 @@
     }
 
     // Watchlist-Tabs rendern
-        function radarRenderWatchlist() {
-      const box = wlBox();
-      if (!box) return;
-      box.innerHTML = '';
+function radarRenderWatchlist() {
+  const box = wlBox();
+  if (!box) return;
+  box.innerHTML = '';
 
-      radarWatchlist.forEach(item => {
-        const btn = document.createElement('button');
-        btn.className = 'radar-tab';
+  radarWatchlist.forEach(item => {
+    const btn = document.createElement('button');
+    btn.className = 'radar-tab';
 
-        const color = radarColors[item.colorIndex] || radarColors[0];
-        btn.style.backgroundColor = color;
+    const color = radarColors[item.colorIndex] || radarColors[0];
+    btn.style.backgroundColor = color;
 
-        // Inhalt löschen, neu aufbauen
-        btn.innerHTML = '';
+    // Inhalt neu aufbauen
+    btn.innerHTML = '';
 
-        // Trikot-Badge (falls Nummer vorhanden)
-        if (item.jerseyNumber) {
-          const badge = document.createElement('span');
-          badge.className = 'jersey-badge';
-          badge.textContent = item.jerseyNumber;
-          badge.style.marginRight = '6px';
-          btn.appendChild(badge);
-        }
-
-        // Name / Text
-        const textSpan = document.createElement('span');
-        textSpan.textContent = item.playerName;
-        btn.appendChild(textSpan);
-
-        // aktiver Spieler visuell hervorheben
-        if (item.playerId === currentRadarPlayerId) {
-          btn.classList.add('active');
-          btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.08)';
-        } else {
-          btn.classList.remove('active');
-          btn.style.boxShadow = 'none';
-        }
-
-        btn.addEventListener('click', () => {
-          radarLoadPlayerFromWatchlist(item.playerId);
-        });
-
-        box.appendChild(btn);
-      });
+    // Trikot-Badge mit Nummer
+    if (item.jerseyNumber) {
+      const badge = document.createElement('span');
+      badge.className = 'jersey-badge';
+      badge.textContent = item.jerseyNumber;
+      badge.style.marginRight = '6px';
+      btn.appendChild(badge);
     }
+
+    // Spielername
+    const textSpan = document.createElement('span');
+    textSpan.textContent = item.playerName;
+    btn.appendChild(textSpan);
+
+    // aktiven Spieler markieren
+    if (item.playerId === currentRadarPlayerId) {
+      btn.classList.add('active');
+      btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.08)';
+    } else {
+      btn.classList.remove('active');
+      btn.style.boxShadow = 'none';
+    }
+
+    btn.addEventListener('click', () => {
+      radarLoadPlayerFromWatchlist(item.playerId);
+    });
+
+    box.appendChild(btn);
+  });
+}
 
     // Spieler aus Watchlist wählen → Dropdown setzen → Radar starten
     function radarLoadPlayerFromWatchlist(playerId) {
@@ -2561,42 +2561,42 @@
    }
 
     // Spieler zur Watchlist hinzufügen (max. 3)
-    function radarAddToWatchlist() {
-      const playerSel = document.getElementById('radar-player-select');
-      const eventSel  = document.getElementById('radar-event-select');
-      const status    = document.getElementById('radar-status');
+function radarAddToWatchlist() {
+  const playerSel = document.getElementById('radar-player-select');
+  const eventSel  = document.getElementById('radar-event-select');
+  const status    = document.getElementById('radar-status');
 
-      if (!eventSel.value) {
-        if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
-        return;
-      }
-      if (!playerSel.value) {
-        if (status) status.textContent = 'Bitte einen Spieler wählen.';
-        return;
-      }
+  if (!eventSel.value) {
+    if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
+    return;
+  }
+  if (!playerSel.value) {
+    if (status) status.textContent = 'Bitte einen Spieler wählen.';
+    return;
+  }
 
-      const opt = playerSel.options[playerSel.selectedIndex];
-      const playerId = opt.value;
-      const playerName = opt.textContent;
-      const teamName = opt.dataset.club || null;
-      const jerseyNumber = opt.dataset.number ? parseInt(opt.dataset.number, 10) : null;
+  const opt = playerSel.options[playerSel.selectedIndex];
+  const playerId = opt.value;
+  const playerName = opt.textContent;
+  const teamName = opt.dataset.club || null;
+  const jerseyNumber = opt.dataset.number ? parseInt(opt.dataset.number, 10) : null;
 
-      if (radarWatchlist.length >= 3) {
-        if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
-        return;
-      }
-      if (radarWatchlist.some(p => p.playerId === playerId)) {
-        if (status) status.textContent = 'Spieler ist bereits in der Watchlist.';
-        return;
-      }
+  if (radarWatchlist.length >= 3) {
+    if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
+    return;
+  }
+  if (radarWatchlist.some(p => p.playerId === playerId)) {
+    if (status) status.textContent = 'Spieler ist bereits in der Watchlist.';
+    return;
+  }
 
-      const colorIndex = radarWatchlist.length % radarColors.length;
+  const colorIndex = radarWatchlist.length % radarColors.length;
 
-      radarWatchlist.push({ playerId, playerName, teamName, colorIndex, jerseyNumber });
-      radarRenderWatchlist();
+  radarWatchlist.push({ playerId, playerName, teamName, colorIndex, jerseyNumber });
+  radarRenderWatchlist();
 
-      if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
-    }
+  if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
+}
 
     function radarUpdateScoresUI() {
       if (!currentRadar) return;
