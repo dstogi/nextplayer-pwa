@@ -2784,9 +2784,8 @@ if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefü
           .from('player_radar')
           .select('*')
           .eq('event_id', eventId)
-          .eq('evaluator_user_id', currentUser.id);
-
-        query = query.in('rated_player_id', playerIds);
+          .eq('evaluator_user_id', currentUser.id)
+          .in('rated_player_id', playerIds);
 
         const { data, error } = await query;
         if (error) throw error;
@@ -2800,43 +2799,31 @@ if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefü
         const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
 
         const rows = data.map(row => {
-          const nets = field => (row[`${field}_plus`] || 0) - (row[`${field}_minus`] || 0);
-          const ballsich = nets('ballsicherheit');
-          const zweik = nets('zweikampf');
-          const lauf = nets('laufduell');
-          const abschluss = nets('abschluss');
-          const std = nets('standard');
-          const ment = nets('mentalitaet');
-          const fair = nets('fairplay');
-
-          // Simple Gesamtwertung: Summe aller Nettowerte
-          const total = ballsich + zweik + lauf + abschluss + std + ment + fair;
-
+          const nets = f => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
           return {
-            data: row,
             playerId: row.rated_player_id,
-            ballsich,
-            zweik,
-            lauf,
-            abschluss,
-            std,
-            ment,
-            fair,
-            total
+            ballsich: nets('ballsicherung'),
+            zweik: nets('zweikampf'),
+            lauf: nets('laufduell'),
+            abschluss: nets('abschluss'),
+            std: nets('standard'),
+            ment: nets('mentalitaet'),
+            fair: nets('fairplay'),
+            total: nets('ballsicherung') + nets('zweikampf') + nets('laufduell') +
+                   nets('abschluss') + nets('standard') + nets('mentalitaet') + nets('fairplay')
           };
         });
 
-        // Sortierung: beste Gesamtwertung zuerst
         rows.sort((a, b) => b.total - a.total);
 
         tbody.innerHTML = rows.map(r => {
           const wl = wlMap.get(r.playerId);
           const label = wl ? wl.playerName : r.playerId;
-          const color = wl ? (radarColors[wl.colorIndex] || '#f7f7f7') : '#f7f7f7';
-          const isActive = r.playerId === currentRadarPlayerId;
+          const color = wl ? radarColors[wl.colorIndex] : '#eee';
+          const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
 
           return `
-            <tr style="background:${color}${isActive ? ';font-weight:600;' : ''}">
+            <tr style="background:${color};${active}">
               <td>${label}</td>
               <td>${r.total}</td>
               <td>${r.ballsich}</td>
@@ -2850,21 +2837,13 @@ if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefü
           `;
         }).join('');
 
-        if (msg) msg.textContent = `Radar-Ranking für ${rows.length} Spieler dieses Spiels.`;
+        if (msg) msg.textContent = `Radar-Ranking für ${rows.length} Spieler geladen.`;
+
       } catch (e) {
         console.error('radarRefreshSummary', e);
-        if (tbody) {
-          tbody.innerHTML = '<tr><td colspan="9">Fehler beim Laden der Radar-Auswertung.</td></tr>';
-        }
-        if (msg) msg.textContent = 'Fehler beim Laden der Radar-Auswertung.';
+        tbody.innerHTML = '<tr><td colspan="9">Fehler beim Laden.</td></tr>';
+        if (msg) msg.textContent = 'Fehler beim Ranking.';
       }
-    }
-
-    async function radarRefreshData() {
-      await Promise.all([
-        radarLoadEventsForRadar(),
-        radarLoadPlayersForRadar()
-      ]);
     }
 
     radarInitUI();
