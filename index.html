@@ -2423,14 +2423,22 @@
       const sel = document.getElementById('radar-player-select');
       const statusEl = document.getElementById('radar-status');
       if (!sel) return;
+
       try {
         const c = await getClient();
         const { data, error } = await c
           .from('player')
           .select('id, full_name, club_name, positions, jersey_number')
           .order('full_name', { ascending: true });
-          const club = pl.club_name || ''; ...
-        
+
+        if (error) throw error;
+
+        // Dropdown leeren und Standard-Option setzen
+        sel.innerHTML = '<option value="">Bitte wählen …</option>';
+
+        // Alle Spieler einfügen
+        (data || []).forEach(pl => {
+          const club = pl.club_name || '';
           const pos = (pl.positions && pl.positions.length)
             ? ` [${pl.positions.join(', ')}]`
             : '';
