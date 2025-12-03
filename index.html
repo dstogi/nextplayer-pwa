@@ -2856,20 +2856,7 @@ function radarAddToWatchlist() {
       }
     }
 
-    radarInitUI();
-    
-        // kleine Hilfsfunktion: Radar-Dropdowns neu laden
-    async function radarRefreshData() {
-      // falls Radar im HTML nicht existiert, einfach nichts tun
-      const eventSel = document.getElementById('radar-event-select');
-      const playerSel = document.getElementById('radar-player-select');
-      if (!eventSel || !playerSel) return;
-
-      await Promise.all([
-        radarLoadEventsForRadar(),
-       ]);
-    }
-        
+       radarInitUI();
 
     // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
     async function radarRefreshData() {
@@ -2884,37 +2871,6 @@ function radarAddToWatchlist() {
         radarLoadPlayersForRadar()
       ]);
     }
-
-
-    // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
-    async function radarRefreshData() {
-      const eventSel  = document.getElementById('radar-event-select');
-      const playerSel = document.getElementById('radar-player-select');
-
-      // Wenn der Radar-Reiter im HTML noch nicht existiert, einfach nichts tun
-      if (!eventSel || !playerSel) return;
-
-      await Promise.all([
-        radarLoadEventsForRadar(),
-        radarLoadPlayersForRadar()
-      ]);
-    }
-
-
-    // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
-    async function radarRefreshData() {
-      const eventSel  = document.getElementById('radar-event-select');
-      const playerSel = document.getElementById('radar-player-select');
-
-      // Wenn der Radar-Reiter im HTML noch nicht existiert, einfach nichts tun
-      if (!eventSel || !playerSel) return;
-
-      await Promise.all([
-        radarLoadEventsForRadar(),
-        radarLoadPlayersForRadar()
-      ]);
-    }
-
 
     // -----------------------------
     // Daten-Init nach Login
