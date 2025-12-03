@@ -2684,20 +2684,21 @@ function radarAddToWatchlist() {
         radarUpdateScoresUI();
 
         // Panel + Tabs farblich anpassen
-        const activeItem = radarWatchlist.find(p => p.playerId === playerId);
-        const panelColor = activeItem ? radarColors[activeItem.colorIndex] : 'rgba(245,182,66,0.10)';
-        if (panel) {
-          panel.style.display = 'block';
-          panel.classList.add('active');
-          panel.style.backgroundColor = panelColor;
-        }
+    const activeItem = radarWatchlist.find(p => p.playerId === playerId);
+    const panelColor = activeItem ? radarColors[activeItem.colorIndex] : 'rgba(245,182,66,0.10)';
+    if (panel) {
+      panel.style.display = 'block';
+      panel.classList.add('active');
+      panel.style.backgroundColor = panelColor;
+    }
 
-        radarRenderWatchlist();
+    radarRenderWatchlist();
 
-        if (playerLabel) {
-          playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
-        }
-        if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
+    if (playerLabel) {
+      playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
+    }
+    if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
+    await radarRefreshSummary();
       } catch (e) {
         console.error('radarStartOrLoad', e);
         if (statusEl) statusEl.textContent = 'Fehler beim Starten des SpielerRadars.';
@@ -2855,6 +2856,19 @@ function radarAddToWatchlist() {
     }
 
     radarInitUI();
+    
+        // kleine Hilfsfunktion: Radar-Dropdowns neu laden
+    async function radarRefreshData() {
+      // falls Radar im HTML nicht existiert, einfach nichts tun
+      const eventSel = document.getElementById('radar-event-select');
+      const playerSel = document.getElementById('radar-player-select');
+      if (!eventSel || !playerSel) return;
+
+      await Promise.all([
+        radarLoadEventsForRadar(),
+        radarLoadPlayersForRadar()
+      ]);
+    }
 
     // -----------------------------
     // Daten-Init nach Login
