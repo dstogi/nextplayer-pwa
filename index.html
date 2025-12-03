@@ -2492,6 +2492,7 @@
         opt.textContent = `${num}${pl.full_name} (${club})${pos}`;
         if (club) opt.dataset.club = club;
         if (pl.jersey_number != null) opt.dataset.number = pl.jersey_number;
+        if (pl.jersey_number != null) opt.dataset.number = pl.jersey_number;
         sel.appendChild(opt);
         });
 
@@ -2580,7 +2581,7 @@ function radarAddToWatchlist() {
   const jerseyNumber = opt.dataset.number ? parseInt(opt.dataset.number, 10) : null;
 
   if (radarWatchlist.length >= 3) {
-    if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
+  if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
     return;
   }
   if (radarWatchlist.some(p => p.playerId === playerId)) {
