@@ -2689,6 +2689,37 @@ function radarAddToWatchlist() {
 
         radarUpdateScoresUI();
 
+        // Globale Variablen, wenn du sie noch nicht hast
+let radarCurrentEventId = null;
+let radarCurrentPlayerId = null;
+
+// Beim Starten des Radars setzen:
+function radarStart() {
+  const eventSel = document.getElementById('radar-event-select');
+  const playerSel = document.getElementById('radar-player-select');
+  radarCurrentEventId = eventSel.value || null;
+  radarCurrentPlayerId = playerSel.value || null;
+  // ... Rest wie bisher
+}
+
+// Supabase-Insert für jede Aktion
+async function radarRecordAction(cat, delta) {
+  if (!radarCurrentEventId || !radarCurrentPlayerId) return;
+  const supa = await getClient();   // deine bestehende getClient()-Funktion
+
+  const { error } = await supa.from('radar_actions').insert({
+    event_id: radarCurrentEventId,
+    player_id: radarCurrentPlayerId,
+    cat,
+    delta,
+    created_by: currentUser ? currentUser.id : null
+  });
+
+  if (error) {
+    console.error('radar_actions insert error', error);
+  }
+}
+
         // aktiven Watchlist-Eintrag suchen → Farbe holen
         const activeItem = radarWatchlist.find(p => p.playerId === playerId);
         const panelColor = activeItem
@@ -2869,6 +2900,20 @@ function radarAddToWatchlist() {
     }
 
           radarInitUI();
+    
+    // Beispiel: alle Radar-Buttons haben class="radar-btn"
+document.querySelectorAll('.radar-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const cat = btn.dataset.cat;             // z.B. "ball"
+    const delta = parseInt(btn.dataset.val, 10); // +1 oder -1
+
+    // 1) lokale Anzeige aktualisieren (Netto-Werte etc.)
+    radarUpdateLocalCounters(cat, delta);    // das ist deine bestehende Funktion
+
+    // 2) in Supabase speichern
+    radarRecordAction(cat, delta);
+  });
+});
 
     // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
     async function radarRefreshData() {
