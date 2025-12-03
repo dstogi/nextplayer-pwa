@@ -2429,7 +2429,6 @@
           .from('player')
           .select('id, full_name, club_name, positions, jersey_number')
           .order('full_name', { ascending: true });
-...
           const club = pl.club_name || '';
           const pos = (pl.positions && pl.positions.length)
             ? ` [${pl.positions.join(', ')}]`
