@@ -388,6 +388,11 @@
           <option value="both">beidfüßig</option>
         </select>
       </div>
+    
+      <div class="row">
+        <label for="pl-number">Rückennummer</label>
+        <input id="pl-number" type="number" min="1" max="99" style="width:80px;">
+      </div>
 
       <div class="row">
         <button id="btn-create-player" type="button">Spieler speichern</button>
@@ -1421,6 +1426,7 @@
       const birth = (document.getElementById('pl-birth')?.value || '').trim();
       const clubCur  = (document.getElementById('pl-club-current')?.value || '').trim();
       const clubPrev = (document.getElementById('pl-club-prev')?.value   || '').trim();
+      const numStr   = (document.getElementById('pl-number')?.value      || '').trim();
       const posSel   = document.getElementById('pl-pos');
       const footSel  = document.getElementById('pl-foot');
 
@@ -1447,8 +1453,10 @@
             club_name: clubCur || null,
             prev_club: clubPrev || null,
             positions: positions.length ? positions : null,
-            dominant_foot: footSel?.value || null
+            dominant_foot: footSel?.value || null,
+            jersey_number: numStr ? parseInt(numStr, 10) : null
           }])
+
           .select('id')
           .single();
 
@@ -1477,9 +1485,9 @@
 
         if (msg) msg.textContent = 'Spieler gespeichert.';
 
-        ['pl-first','pl-last','pl-birth','pl-club-current','pl-club-prev']
+        ['pl-first','pl-last','pl-birth','pl-club-current','pl-club-prev','pl-number']
           .forEach(id => {
-            const el = document.getElementById(id);
+ const el = document.getElementById(id);
             if (el) el.value = '';
           });
         if (posSel) Array.from(posSel.options).forEach(o => (o.selected = false));
@@ -1503,16 +1511,18 @@
     async function refreshPlayers() {
       try {
         const c = await getClient();
-        const { data, error } = await c
+       const { data, error } = await c
           .from('player')
-          .select('id, full_name, club_name')
+          .select('id, full_name, club_name, jersey_number')
           .order('full_name');
         if (error) throw error;
         const sel = document.querySelector('#r-player');
         if (!sel) return;
-        sel.innerHTML = (data || []).map(p =>
-          `<option value="${p.id}">${p.full_name} (${p.club_name || ''})</option>`
-        ).join('');
+        sel.innerHTML = (data || []).map(p => {
+          const num = p.jersey_number ? `#${p.jersey_number} ` : '';
+          const club = p.club_name || '';
+          return `<option value="${p.id}">${num}${p.full_name} (${club})</option>`;
+        }).join('');
       } catch (e) {
         console.error('refreshPlayers', e);
       }
@@ -2417,19 +2427,17 @@
         const c = await getClient();
         const { data, error } = await c
           .from('player')
-          .select('id, full_name, club_name, positions')
+          .select('id, full_name, club_name, positions, jersey_number')
           .order('full_name', { ascending: true });
-        if (error) throw error;
-
-        sel.innerHTML = '<option value="">Bitte wählen …</option>';
-        (data || []).forEach(pl => {
+...
           const club = pl.club_name || '';
           const pos = (pl.positions && pl.positions.length)
             ? ` [${pl.positions.join(', ')}]`
             : '';
+          const num = pl.jersey_number ? `#${pl.jersey_number} ` : '';
           const opt = document.createElement('option');
           opt.value = pl.id;
-          opt.textContent = `${pl.full_name} (${club})${pos}`;
+          opt.textContent = `${num}${pl.full_name} (${club})${pos}`;
           if (club) opt.dataset.club = club;
           sel.appendChild(opt);
         });
