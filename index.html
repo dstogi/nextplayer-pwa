@@ -2621,14 +2621,15 @@ function radarAddToWatchlist() {
     }
 
     async function radarStartOrLoad() {
-      const statusEl = document.getElementById('radar-status');
-      const panel = document.getElementById('radar-panel');
-      const eventSel = document.getElementById('radar-event-select');
-      const playerSel = document.getElementById('radar-player-select');
+      const statusEl    = document.getElementById('radar-status');
+      const panel       = document.getElementById('radar-panel');
+      const eventSel    = document.getElementById('radar-event-select');
+      const playerSel   = document.getElementById('radar-player-select');
       const playerLabel = document.getElementById('radar-player-label');
+
       if (!eventSel || !playerSel) return;
 
-      const eventId = eventSel.value || '';
+      const eventId  = eventSel.value || '';
       const playerId = playerSel.value || '';
 
       if (!currentUser) {
@@ -2645,16 +2646,16 @@ function radarAddToWatchlist() {
         if (statusEl) statusEl.textContent = 'Bitte Event und Spieler auswählen.';
         if (panel) panel.style.display = 'none';
         return;
-        await radarRefreshSummary();
       }
 
       try {
         const c = await getClient();
         const evaluatorId = currentUser.id;
-        const playerOption = playerSel.options[playerSel.selectedIndex];
+        const playerOption   = playerSel.options[playerSel.selectedIndex];
         const playerTeamName = playerOption?.dataset?.club || null;
         const evaluatorTeamName = currentProfile?.club_name || null;
 
+        // vorhandenen Datensatz laden
         let { data, error } = await c
           .from('player_radar')
           .select('*')
@@ -2662,8 +2663,10 @@ function radarAddToWatchlist() {
           .eq('rated_player_id', playerId)
           .eq('evaluator_user_id', evaluatorId)
           .maybeSingle();
+
         if (error) throw error;
 
+        // falls noch keiner, neuen Datensatz anlegen
         if (!data) {
           const ins = await c
             .from('player_radar')
@@ -2676,6 +2679,7 @@ function radarAddToWatchlist() {
             })
             .select('*')
             .single();
+
           if (ins.error) throw ins.error;
           data = ins.data;
         }
@@ -2685,27 +2689,34 @@ function radarAddToWatchlist() {
 
         radarUpdateScoresUI();
 
-        // Panel + Tabs farblich anpassen
-    const activeItem = radarWatchlist.find(p => p.playerId === playerId);
-    const panelColor = activeItem ? radarColors[activeItem.colorIndex] : 'rgba(245,182,66,0.10)';
-    if (panel) {
-      panel.style.display = 'block';
-      panel.classList.add('active');
-      panel.style.backgroundColor = panelColor;
-    }
+        // aktiven Watchlist-Eintrag suchen → Farbe holen
+        const activeItem = radarWatchlist.find(p => p.playerId === playerId);
+        const panelColor = activeItem
+          ? (radarColors[activeItem.colorIndex] || '#fff9dd')
+          : '#fff9dd';
 
-    radarRenderWatchlist();
+        if (panel) {
+          panel.style.display = 'block';
+          panel.style.backgroundColor = panelColor;
+          panel.style.borderTop = '1px solid ' + panelColor;
+        }
 
-    if (playerLabel) {
-      playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
-    }
-    if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
-    await radarRefreshSummary();
+        // Tabs neu zeichnen (damit dort auch der aktive Spieler markiert ist)
+        radarRenderWatchlist();
+
+        if (playerLabel) {
+          playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
+        }
+        if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
+
+        // Ranking für dieses Spiel aktualisieren, falls vorhanden
+        if (typeof radarRefreshSummary === 'function') {
+          await radarRefreshSummary();
+        }
       } catch (e) {
         console.error('radarStartOrLoad', e);
         if (statusEl) statusEl.textContent = 'Fehler beim Starten des SpielerRadars.';
-        const panel2 = document.getElementById('radar-panel');
-        if (panel2) panel2.style.display = 'none';
+        if (panel) panel.style.display = 'none';
       }
     }
 
