@@ -1487,15 +1487,23 @@
 
         ['pl-first','pl-last','pl-birth','pl-club-current','pl-club-prev','pl-number']
           .forEach(id => {
- const el = document.getElementById(id);
+            const el = document.getElementById(id);
             if (el) el.value = '';
           });
         if (posSel) Array.from(posSel.options).forEach(o => (o.selected = false));
         if (footSel) footSel.value = '';
 
+        // Spielerlisten aktualisieren:
+        // 1) für die normale Bewertung
         await refreshPlayers();
-        await refreshClubFilter?.();
+        // 2) für Vereinsfilter im Ranking
+        await refreshClubFilter();
+        // 3) für den Radar-Reiter (Dropdown)
+        if (typeof radarRefreshData === 'function') {
+          await radarRefreshData();
+        }
 
+        // neu angelegten Spieler direkt im Bewertungs-Dropdown auswählen
         const sel = document.getElementById('r-player');
         if (sel && data?.id) {
           sel.value = data.id;
