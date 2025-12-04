@@ -57,6 +57,28 @@
 .card-section h3 {
   margin-top: 0;
 }
+
+    /* Spezielle Karte für Bereich 3. Bewertung erfassen */
+#card-rating {
+  margin-top: 18px;
+  background: #fafafa;          /* leicht grau abgesetzt */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+#card-rating h3 {
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+#card-rating .row {
+  margin-bottom: 8px;
+}
+
+#card-rating textarea {
+  max-width: 100%;
+}
     
     /* Neues Panel-Layout für Live-Aktionen */
     .radar-panel {
@@ -444,29 +466,32 @@
       </div>
       <div id="player-create-msg" class="status-line"></div>
 
-      <!-- === BLOCK_3_RATING_CARD_START === -->
+<!-- === BLOCK_3_RATING_CARD_START === -->
 <div class="card card-section" id="card-rating">
- <h3>3. Bewertung erfassen</h3>
-     
+  <h3>3. Bewertung erfassen</h3>
+
   <div class="row">
-        <label for="r-player">Spieler</label>
-        <select id="r-player"></select>
-      </div>
-      <div class="row">
-        <label for="r-event">Event</label>
-        <select id="r-event"></select>
-      </div>
-
-      <h3>Kriterien (Schulnoten 1–6)</h3>
-      <div id="criteria"></div>
-
-      <h3>Kommentar</h3>
-      <textarea id="r-comment" placeholder="Kurze Beschreibung der Leistung..."></textarea>
-      <div class="row">
-        <button id="btn-add-rating">Bewertung speichern</button>
-      </div>
-      <div id="rate-msg" class="status-line"></div>
+    <label for="r-player">Spieler</label>
+    <select id="r-player"></select>
   </div>
+
+  <div class="row">
+    <label for="r-event">Event</label>
+    <select id="r-event"></select>
+  </div>
+
+  <h3>Kriterien (Schulnoten 1–6)</h3>
+  <div id="criteria"></div>
+
+  <h3>Kommentar</h3>
+  <textarea id="r-comment" placeholder="Kurze Beschreibung der Leistung..."></textarea>
+
+  <div class="row">
+    <button id="btn-add-rating">Bewertung speichern</button>
+  </div>
+
+  <div id="rate-msg" class="status-line"></div>
+</div>
 <!-- === BLOCK_3_RATING_CARD_END === -->
 
       <h3>3b. Ereignis suchen</h3>
