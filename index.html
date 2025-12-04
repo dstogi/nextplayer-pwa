@@ -46,6 +46,18 @@
       font-weight: 600;
     }
 
+.card {
+  background: #ffffff;
+  border-radius: 6px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+.card-section h3 {
+  margin-top: 0;
+}
+    
     /* Neues Panel-Layout für Live-Aktionen */
     .radar-panel {
       display: none;              /* wird per JS auf block gesetzt */
@@ -432,8 +444,11 @@
       </div>
       <div id="player-create-msg" class="status-line"></div>
 
-      <h3>3. Bewertung erfassen</h3>
-      <div class="row">
+      <!-- === BLOCK_3_RATING_CARD_START === -->
+<div class="card card-section" id="card-rating">
+ <h3>3. Bewertung erfassen</h3>
+     
+  <div class="row">
         <label for="r-player">Spieler</label>
         <select id="r-player"></select>
       </div>
@@ -451,6 +466,8 @@
         <button id="btn-add-rating">Bewertung speichern</button>
       </div>
       <div id="rate-msg" class="status-line"></div>
+  </div>
+<!-- === BLOCK_3_RATING_CARD_END === -->
 
       <h3>3b. Ereignis suchen</h3>
       <div class="row">
