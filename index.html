@@ -289,15 +289,17 @@
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
     <div class="top-nav">
-      <button data-target="sec-config"  class="active">Setup</button>
-      <button data-target="sec-auth">Login</button>
-      <button data-target="sec-profile">Profil</button>
-      <button data-target="sec-rating">Bewerten</button>
-      <button data-target="sec-radar">Radar</button>
-      <button data-target="sec-ranking">Ranking</button>
-      <button data-target="sec-events">Events</button>
-      <button data-target="sec-last">Verlauf</button>
-    </div>
+  <button data-target="sec-config"  class="active">Setup</button>
+  <button data-target="sec-auth">Login</button>
+  <button data-target="sec-profile">Profil</button>
+  <button data-target="sec-rating">Bewerten</button>
+  <!-- Neuer Reiter nur für Punkt 3 -->
+  <button data-target="sec-rating-form">Bewertung</button>
+  <button data-target="sec-radar">Radar</button>
+  <button data-target="sec-ranking">Ranking</button>
+  <button data-target="sec-events">Events</button>
+  <button data-target="sec-last">Verlauf</button>
+</div>
   </header>
 
   <main>
@@ -408,119 +410,93 @@
       <div id="prof-msg" class="status-line"></div>
     </section>
 
-    <!-- 2a. Spieler anlegen + 3. Bewertung & Events -->
-    <section id="sec-rating" class="section-card">
-      <h2><span>2a. Spieler & 3. Bewertung</span></h2>
+<!-- 2a. Spieler anlegen + Events -->
+<section id="sec-rating" class="section-card">
+  <h2><span>2a. Spieler & Events</span></h2>
 
-      <h3>2a. Spieler anlegen (manuell)</h3>
-      <div class="row">
-        <label for="pl-first">Vorname</label>
-        <input id="pl-first" type="text" size="20">
-      </div>
-      <div class="row">
-        <label for="pl-last">Nachname</label>
-        <input id="pl-last" type="text" size="20">
-      </div>
-      <div class="row">
-        <label for="pl-birth">Geburtsdatum</label>
-        <input id="pl-birth" type="date">
-      </div>
-      <div class="row">
-        <label for="pl-club-current">Aktueller Verein</label>
-        <input id="pl-club-current" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
-      </div>
-      <div class="row">
-        <label for="pl-club-prev">Verein vorher</label>
-        <input id="pl-club-prev" type="text" size="30" placeholder="z.B. SC Freiburg Jugend">
-      </div>
-      <div class="row">
-        <label for="pl-pos">Position(en)</label>
-        <select id="pl-pos" multiple size="6">
-          <option value="TW">TW (Torwart)</option>
-          <option value="AV">AV (Außenverteidiger)</option>
-          <option value="IV">IV (Innenverteidiger)</option>
-          <option value="MF">MF (Mittelfeld)</option>
-          <option value="AST">AST (Außenstürmer)</option>
-          <option value="MST">MST (Mittelstürmer)</option>
-        </select>
-        <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
-      </div>
-
-      <div class="row">
-        <label for="pl-foot">Starker Fuß</label>
-        <select id="pl-foot">
-          <option value="">Bitte wählen…</option>
-          <option value="left">links</option>
-          <option value="right">rechts</option>
-          <option value="both">beidfüßig</option>
-        </select>
-      </div>
-    
-      <div class="row">
-        <label for="pl-number">Rückennummer</label>
-        <input id="pl-number" type="number" min="1" max="99" style="width:80px;">
-      </div>
-
-      <div class="row">
-        <button id="btn-create-player" type="button">Spieler speichern</button>
-      </div>
-      <div id="player-create-msg" class="status-line"></div>
-
-<!-- === BLOCK_3_RATING_CARD_START === -->
-<div class="card card-section" id="card-rating">
-  <h3>3. Bewertung erfassen</h3>
-
+  <h3>2a. Spieler anlegen (manuell)</h3>
   <div class="row">
-    <label for="r-player">Spieler</label>
-    <select id="r-player"></select>
+    <label for="pl-first">Vorname</label>
+    <input id="pl-first" type="text" size="20">
+  </div>
+  <div class="row">
+    <label for="pl-last">Nachname</label>
+    <input id="pl-last" type="text" size="20">
+  </div>
+  <div class="row">
+    <label for="pl-birth">Geburtsdatum</label>
+    <input id="pl-birth" type="date">
+  </div>
+  <div class="row">
+    <label for="pl-club-current">Aktueller Verein</label>
+    <input id="pl-club-current" type="text" size="30" placeholder="z.B. FC 08 Villingen U17">
+  </div>
+  <div class="row">
+    <label for="pl-club-prev">Verein vorher</label>
+    <input id="pl-club-prev" type="text" size="30" placeholder="z.B. SC Freiburg Jugend">
+  </div>
+  <div class="row">
+    <label for="pl-pos">Position(en)</label>
+    <select id="pl-pos" multiple size="6">
+      <option value="TW">TW (Torwart)</option>
+      <option value="AV">AV (Außenverteidiger)</option>
+      <option value="IV">IV (Innenverteidiger)</option>
+      <option value="MF">MF (Mittelfeld)</option>
+      <option value="AST">AST (Außenstürmer)</option>
+      <option value="MST">MST (Mittelstürmer)</option>
+    </select>
+    <span style="font-size:0.8rem;">Strg/Cmd gedrückt halten für Mehrfachauswahl.</span>
   </div>
 
   <div class="row">
-    <label for="r-event">Event</label>
-    <select id="r-event"></select>
+    <label for="pl-foot">Starker Fuß</label>
+    <select id="pl-foot">
+      <option value="">Bitte wählen…</option>
+      <option value="left">links</option>
+      <option value="right">rechts</option>
+      <option value="both">beidfüßig</option>
+    </select>
   </div>
-
-  <h3>Kriterien (Schulnoten 1–6)</h3>
-  <div id="criteria"></div>
-
-  <h3>Kommentar</h3>
-  <textarea id="r-comment" placeholder="Kurze Beschreibung der Leistung..."></textarea>
 
   <div class="row">
-    <button id="btn-add-rating">Bewertung speichern</button>
+    <label for="pl-number">Rückennummer</label>
+    <input id="pl-number" type="number" min="1" max="99" style="width:80px;">
   </div>
 
-  <div id="rate-msg" class="status-line"></div>
-</div>
-<!-- === BLOCK_3_RATING_CARD_END === -->
+  <div class="row">
+    <button id="btn-create-player" type="button">Spieler speichern</button>
+  </div>
+  <div id="player-create-msg" class="status-line"></div>
 
-      <h3>3b. Ereignis suchen</h3>
-      <div class="row">
-        <label for="search-pairing">Paarung / Spiel</label>
-        <input id="search-pairing" type="text" size="40"
-          placeholder="z.B. FC 08 Villingen - SC Freiburg U17" />
-        <button id="btn-search-event" type="button">Suchen</button>
-      </div>
-      <div id="event-results"></div>
+  <!-- Punkt 3 ist jetzt in einem eigenen Reiter / Section -->
 
-      <p id="event-current" style="font-size:0.9rem; color:#555; margin-top:10px;">
-        Kein Spiel ausgewählt.
-      </p>
+  <h3>3b. Ereignis suchen</h3>
+  <div class="row">
+    <label for="search-pairing">Paarung / Spiel</label>
+    <input id="search-pairing" type="text" size="40"
+      placeholder="z.B. FC 08 Villingen - SC Freiburg U17" />
+    <button id="btn-search-event" type="button">Suchen</button>
+  </div>
+  <div id="event-results"></div>
 
-      <h3>3d. Event-Details</h3>
-      <div id="event-card" style="
-        background:#fff;
-        border-radius:8px;
-        padding:10px 14px;
-        box-shadow:0 1px 3px rgba(0,0,0,0.12);
-        max-width:600px;
-        font-size:0.9rem;
-      ">
-        <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
-      </div>
+  <p id="event-current" style="font-size:0.9rem; color:#555; margin-top:10px;">
+    Kein Spiel ausgewählt.
+  </p>
 
-      <div id="event-create-msg" class="status-line"></div>
-    </section>
+  <h3>3d. Event-Details</h3>
+  <div id="event-card" style="
+    background:#fff;
+    border-radius:8px;
+    padding:10px 14px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.12);
+    max-width:600px;
+    font-size:0.9rem;
+  ">
+    <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
+  </div>
+
+  <div id="event-create-msg" class="status-line"></div>
+</section>
 
         <!-- 7. SpielerRadar -->
     <section id="sec-radar" class="section-card">
