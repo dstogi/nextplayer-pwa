@@ -46,6 +46,26 @@
       font-weight: 600;
     }
 
+    /* Neues Panel-Layout für Live-Aktionen */
+    .radar-panel {
+      display: none;              /* wird per JS auf block gesetzt */
+      margin-top: 10px;
+      border-top: 1px solid #eee;
+      padding: 12px 14px;
+      border-radius: 10px;
+      transition: background-color 0.2s ease;
+    }
+
+    .radar-player-label {
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .small-note {
+      font-size: 0.85rem;
+      color: var(--np-muted);
+    }
+
     #radar-panel.active {
       background: rgba(245, 182, 66, 0.10); /* leichter Goldschimmer */
       border-top-color: var(--np-accent);
@@ -208,7 +228,7 @@
       font-size: 1rem;
     }
   
-            .jersey-badge {
+    .jersey-badge {
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -495,8 +515,8 @@
 
       <div id="radar-status" class="status-line"></div>
 
-      <div id="radar-panel"
-              <div id="radar-summary" style="margin-top:16px;">
+      <!-- BLOCK: Radar-Ranking-Tabelle -->
+      <div id="radar-summary" style="margin-top:16px;">
         <h3>Radar-Ranking (dieses Spiel)</h3>
         <table id="radar-summary-table">
           <thead>
@@ -516,11 +536,12 @@
             <tr><td colspan="9">Noch keine Radar-Daten.</td></tr>
           </tbody>
         </table>
-        <div id="radar-summary-msg" class="status-line"></div>
+        <div id="radar-summary-msg" class="status-line small-note"></div>
       </div>
 
-           style="display:none; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
-        <h3 id="radar-player-label">Live-Aktionen</h3>
+      <!-- BLOCK: Radar-Live-Aktionen-Panel -->
+      <div id="radar-panel" class="radar-panel">
+        <h3 id="radar-player-label" class="radar-player-label">Live-Aktionen</h3>
         <p style="font-size:0.8rem; color:#555;">
           Während des Spiels einfach + (gute Aktionen) oder − (nicht so gute) tippen.
         </p>
