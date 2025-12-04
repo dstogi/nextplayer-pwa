@@ -824,8 +824,23 @@
 
   <!-- Supabase-Logik -->
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-    ...
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+  const $  = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+  function isUUID(v) {
+    return typeof v === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  }
+
+  let supa = null;
+  let currentUser = null;
+  let currentUserMeta = null;
+  let currentProfile = null;
+  let currentEvent = null;
+  let allEvents = [];
+  // ... ab hier dein restlicher (funktionierender) Code
 
     // -----------------------------
     // Supabase-Konfiguration
