@@ -2779,7 +2779,7 @@
       });
     }
     
-    async function radarRefreshSummary() {
+        async function radarRefreshSummary() {
       const tbody = document.querySelector('#radar-summary-table tbody');
       const msg = document.getElementById('radar-summary-msg');
       const eventSel = document.getElementById('radar-event-select');
@@ -2824,16 +2824,21 @@
           const nets = f => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
           return {
             playerId: row.rated_player_id,
-            // BUGFIX: hier "ballsicherheit" statt "ballsicherung"
-            ballsich: nets('ballsicherheit'),
-            zweik: nets('zweikampf'),
-            lauf: nets('laufduell'),
+            // alle Feldnamen exakt wie in der Tabelle:
+            ballsich:  nets('ballsicherheit'),
+            zweik:     nets('zweikampf'),
+            lauf:      nets('laufduell'),
             abschluss: nets('abschluss'),
-            std: nets('standard'),
-            ment: nets('mentalitaet'),
-            fair: nets('fairplay'),
-            total: nets('ballsicherheit') + nets('zweikampf') + nets('laufduell') +
-                   nets('abschluss') + nets('standard') + nets('mentalitaet') + nets('fairplay')
+            std:       nets('standard'),
+            ment:      nets('mentalitaet'),
+            fair:      nets('fairplay'),
+            total:     nets('ballsicherheit') +
+                       nets('zweikampf') +
+                       nets('laufduell') +
+                       nets('abschluss') +
+                       nets('standard') +
+                       nets('mentalitaet') +
+                       nets('fairplay')
           };
         });
 
