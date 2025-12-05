@@ -506,6 +506,13 @@
     <!-- 2a. Spieler anlegen + Events -->
     <section id="sec-rating" class="section-card">
       <h2><span>2a. Spieler & Events</span></h2>
+            <h3>2a. Spieler suchen</h3>
+      <div class="row">
+        <label for="pl-search-name">Spielername</label>
+        <input id="pl-search-name" type="text" size="30" placeholder="z.B. Elias Koch">
+        <button id="btn-player-search" type="button">Spieler suchen</button>
+      </div>
+      <div id="pl-search-results" class="status-line"></div>
 
       <h3>2a. Spieler anlegen (manuell)</h3>
       <div class="row">
@@ -1921,7 +1928,109 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
         console.error('refreshEvents', e);
       }
     }
+   
+    // -----------------------------
+    // Spieler-Suche in "Spieler & Events"
+    // -----------------------------
+    async function searchPlayerByName() {
+      const nameInput = document.getElementById('pl-search-name');
+      const resultBox = document.getElementById('pl-search-results');
+      if (!nameInput || !resultBox) return;
 
+      const term = (nameInput.value || '').trim();
+      if (!term) {
+        resultBox.textContent = 'Bitte einen Spielernamen eingeben.';
+        return;
+      }
+
+      resultBox.textContent = 'Suche läuft…';
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player')
+          .select('id, full_name, club_name, positions, jersey_number, dominant_foot, birthdate')
+          .ilike('full_name', `%${term}%`)
+          .order('full_name', { ascending: true });
+
+        if (error) throw error;
+
+        // Nichts gefunden → automatisch zum Formular "Spieler anlegen" scrollen
+        if (!data || !data.length) {
+          resultBox.textContent =
+            'Kein Spieler gefunden. Du kannst unten einen neuen Spieler anlegen.';
+          const firstInput = document.getElementById('pl-first');
+          if (firstInput) {
+            firstInput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setTimeout(() => firstInput.focus(), 400);
+          }
+          return;
+        }
+
+        // Trefferliste aufbauen
+        const ul = document.createElement('ul');
+        ul.style.listStyle = 'none';
+        ul.style.padding = '0';
+        ul.style.margin = '4px 0';
+
+        data.forEach(p => {
+          const li = document.createElement('li');
+          li.style.marginBottom = '4px';
+
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.style.padding = '4px 8px';
+          btn.style.cursor = 'pointer';
+          btn.style.width = '100%';
+          btn.style.textAlign = 'left';
+
+          const num = p.jersey_number ? `#${p.jersey_number} ` : '';
+          const club = p.club_name ? ` (${p.club_name})` : '';
+          btn.textContent = `${num}${p.full_name}${club}`;
+
+          btn.addEventListener('click', () => {
+            // Spieler in Bewertungs-Dropdown setzen
+            const ratingSel = document.getElementById('r-player');
+            if (ratingSel) {
+              ratingSel.value = p.id;
+            }
+
+            // Spieler in Radar-Dropdown setzen (optional)
+            const radarSel = document.getElementById('radar-player-select');
+            if (radarSel) {
+              radarSel.value = p.id;
+            }
+
+            resultBox.textContent = `Spieler "${p.full_name}" wurde ausgewählt.`;
+            // Optional: direkt zum Reiter "Bewertung" springen
+            // if (window.npShowSection) window.npShowSection('sec-rating-form');
+          });
+
+          li.appendChild(btn);
+          ul.appendChild(li);
+        });
+
+        resultBox.innerHTML = '';
+        resultBox.appendChild(ul);
+
+      } catch (e) {
+        console.error('searchPlayerByName', e);
+        const resultBox2 = document.getElementById('pl-search-results');
+        if (resultBox2) {
+          resultBox2.textContent = 'Fehler bei der Spielersuche.';
+        }
+      }
+    }
+
+    // Events für Suchfeld
+    document.getElementById('btn-player-search')?.addEventListener('click', searchPlayerByName);
+    document.getElementById('pl-search-name')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        searchPlayerByName();
+      }
+    });
+    
     // Bewertung speichern
     document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
       try {
