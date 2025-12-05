@@ -72,6 +72,50 @@
       font-weight: 600;
       margin-bottom: 8px;
     }
+/* --- Radar: Klarere Struktur & Boxen --- */
+
+/* Intro-Text im Radar etwas dezenter */
+#sec-radar p {
+  margin-top: 4px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: var(--np-muted);
+}
+
+/* Die ersten Zeilen (Event & Spieler) als Filter-Box hervorheben */
+#sec-radar .row:nth-of-type(1),
+#sec-radar .row:nth-of-type(2) {
+  background: #fafafa;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+/* Radar-Tabs mit etwas Luft nach oben/unten */
+#sec-radar .radar-tab {
+  margin-top: 4px;
+}
+
+/* Panel für Live-Aktionen als eigene „Karte“ */
+#sec-radar .radar-panel {
+  margin-top: 10px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  padding: 10px 12px;
+}
+
+/* Label im Panel hervorheben (falls benutzt) */
+#sec-radar .radar-player-label {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Kleine Hinweise im Radar etwas einheitlicher */
+#sec-radar .small-note {
+  font-size: 0.8rem;
+  color: var(--np-muted);
+}
 
     .small-note {
       font-size: 0.85rem;
@@ -267,17 +311,16 @@
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
     <div class="top-nav">
-      <button data-target="sec-config"  class="active">Setup</button>
-      <button data-target="sec-auth">Login</button>
-      <button data-target="sec-profile">Profil</button>
-      <button data-target="sec-rating">Bewerten</button>
-      <!-- Neuer Reiter nur für Punkt 3 -->
-      <button data-target="sec-rating-form">Bewertung</button>
-      <button data-target="sec-radar">Radar</button>
-      <button data-target="sec-ranking">Ranking</button>
-      <button data-target="sec-events">Events</button>
-      <button data-target="sec-last">Verlauf</button>
-    </div>
+  <button data-target="sec-config"  class="active">🛠️ Setup</button>
+  <button data-target="sec-auth">🔑 Login</button>
+  <button data-target="sec-profile">👤 Profil</button>
+  <button data-target="sec-rating">⚽ Bewerten</button>
+  <button data-target="sec-rating-form">⭐ Bewertung</button>
+  <button data-target="sec-radar">📡 Radar</button>
+  <button data-target="sec-ranking">📊 Ranking</button>
+  <button data-target="sec-events">📅 Events</button>
+  <button data-target="sec-last">🕒 Verlauf</button>
+</div>
   </header>
 
   <main>
