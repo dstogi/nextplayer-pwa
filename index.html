@@ -2410,21 +2410,37 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     let lastRows = [];
     let ratingsByPlayer = new Map();
 
+    // -----------------------------
+    // Ranking neu & robuster
+    // -----------------------------
+    let favSet   = loadFavSet();
+    let lastRows = [];
+    let ratingsByPlayer = new Map();
+
     async function refreshRanking() {
+      const msg = document.querySelector('#rank-msg');
+      const tbody = document.querySelector('#rank-table tbody');
+      if (!tbody) return;
+
+      if (msg) msg.textContent = 'Lade Ranking-Daten…';
+
       try {
         const c = await getClient();
+
+        // 1) Basisdaten holen
         const [pRes, eRes, rRes] = await Promise.all([
           c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
           c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
-          c.from('rating').select('player_id, event_id, criteria, created_at')
+          c.from('rating')
+            .select('player_id, event_id, criteria, created_at')
             .order('created_at', { ascending: false })
             .limit(2000)
         ]);
 
         if (pRes.error || eRes.error || rRes.error) {
-          console.error(pRes.error || eRes.error || rRes.error);
-          const msg = document.querySelector('#rank-msg');
-          if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+          console.error('refreshRanking errors:', pRes.error, eRes.error, rRes.error);
+          if (msg) msg.textContent = 'Fehler beim Laden der Daten (Player/Event/Rating).';
+          tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Daten.</td></tr>';
           return;
         }
 
@@ -2432,9 +2448,19 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
         const events  = eRes.data || [];
         const ratings = rRes.data || [];
 
+        // Falls es überhaupt keine Ratings gibt, früh abbrechen
+        if (!ratings.length) {
+          if (msg) msg.textContent = 'Noch keine Bewertungen in der Datenbank.';
+          tbody.innerHTML = '<tr><td colspan="8">Noch keine Bewertungen gespeichert.</td></tr>';
+          lastRows = [];
+          ratingsByPlayer = new Map();
+          return;
+        }
+
         const pMap = new Map(players.map(p => [p.id, p]));
         const eMap = new Map(events.map(e => [e.id, e]));
 
+        // 2) Filter auslesen
         const clubF   = document.querySelector('#club-filter')?.value || '';
         const posF    = document.querySelector('#rank-pos')?.value || '';
         const footF   = document.querySelector('#rank-foot')?.value || '';
@@ -2445,11 +2471,12 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
         const q       = (document.querySelector('#rank-q')?.value || '').toLowerCase();
         const minR    = parseInt(document.querySelector('#rank-min')?.value || '0', 10) || 0;
         const favMode = document.querySelector('#fav-filter')?.value || 'all';
+        const topOnly = document.querySelector('#rank-top10')?.checked;
 
         const agg = new Map();
         ratingsByPlayer = new Map();
-        let rows = [];
 
+        // 3) Ratings pro Spieler aggregieren
         for (const r of ratings) {
           const ev = eMap.get(r.event_id);
           const pl = pMap.get(r.player_id);
@@ -2466,13 +2493,15 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           if (fromF && d < fromF) continue;
           if (toF   && d > toF)   continue;
 
+          // Ø-Note aus Kriterien berechnen
           const vals = Object.entries(critObj)
             .map(([k, v]) => k.startsWith('_') ? NaN : Number(v))
             .filter(n => Number.isFinite(n));
-          if (!vals.length) continue;
 
+          if (!vals.length) continue;
           const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
 
+          // Liste der Einzelratings pro Spieler (für Detailanzeige)
           let list = ratingsByPlayer.get(r.player_id);
           if (!list) {
             list = [];
@@ -2488,18 +2517,18 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
             rater:      critObj._rater || ''
           });
 
+          // Aggregation
           const key = r.player_id;
           let stat = agg.get(key);
-          if (!stat) {
-            stat = { sum: 0, cnt: 0, last: '0000-00-00' };
-          }
+          if (!stat) stat = { sum: 0, cnt: 0, last: '0000-00-00' };
           stat.sum  += avg;
           stat.cnt  += 1;
           if (d > stat.last) stat.last = d;
           agg.set(key, stat);
         }
 
-        rows = [];
+        // 4) in Array umwandeln
+        let rows = [];
         for (const [playerId, st] of agg.entries()) {
           const pl = pMap.get(playerId) || {
             full_name: playerId,
@@ -2522,14 +2551,15 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           });
         }
 
+        // 5) Filter auf Spielerebene anwenden
         rows = rows.filter(r => {
           const matchClub = !clubF || r.club === clubF;
 
           const posArr = Array.isArray(r.pos)
             ? r.pos
             : (typeof r.pos === 'string' && r.pos.length
-              ? r.pos.split(',').map(x => x.trim()).filter(Boolean)
-              : []);
+                ? r.pos.split(',').map(x => x.trim()).filter(Boolean)
+                : []);
 
           const matchPos  = !posF || posArr.includes(posF);
           const matchFoot = !footF || r.foot === footF;
@@ -2540,38 +2570,47 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
         });
 
+        // 6) Sortierung & Top 10
         rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
-        const top = document.querySelector('#rank-top10')?.checked;
-        if (top) rows = rows.slice(0, 10);
+        if (topOnly) rows = rows.slice(0, 10);
 
         lastRows = rows.slice();
 
-        const tb = document.querySelector('#rank-table tbody');
-        if (!tb) return;
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter gefunden.</td></tr>';
+          if (msg) msg.textContent = 'Keine Spieler – ggf. Filter zurücksetzen oder mehr Bewertungen speichern.';
+          return;
+        }
 
-        tb.innerHTML = rows.length
-          ? rows.map(r => {
-              const star   = favSet.has(r.id) ? '★' : '☆';
-              const posStr = Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || '');
-              const footLabel =
-                r.foot === 'left' ? 'links' :
-                r.foot === 'right' ? 'rechts' :
-                r.foot === 'both' ? 'beidfüßig' : '';
-              return `<tr data-pid="${r.id}">
-                        <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
-                        <td>${r.name}</td>
-                        <td>${r.club}</td>
-                        <td>${posStr}</td>
-                        <td>${footLabel}</td>
-                        <td>${r.cnt}</td>
-                        <td>${r.avg.toFixed(2)}</td>
-                        <td>${r.last || ''}</td>
-                      </tr>`;
-            }).join('')
-          : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
+        // 7) Tabelle rendern
+        const footLabel = f =>
+          f === 'left' ? 'links' :
+          f === 'right' ? 'rechts' :
+          f === 'both' ? 'beidfüßig' : '';
 
-        tb.querySelectorAll('.fav-toggle').forEach(el => {
-          el.addEventListener('click', (ev) => {
+        const posStr = p =>
+          Array.isArray(p) ? p.join(', ') :
+          (typeof p === 'string' ? p : '');
+
+        tbody.innerHTML = rows.map(r => {
+          const star = favSet.has(r.id) ? '★' : '☆';
+          return `
+            <tr data-pid="${r.id}">
+              <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
+              <td>${r.name}</td>
+              <td>${r.club}</td>
+              <td>${posStr(r.pos)}</td>
+              <td>${footLabel(r.foot)}</td>
+              <td>${r.cnt}</td>
+              <td>${r.avg.toFixed(2)}</td>
+              <td>${r.last || ''}</td>
+            </tr>
+          `;
+        }).join('');
+
+        // Watchlist-Klick
+        tbody.querySelectorAll('.fav-toggle').forEach(el => {
+          el.addEventListener('click', ev => {
             ev.stopPropagation();
             const pid = el.getAttribute('data-pid');
             if (!pid) return;
@@ -2582,7 +2621,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           });
         });
 
-        tb.onclick = (ev) => {
+        // Zeilen-Klick → Detailpopup
+        tbody.onclick = (ev) => {
           const tr = ev.target.closest('tr[data-pid]');
           if (!tr) return;
           if (ev.target.classList.contains('fav-toggle')) return;
@@ -2594,15 +2634,12 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           const pl = pMap.get(row.id) || {};
           const birthStr = pl.birthdate || '-';
           const footVal  = pl.dominant_foot || row.foot || '';
-          const footLabel =
-            footVal === 'left' ? 'links' :
-            footVal === 'right' ? 'rechts' :
-            footVal === 'both' ? 'beidfüßig' : (footVal || '-');
-          const posStr   = Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '');
+          const footL    = footLabel(footVal);
+          const posS     = posStr(row.pos);
 
           const details = ratingsByPlayer.get(row.id) || [];
-
           let detailText = '';
+
           if (details.length) {
             detailText =
               '\n\nEinzelbewertungen:\n' +
@@ -2613,13 +2650,11 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
                   d.event_type === 'training'   ? 'Tr.' :
                   d.event_type === 'tournament' ? 'Tu.' :
                   (d.event_type || '');
-
                 const pairing = d.event_name || '';
                 const role    = d.role  || '';
                 const rater   = d.rater || '';
-                const raterShort = rater.includes('@') ? rater.split('@')[0] : rater;
-
-                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${raterShort}`;
+                const rShort  = rater.includes('@') ? rater.split('@')[0] : rater;
+                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${rShort}`;
               }).join('\n');
           } else {
             detailText = '\n\nKeine Einzelbewertungen gefunden.';
@@ -2629,20 +2664,21 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
             'Spieler: '      + row.name + '\n' +
             'Geb.: '         + birthStr + '\n' +
             'Verein: '       + row.club + '\n' +
-            'Position(en): ' + posStr + '\n' +
-            'Fuß: '          + footLabel + '\n' +
+            'Position(en): ' + posS + '\n' +
+            'Fuß: '          + (footL || '-') + '\n' +
             'Bewertungen: '  + row.cnt + '\n' +
             'Ø Note: '       + row.avg.toFixed(2) +
             detailText
           );
         };
 
-        const rankMsgLocal = $('#rank-msg');
-        if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
+        if (msg) msg.textContent = `OK: ${rows.length} Spieler im Ranking.`;
       } catch (e) {
         console.error('refreshRanking', e);
-        const msg = $('#rank-msg');
+        const msg = document.querySelector('#rank-msg');
         if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+        const tbody = document.querySelector('#rank-table tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden des Rankings.</td></tr>';
       }
     }
 
