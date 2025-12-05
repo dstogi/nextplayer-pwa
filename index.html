@@ -182,6 +182,15 @@
   font-size: 0.8rem;
   color: var(--np-muted);
 }
+
+    #pl-search-results button {
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+#pl-search-results button:hover {
+  background: #f7f7f7;
+}
     
 /* Kleine Hinweise im Radar etwas einheitlicher */
 #sec-radar .small-note {
@@ -1930,8 +1939,25 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     }
    
     // -----------------------------
-    // Spieler-Suche in "Spieler & Events"
+    // Spieler-Suche in "Spieler & Events" mit Mini-Vorschau
     // -----------------------------
+    function formatFootLabel(foot) {
+      if (foot === 'left') return 'links';
+      if (foot === 'right') return 'rechts';
+      if (foot === 'both') return 'beidfüßig';
+      return '';
+    }
+
+    function formatAgeLabel(birthdate) {
+      if (!birthdate) return '';
+      const year = parseInt(String(birthdate).slice(0, 4), 10);
+      if (!year || isNaN(year)) return '';
+      const nowYear = new Date().getFullYear();
+      const age = nowYear - year;
+      if (age < 5 || age > 60) return ''; // unrealistische Werte ausblenden
+      return `${age} J.`;
+    }
+
     async function searchPlayerByName() {
       const nameInput = document.getElementById('pl-search-name');
       const resultBox = document.getElementById('pl-search-results');
@@ -1967,7 +1993,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           return;
         }
 
-        // Trefferliste aufbauen
+        // Trefferliste aufbauen (mit Mini-Vorschau)
         const ul = document.createElement('ul');
         ul.style.listStyle = 'none';
         ul.style.padding = '0';
@@ -1984,9 +2010,35 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           btn.style.width = '100%';
           btn.style.textAlign = 'left';
 
+          // Hauptzeile: #Nr Name (Verein)
           const num = p.jersey_number ? `#${p.jersey_number} ` : '';
           const club = p.club_name ? ` (${p.club_name})` : '';
-          btn.textContent = `${num}${p.full_name}${club}`;
+          const title = document.createElement('div');
+          title.style.fontWeight = '600';
+          title.textContent = `${num}${p.full_name}${club}`;
+
+          // Zweite Zeile: Pos • Fuß • Alter
+          const posArr = Array.isArray(p.positions)
+            ? p.positions
+            : (typeof p.positions === 'string'
+                ? p.positions.split(',').map(x => x.trim()).filter(Boolean)
+                : []);
+          const posStr = posArr.length ? posArr.join(', ') : '';
+          const footStr = formatFootLabel(p.dominant_foot);
+          const ageStr = formatAgeLabel(p.birthdate);
+
+          const metaParts = [];
+          if (posStr) metaParts.push(`Pos: ${posStr}`);
+          if (footStr) metaParts.push(`Fuß: ${footStr}`);
+          if (ageStr) metaParts.push(ageStr);
+
+          const meta = document.createElement('div');
+          meta.style.fontSize = '0.8rem';
+          meta.style.color = '#555';
+          meta.textContent = metaParts.join(' • ');
+
+          btn.appendChild(title);
+          btn.appendChild(meta);
 
           btn.addEventListener('click', () => {
             // Spieler in Bewertungs-Dropdown setzen
