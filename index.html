@@ -1056,14 +1056,22 @@
 
       window.npShowSection = showSection;
 
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const target = btn.dataset.target;
-          if (target && sections[target]) {
-            showSection(target);
+          buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.dataset.target;
+        if (target && sections[target]) {
+          showSection(target);
+
+          // Spezialfälle: beim Öffnen Daten laden
+          if (target === 'sec-ranking' && typeof refreshRanking === 'function') {
+            refreshRanking();
           }
-        });
+          if (target === 'sec-last' && typeof refreshLastComments === 'function') {
+            refreshLastComments();
+          }
+        }
       });
+    });
 
       // Start mit Setup
       showSection('sec-config');
