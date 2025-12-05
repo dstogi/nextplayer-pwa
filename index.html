@@ -677,202 +677,202 @@
         <div id="radar-summary-msg" class="status-line small-note"></div>
       </div>
 
-      <!-- BLOCK: Radar-Live-Aktionen-Panel -->
-     <div id="radar-panel" class="radar-panel">
-  <p class="small-note">
-    Live-Aktionen: Tippe auf + (gute Aktion) oder − (nicht so gute Aktion).
-  </p>
+            <!-- BLOCK: Radar-Live-Aktionen-Panel -->
+      <div id="radar-panel" class="radar-panel">
+        <h3 id="radar-player-label" class="radar-player-label">Live-Aktionen</h3>
+        <p class="small-note">
+          Während des Spiels einfach + (gute Aktionen) oder − (nicht so gute) tippen.
+        </p>
 
-  <!-- Ballsicherheit -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">🧍‍♂️⚽</span>
-      <span class="radar-cat-label">Ballsicherheit</span>
-    </div>
+        <!-- Ballsicherheit -->
+        <div class="radar-action-row" data-field="ballsicherheit">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">🧍‍♂️⚽</span>
+            <span class="radar-cat-label">Ballsicherheit</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="ball"
-        data-dir="plus">
-        ballsicher
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="ball"
-        data-dir="minus">
-        Ballverlust
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="ballsicherheit">
+              ballsicher
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="ballsicherheit">
+              Ballverlust
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="ball-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="ballsicherheit">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
 
-  <!-- Zweikampf -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">🤼‍♂️</span>
-      <span class="radar-cat-label">Zweikampf</span>
-    </div>
+        <!-- Zweikampf -->
+        <div class="radar-action-row" data-field="zweikampf">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">🤼‍♂️</span>
+            <span class="radar-cat-label">Zweikampf</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="duel"
-        data-dir="plus">
-        gewonnen
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="duel"
-        data-dir="minus">
-        verloren
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="zweikampf">
+              gewonnen
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="zweikampf">
+              verloren
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="duel-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="zweikampf">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
 
-  <!-- Laufduell -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">🏃‍♂️</span>
-      <span class="radar-cat-label">Laufduell</span>
-    </div>
+        <!-- Laufduell -->
+        <div class="radar-action-row" data-field="laufduell">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">🏃‍♂️</span>
+            <span class="radar-cat-label">Laufduell</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="run"
-        data-dir="plus">
-        gewonnen
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="run"
-        data-dir="minus">
-        verloren
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="laufduell">
+              gewonnen
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="laufduell">
+              verloren
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="run-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="laufduell">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
 
-  <!-- Abschluss -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">🥅</span>
-      <span class="radar-cat-label">Abschluss</span>
-    </div>
+        <!-- Abschluss -->
+        <div class="radar-action-row" data-field="abschluss">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">🥅</span>
+            <span class="radar-cat-label">Abschluss</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="finish"
-        data-dir="plus">
-        guter Abschluss
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="finish"
-        data-dir="minus">
-        schlechter Abschluss
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="abschluss">
+              guter Abschluss
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="abschluss">
+              schlechter Abschluss
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="finish-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="abschluss">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
 
-  <!-- Standards -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">📐</span>
-      <span class="radar-cat-label">Standards</span>
-    </div>
+        <!-- Standards -->
+        <div class="radar-action-row" data-field="standard">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">📐</span>
+            <span class="radar-cat-label">Standards</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="standard"
-        data-dir="plus">
-        gut ausgeführt
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="standard"
-        data-dir="minus">
-        schwach
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="standard">
+              gut ausgeführt
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="standard">
+              schwach
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="standard-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="standard">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
 
-  <!-- Mentalität -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">🔥</span>
-      <span class="radar-cat-label">Mentalität</span>
-    </div>
+        <!-- Mentalität -->
+        <div class="radar-action-row" data-field="mentalitaet">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">🔥</span>
+            <span class="radar-cat-label">Mentalität</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="mentality"
-        data-dir="plus">
-        gezeigt
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="mentality"
-        data-dir="minus">
-        gefehlt
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="mentalitaet">
+              gezeigt
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="mentalitaet">
+              gefehlt
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="mentality-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="mentalitaet">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
 
-  <!-- Fair Play -->
-  <div class="radar-action-row">
-    <div class="radar-cat">
-      <span class="radar-cat-icon">🤝</span>
-      <span class="radar-cat-label">Fair Play</span>
-    </div>
+        <!-- Fair Play -->
+        <div class="radar-action-row" data-field="fairplay">
+          <div class="radar-cat">
+            <span class="radar-cat-icon">🤝</span>
+            <span class="radar-cat-label">Fair Play</span>
+          </div>
 
-    <div class="radar-buttons">
-      <button
-        class="radar-btn radar-btn-plus"
-        data-metric="fairplay"
-        data-dir="plus">
-        fair
-      </button>
-      <button
-        class="radar-btn radar-btn-minus"
-        data-metric="fairplay"
-        data-dir="minus">
-        unsportlich
-      </button>
-    </div>
+          <div class="radar-buttons">
+            <button type="button"
+              class="radar-btn radar-btn-plus"
+              data-field="fairplay">
+              fair
+            </button>
+            <button type="button"
+              class="radar-btn radar-btn-minus"
+              data-field="fairplay">
+              unsportlich
+            </button>
+          </div>
 
-    <div class="radar-netto">
-      Netto: <span data-metric="fairplay-net">0 ( +0 / −0 )</span>
-    </div>
-  </div>
-</div>
-    </section>
+          <div class="radar-netto">
+            <span class="radar-score" data-field="fairplay">
+              Netto: 0 ( +0 / −0 )
+            </span>
+          </div>
+        </div>
+      </div>
 
     <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
