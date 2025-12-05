@@ -2406,10 +2406,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     function saveFavSet(set) {
       localStorage.setItem('fav_players', JSON.stringify([...set]));
     }
-    let favSet   = loadFavSet();
-    let lastRows = [];
-    let ratingsByPlayer = new Map();
-
+    
     // -----------------------------
     // Ranking neu & robuster
     // -----------------------------
