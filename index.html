@@ -2668,29 +2668,37 @@ if (msg) {
   msg.textContent = `OK: ${rows.length} Spieler im Radar-Ranking (Quelle: Live-Aktionen)`;
 }
 
-// try-Block HIER sauber schließen
-} catch (e) {
-  console.error('refreshRankingFromRadar', e);
-  if (msg) msg.textContent = 'Fehler beim Laden des Radar-Rankings.';
-  if (tbody) {
-    tbody.innerHTML =
-      '<tr><td colspan="8">Fehler beim Laden des Radar-Rankings.</td></tr>';
-  }
-}
-
+// Vor dem try: msg & tbody einmal definieren
 const msg  = document.querySelector('#rank-msg');
 const tbody = document.querySelector('#rank-table tbody');
 
 // Wenn es keine Ranking-Tabelle gibt, nur warnen und hier STOPPEN,
 // aber OHNE "return" (das ist am Top-Level verboten).
 if (!tbody) {
-  console.warn('Ranking-Tabelle (#rank-table tbody) nicht gefunden – refreshRanking wird übersprungen.');
+  console.warn(
+    'Ranking-Tabelle (#rank-table tbody) nicht gefunden – refreshRanking wird übersprungen.'
+  );
 } else {
 
   if (msg) msg.textContent = 'Lade Ranking-Daten…';
 
   try {
     const c = await getClient();
+
+    // ... dein ganzer Radar-Ranking-Code:
+    // Daten laden, players/events/radar auswerten, rows bauen, sortieren,
+    // tbody.innerHTML = rows.map(...).join('');
+
+  } catch (e) {
+    console.error('refreshRankingFromRadar', e);
+    if (msg) msg.textContent = 'Fehler beim Laden des Radar-Rankings.';
+    if (tbody) {
+      tbody.innerHTML =
+        '<tr><td colspan="8">Fehler beim Laden des Radar-Rankings.</td></tr>';
+    }
+  }
+}
+
 
     // 1) Basisdaten holen
     const [pRes, eRes, rRes] = await Promise.all([
