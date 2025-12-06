@@ -2625,18 +2625,18 @@ if (pRes.error || eRes.error || rRes.error) {
         }
 
         if (!rows.length) {
-          tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter (Radar).</td></tr>';
-          if (msg) msg.textContent = 'Keine Spieler – ggf. Filter anpassen oder mehr Radar-Daten erfassen.';
-          return;
-        }
+  tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter (Radar).</td></tr>';
+  if (msg) msg.textContent = 'Keine Spieler – ggf. Filter anpassen oder mehr Radar-Daten erfassen.';
+} else {
+  // 3) Sortierung nach Radar-Score (total)
+  rows.sort((a, b) => b.total - a.total);
 
-        // 3) Sortierung nach Radar-Score (total)
-        rows.sort((a, b) => b.total - a.total);
-
-        const footLabel = f =>
-          f === 'left' ? 'links' :
-          f === 'right' ? 'rechts' :
-          f === 'both' ? 'beidfüßig' : '';
+  const footLabel = f => {
+    if (f === 'left')  return 'links';
+    if (f === 'right') return 'rechts';
+    if (f === 'both')  return 'beidfüßig';
+    return '';
+  };
 
         const posStr = p =>
           Array.isArray(p) ? p.join(', ') :
