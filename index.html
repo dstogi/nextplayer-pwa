@@ -2463,13 +2463,18 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     // -----------------------------
     async function refreshRankingFromRadar(filters) {
       const msg  = document.querySelector('#rank-msg');
-      const tbody = document.querySelector('#rank-table tbody');
-      if (!tbody) return;
+const tbody = document.querySelector('#rank-table tbody');
 
-      if (msg) msg.textContent = 'Lade Radar-Daten…';
+if (!tbody) {
+  console.warn('Ranking-Tabelle (#rank-table tbody) nicht gefunden.');
+  throw new Error('Ranking-Tabelle (#rank-table tbody) nicht gefunden.');
+}
 
-      try {
-        const c = await getClient();
+if (msg) msg.textContent = 'Lade Ranking-Daten…';
+
+try {
+  const c = await getClient();
+  // ... dein weiterer Code bleibt wie er ist ...
 
         // Events und Radar-Daten laden
         const [pRes, eRes, rRes] = await Promise.all([
