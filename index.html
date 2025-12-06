@@ -934,6 +934,14 @@
           <option value="tournament">Turnier</option>
         </select>
       </div>
+     
+      <div class="row">
+        <label for="rank-source">Quelle</label>
+        <select id="rank-source">
+          <option value="rating">Bewertungen (Noten)</option>
+          <option value="radar">Radar (Live-Aktionen)</option>
+        </select>
+      </div>
 
       <div class="row">
         <label for="rank-role">Bewertungs-Rolle</label>
@@ -2428,7 +2436,226 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     let lastRows = [];
     let ratingsByPlayer = new Map();
 
+    async function refreshRankingFromRating(filters) {
+  // dein bisheriger großer Block bleibt hier drin
+  // statt Filter direkt aus dem DOM zu lesen, benutzen wir 'filters'
+}
+
+        // Haupt-Funktion, die von außen aufgerufen wird
     async function refreshRanking() {
+      const sourceSel = document.getElementById('rank-source');
+      const source = sourceSel ? (sourceSel.value || 'rating') : 'rating';
+
+      // Hier könntest du später die Filter einmal zentral einsammeln
+      // und an beide Varianten übergeben. Vorerst lassen wir die alte
+      // Rating-Funktion ihre Filter selber aus dem DOM lesen.
+      const filters = {}; // Platzhalter für spätere Erweiterungen
+
+      if (source === 'radar') {
+        await refreshRankingFromRadar(filters);
+      } else {
+        await refreshRankingFromRating(filters);
+      }
+    }
+
+        // -----------------------------
+    // Radar-basiertes Ranking (global über Events)
+    // -----------------------------
+    async function refreshRankingFromRadar(filters) {
+      const msg  = document.querySelector('#rank-msg');
+      const tbody = document.querySelector('#rank-table tbody');
+      if (!tbody) return;
+
+      if (msg) msg.textContent = 'Lade Radar-Daten…';
+
+      try {
+        const c = await getClient();
+
+        // Events und Radar-Daten laden
+        const [pRes, eRes, rRes] = await Promise.all([
+          c.from('player')
+            .select('id, full_name, club_name, positions, dominant_foot'),
+          c.from('event')
+            .select('id, event_date, type, competition, opponent, subtype, location'),
+          c.from('player_radar')
+            .select('*')
+        ]);
+
+        if (pRes.error || eRes.error || rRes.error) {
+          console.error('refreshRankingFromRadar errors:', pRes.error, eRes.error, rRes.error);
+          if (msg) msg.textContent = 'Fehler beim Laden der Radar-Daten.';
+          tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Radar-Daten.</td></tr>';
+          return;
+        }
+
+        const players = pRes.data || [];
+        const events  = eRes.data || [];
+        const radar   = rRes.data || [];
+
+        if (!radar.length) {
+          if (msg) msg.textContent = 'Noch keine Radar-Daten in der Datenbank.';
+          tbody.innerHTML = '<tr><td colspan="8">Noch keine Radar-Daten gespeichert.</td></tr>';
+          return;
+        }
+
+        const pMap = new Map(players.map(p => [p.id, p]));
+        const eMap = new Map(events.map(e => [e.id, e]));
+
+        // Filter aus dem Ranking-UI (können später ins filters-Objekt wandern)
+        const clubF   = document.querySelector('#club-filter')?.value || '';
+        const posF    = document.querySelector('#rank-pos')?.value || '';
+        const footF   = document.querySelector('#rank-foot')?.value || '';
+        const typeF   = document.querySelector('#rank-type')?.value || '';
+        const fromF   = document.querySelector('#rank-from')?.value || '';
+        const toF     = document.querySelector('#rank-to')?.value || '';
+        const q       = (document.querySelector('#rank-q')?.value || '').toLowerCase();
+        const minR    = parseInt(document.querySelector('#rank-min')?.value || '0', 10) || 0;
+
+        const agg = new Map();
+
+        // 1) Radar-Daten pro Spieler aggregieren
+        radar.forEach(row => {
+          const pl = pMap.get(row.rated_player_id);
+          const ev = eMap.get(row.event_id);
+          if (!pl || !ev) return;
+
+          const d = (ev.event_date || '').slice(0,10);
+
+          if (typeF && ev.type !== typeF) return;
+          if (fromF && d < fromF) return;
+          if (toF   && d > toF)   return;
+
+          const club = pl.club_name || '';
+          const pos  = pl.positions || null;
+          const foot = pl.dominant_foot || '';
+
+          // Grobe Filter auf Spielerebene
+          if (clubF && club !== clubF) return;
+
+          const posArr = Array.isArray(pos)
+            ? pos
+            : (typeof pos === 'string'
+                ? pos.split(',').map(x => x.trim()).filter(Boolean)
+                : []);
+          if (posF && !posArr.includes(posF)) return;
+
+          if (footF && foot !== footF) return;
+
+          const nameLower = (pl.full_name || '').toLowerCase();
+          if (q && !nameLower.includes(q) && !club.toLowerCase().includes(q)) return;
+
+          const key = row.rated_player_id;
+          let stat = agg.get(key);
+          if (!stat) {
+            stat = {
+              cntEvents: 0,
+              ballsich: 0,
+              zweik: 0,
+              lauf: 0,
+              abschluss: 0,
+              std: 0,
+              ment: 0,
+              fair: 0
+            };
+          }
+
+          const nets = f => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
+
+          stat.cntEvents += 1;
+          stat.ballsich  += nets('ballsicherheit');
+          stat.zweik     += nets('zweikampf');
+          stat.lauf      += nets('laufduell');
+          stat.abschluss += nets('abschluss');
+          stat.std       += nets('standard');
+          stat.ment      += nets('mentalitaet');
+          stat.fair      += nets('fairplay');
+
+          agg.set(key, stat);
+        });
+
+        // 2) in Array umwandeln
+        let rows = [];
+        for (const [playerId, st] of agg.entries()) {
+          if (st.cntEvents < minR) continue;
+
+          const pl = pMap.get(playerId) || {
+            full_name: playerId,
+            club_name: '',
+            positions: null,
+            dominant_foot: null
+          };
+
+          const total =
+            st.ballsich +
+            st.zweik +
+            st.lauf +
+            st.abschluss +
+            st.std +
+            st.ment +
+            st.fair;
+
+          rows.push({
+            id:    playerId,
+            name:  pl.full_name,
+            club:  pl.club_name || '',
+            pos:   pl.positions || null,
+            foot:  pl.dominant_foot || '',
+            cntEvents: st.cntEvents,
+            ballsich:  st.ballsich,
+            zweik:     st.zweik,
+            lauf:      st.lauf,
+            abschluss: st.abschluss,
+            std:       st.std,
+            ment:      st.ment,
+            fair:      st.fair,
+            total
+          });
+        }
+
+        if (!rows.length) {
+          tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter (Radar).</td></tr>';
+          if (msg) msg.textContent = 'Keine Spieler – ggf. Filter anpassen oder mehr Radar-Daten erfassen.';
+          return;
+        }
+
+        // 3) Sortierung nach Radar-Score (total)
+        rows.sort((a, b) => b.total - a.total);
+
+        const footLabel = f =>
+          f === 'left' ? 'links' :
+          f === 'right' ? 'rechts' :
+          f === 'both' ? 'beidfüßig' : '';
+
+        const posStr = p =>
+          Array.isArray(p) ? p.join(', ') :
+          (typeof p === 'string' ? p : '');
+
+        // 4) Tabelle bauen – wir nutzen vorhandene Spalten,
+        //  interpretieren aber Ø Note hier als Gesamt-Radarwert.
+        tbody.innerHTML = rows.map(r => `
+          <tr>
+            <td>★</td>
+            <td>${r.name}</td>
+            <td>${r.club}</td>
+            <td>${posStr(r.pos)}</td>
+            <td>${footLabel(r.foot)}</td>
+            <td>${r.cntEvents}</td>
+            <td>${r.total}</td>
+            <td>Radar</td>
+          </tr>
+        `).join('');
+
+        if (msg) msg.textContent = `OK: ${rows.length} Spieler im Radar-Ranking (Quelle: Live-Aktionen).`;
+
+      } catch (e) {
+        console.error('refreshRankingFromRadar', e);
+        const msg = document.querySelector('#rank-msg');
+        if (msg) msg.textContent = 'Fehler beim Laden des Radar-Rankings.';
+        const tbody = document.querySelector('#rank-table tbody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="8">Fehler beim Radar-Ranking.</td></tr>';
+      }
+    }
+
       const msg = document.querySelector('#rank-msg');
       const tbody = document.querySelector('#rank-table tbody');
       if (!tbody) return;
