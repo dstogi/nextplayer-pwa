@@ -2661,24 +2661,30 @@ try {
       }
     }
 
-      const msg = document.querySelector('#rank-msg');
-      const tbody = document.querySelector('#rank-table tbody');
-      if (!tbody) return;
+const msg  = document.querySelector('#rank-msg');
+const tbody = document.querySelector('#rank-table tbody');
 
-      if (msg) msg.textContent = 'Lade Ranking-Daten…';
+// Wenn es keine Ranking-Tabelle gibt, nur warnen und hier STOPPEN,
+// aber OHNE "return" (das ist am Top-Level verboten).
+if (!tbody) {
+  console.warn('Ranking-Tabelle (#rank-table tbody) nicht gefunden – refreshRanking wird übersprungen.');
+} else {
 
-      try {
-        const c = await getClient();
+  if (msg) msg.textContent = 'Lade Ranking-Daten…';
 
-        // 1) Basisdaten holen
-        const [pRes, eRes, rRes] = await Promise.all([
-          c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
-          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
-          c.from('rating')
-            .select('player_id, event_id, criteria, created_at')
-            .order('created_at', { ascending: false })
-            .limit(2000)
-        ]);
+  try {
+    const c = await getClient();
+
+    // 1) Basisdaten holen
+    const [pRes, eRes, rRes] = await Promise.all([
+      c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
+      c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
+      c.from('rating')
+        .select('player_id, event_id, criteria, created_at')
+        .order('created_at', { ascending: false })
+        .limit(2000)
+    ]);
+    
 
         if (pRes.error || eRes.error || rRes.error) {
           console.error('refreshRanking errors:', pRes.error, eRes.error, rRes.error);
