@@ -2685,29 +2685,28 @@ if (!tbody) {
         .limit(2000)
     ]);
     
-
         if (pRes.error || eRes.error || rRes.error) {
-          console.error('refreshRanking errors:', pRes.error, eRes.error, rRes.error);
-          if (msg) msg.textContent = 'Fehler beim Laden der Daten (Player/Event/Rating).';
-          tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Daten.</td></tr>';
-          return;
-        }
+      console.error('refreshRanking errors:', pRes.error, eRes.error, rRes.error);
+      if (msg) msg.textContent = 'Fehler beim Laden der Daten (Player/Event/Rating).';
+      tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Daten.</td></tr>';
+    }
 
         const players = pRes.data || [];
         const events  = eRes.data || [];
         const ratings = rRes.data || [];
 
-        // Falls es überhaupt keine Ratings gibt, früh abbrechen
-        if (!ratings.length) {
-          if (msg) msg.textContent = 'Noch keine Bewertungen in der Datenbank.';
-          tbody.innerHTML = '<tr><td colspan="8">Noch keine Bewertungen gespeichert.</td></tr>';
-          lastRows = [];
-          ratingsByPlayer = new Map();
-          return;
-        }
+        // Falls es überhaupt keine Ratings gibt, früh abbrechen – aber OHNE return
+    if (!ratings.length) {
+      if (msg) msg.textContent = 'Noch keine Bewertungen in der Datenbank.';
+      tbody.innerHTML = '<tr><td colspan="8">Noch keine Bewertungen vorhanden.</td></tr>';
+      lastRows = [];
+      ratingsByPlayer = new Map();
+    } else {
+      lastRows = [];
+      ratingsByPlayer = new Map();
 
-        const pMap = new Map(players.map(p => [p.id, p]));
-        const eMap = new Map(events.map(e => [e.id, e]));
+      const pMap = new Map(players.map(p => [p.id, p]));
+      const eMap = new Map(events.map(e => [e.id, e]));
 
         // 2) Filter auslesen
         const clubF   = document.querySelector('#club-filter')?.value || '';
