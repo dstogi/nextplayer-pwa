@@ -2648,31 +2648,35 @@ if (!radar.length) {
           Array.isArray(p) ? p.join(', ') :
           (typeof p === 'string' ? p : '');
 
-        // 4) Tabelle bauen – wir nutzen vorhandene Spalten,
-        //  interpretieren aber Ø Note hier als Gesamt-Radarwert.
-        tbody.innerHTML = rows.map(r => `
-          <tr>
-            <td>★</td>
-            <td>${r.name}</td>
-            <td>${r.club}</td>
-            <td>${posStr(r.pos)}</td>
-            <td>${footLabel(r.foot)}</td>
-            <td>${r.cntEvents}</td>
-            <td>${r.total}</td>
-            <td>Radar</td>
-          </tr>
-        `).join('');
+       // 4) Tabelle bauen – wir nutzen vorhandene Spalten,
+// interpretieren aber 0 Note hier als Gesamt-Radarwert.
+tbody.innerHTML = rows.map(r => `
+  <tr>
+    <td></td>
+    <td>${r.name}</td>
+    <td>${r.club}</td>
+    <td>${postStr(r.pos)}</td>
+    <td>${footLabel(r.foot)}</td>
+    <td>${r.cntEvents}</td>
+    <td>${r.total}</td>
+    <td>Radar</td>
+  </tr>
+`).join('');
 
-        if (msg) msg.textContent = `OK: ${rows.length} Spieler im Radar-Ranking (Quelle: Live-Aktionen).`;
+// Status-Text setzen
+if (msg) {
+  msg.textContent = `OK: ${rows.length} Spieler im Radar-Ranking (Quelle: Live-Aktionen)`;
+}
 
-      } catch (e) {
-        console.error('refreshRankingFromRadar', e);
-        const msg = document.querySelector('#rank-msg');
-        if (msg) msg.textContent = 'Fehler beim Laden des Radar-Rankings.';
-        const tbody = document.querySelector('#rank-table tbody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8">Fehler beim Radar-Ranking.</td></tr>';
-      }
-    }
+// try-Block HIER sauber schließen
+} catch (e) {
+  console.error('refreshRankingFromRadar', e);
+  if (msg) msg.textContent = 'Fehler beim Laden des Radar-Rankings.';
+  if (tbody) {
+    tbody.innerHTML =
+      '<tr><td colspan="8">Fehler beim Laden des Radar-Rankings.</td></tr>';
+  }
+}
 
 const msg  = document.querySelector('#rank-msg');
 const tbody = document.querySelector('#rank-table tbody');
