@@ -3417,7 +3417,14 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
         await radarRefreshData();
       }
     }
+   
+    // -----------------------------
+    // Funktionen für Navigation von außen verfügbar machen
+    // -----------------------------
+    window.refreshRanking = refreshRanking;
+    window.refreshLastComments = refreshLastComments;
 
+    
     (async function init() {
       const cfg = loadConfig();
       const urlInput = document.getElementById('sb-url');
