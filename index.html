@@ -2486,12 +2486,19 @@ try {
             .select('*')
         ]);
 
-        if (pRes.error || eRes.error || rRes.error) {
-          console.error('refreshRankingFromRadar errors:', pRes.error, eRes.error, rRes.error);
-          if (msg) msg.textContent = 'Fehler beim Laden der Radar-Daten.';
-          tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Radar-Daten.</td></tr>';
-          return;
-        }
+let players = [];
+let events  = [];
+let ratings = [];
+
+if (pRes.error || eRes.error || rRes.error) {
+  console.error('refreshRanking errors:', pRes.error, eRes.error, rRes.error);
+  if (msg) msg.textContent = 'Fehler beim Laden der Daten (Player/Event/Rating).';
+  tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Daten.</td></tr>';
+} else {
+  players = pRes.data || [];
+  events  = eRes.data || [];
+  ratings = rRes.data || [];
+}
 
         const players = pRes.data || [];
         const events  = eRes.data || [];
@@ -2695,18 +2702,21 @@ if (!tbody) {
         const events  = eRes.data || [];
         const ratings = rRes.data || [];
 
-        // Falls es überhaupt keine Ratings gibt, früh abbrechen – aber OHNE return
-    if (!ratings.length) {
-      if (msg) msg.textContent = 'Noch keine Bewertungen in der Datenbank.';
-      tbody.innerHTML = '<tr><td colspan="8">Noch keine Bewertungen vorhanden.</td></tr>';
-      lastRows = [];
-      ratingsByPlayer = new Map();
-    } else {
-      lastRows = [];
-      ratingsByPlayer = new Map();
+// Falls es überhaupt keine Ratings gibt, früh abbrechen – aber ohne return
+if (!ratings.length) {
+  if (msg) msg.textContent = 'Noch keine Bewertungen in der Datenbank.';
+  tbody.innerHTML = '<tr><td colspan="8">Noch keine Bewertungen vorhanden.</td></tr>';
+  lastRows = [];
+  ratingsByPlayer = new Map();
+} else {
+  lastRows = [];
+  ratingsByPlayer = new Map();
 
-      const pMap = new Map(players.map(p => [p.id, p]));
-      const eMap = new Map(events.map(e => [e.id, e]));
+  const pMap = new Map(players.map(p => [p.id, p]));
+  const eMap = new Map(events.map(e => [e.id, e]));
+
+  // ⬇️ ab hier dein bisheriger Ranking-Code (Filtern, Sortieren, rows.map(...) etc.)
+}
 
         // 2) Filter auslesen
         const clubF   = document.querySelector('#club-filter')?.value || '';
