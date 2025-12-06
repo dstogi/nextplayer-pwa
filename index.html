@@ -890,13 +890,15 @@
         </div>
       </div>
 
-    <!-- 4. Ranking -->
+       <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
       <h2><span>4. Ranking</span></h2>
+
       <div class="row">
         <label for="club-filter">Verein</label>
         <select id="club-filter"></select>
       </div>
+
       <div class="row">
         <label for="rank-pos">Position</label>
         <select id="rank-pos">
@@ -917,6 +919,7 @@
           <option value="both">beidfüßig</option>
         </select>
       </div>
+
       <div class="row">
         <label for="rank-type">Event-Typ</label>
         <select id="rank-type">
@@ -926,6 +929,7 @@
           <option value="tournament">Turnier</option>
         </select>
       </div>
+
       <div class="row">
         <label for="rank-role">Bewertungs-Rolle</label>
         <select id="rank-role">
@@ -937,20 +941,24 @@
           <option value="sonstige">Sonstige</option>
         </select>
       </div>
+
       <div class="row">
         <label for="rank-from">Von Datum</label>
         <input id="rank-from" type="date">
         <label for="rank-to">Bis Datum</label>
         <input id="rank-to" type="date">
       </div>
+
       <div class="row">
         <label for="rank-min">Min. Bewertungen</label>
         <input id="rank-min" type="number" value="1" min="0" style="width:70px;">
       </div>
+
       <div class="row">
         <label for="rank-q">Suche (Name/Verein)</label>
         <input id="rank-q" type="text" size="30">
       </div>
+
       <div class="row">
         <label for="fav-filter">Watchlist</label>
         <select id="fav-filter">
@@ -961,9 +969,10 @@
           <input type="checkbox" id="rank-top10">
           nur Top 10
         </label>
-        <button id="btn-refresh-ranking">Ranking aktualisieren</button>
-        <button id="btn-export-csv">CSV-Export</button>
+        <button id="btn-refresh-ranking" type="button">Ranking aktualisieren</button>
+        <button id="btn-export-csv" type="button">CSV-Export</button>
       </div>
+
       <div id="rank-msg" class="status-line"></div>
 
       <table id="rank-table">
