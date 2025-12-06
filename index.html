@@ -2488,29 +2488,33 @@ try {
 
 let players = [];
 let events  = [];
-let ratings = [];
+let radar   = [];
 
 if (pRes.error || eRes.error || rRes.error) {
   console.error('refreshRanking errors:', pRes.error, eRes.error, rRes.error);
-  if (msg) msg.textContent = 'Fehler beim Laden der Daten (Player/Event/Rating).';
-  tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Daten.</td></tr>';
+  if (msg) msg.textContent = 'Fehler beim Laden der Daten (Player/Event/Radar).';
+  tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden der Radar-Daten.</td></tr>';
 } else {
   players = pRes.data || [];
   events  = eRes.data || [];
-  ratings = rRes.data || [];
+  radar   = rRes.data || [];
 }
 
-        const players = pRes.data || [];
-        const events  = eRes.data || [];
-        const radar   = rRes.data || [];
+// Falls es überhaupt keine Radar-Daten gibt
+if (!radar.length) {
+  if (msg) msg.textContent = 'Noch keine Radar-Daten in der Datenbank.';
+  tbody.innerHTML = '<tr><td colspan="8">Noch keine Radar-Daten vorhanden.</td></tr>';
+} else {
+  // ab hier normal weiterarbeiten
 
-        if (!radar.length) {
-          if (msg) msg.textContent = 'Noch keine Radar-Daten in der Datenbank.';
-          tbody.innerHTML = '<tr><td colspan="8">Noch keine Radar-Daten gespeichert.</td></tr>';
-          return;
-        }
+  const pMap = new Map(players.map(p => [p.id, p]));
+  const eMap = new Map(events.map(e => [e.id, e]));
 
-        const pMap = new Map(players.map(p => [p.id, p]));
+  // ... hier dein bisheriger Code:
+  // Filter auslesen, rows bauen, sortieren, tbody.innerHTML = rows.map(...).join('');
+}
+
+  const pMap = new Map(players.map(p => [p.id, p]));
         const eMap = new Map(events.map(e => [e.id, e]));
 
         // Filter aus dem Ranking-UI (können später ins filters-Objekt wandern)
