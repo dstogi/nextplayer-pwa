@@ -739,6 +739,13 @@
         <button id="drone-reset-btn" type="button">Drohnen-Log löschen</button>
       </div>
 
+         <div class="row">
+        <button id="drone-load-archive-btn" type="button">Archiv-Aktionen laden</button>
+        <span class="small-note">
+          Lädt alle gespeicherten Drohnen-Aktionen für dieses Event und diesen Spieler aus der Datenbank.
+        </span>
+      </div>
+   
       <h3>Verlauf (Zeitstempel)</h3>
       <table id="drone-log-table">
         <thead>
@@ -3456,6 +3463,86 @@ async function radarRunAnalysis() {
       if (status) status.textContent = 'Drohnen-Log zurückgesetzt (nur lokal).';
     }
 
+        // Archivierte Drohnen-Aktionen (Supabase) für aktuelles Event & Spieler laden
+    async function droneLoadArchive() {
+      const status   = document.getElementById('drone-status');
+      const eventSel = document.getElementById('drone-event-select');
+      const playerSel= document.getElementById('drone-player-select');
+
+      if (!eventSel || !playerSel) return;
+
+      const eventId  = eventSel.value;
+      const playerId = playerSel.value;
+
+      if (!eventId) {
+        if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
+        return;
+      }
+      if (!playerId) {
+        if (status) status.textContent = 'Bitte einen Spieler wählen.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+
+        // aktuellen Benutzer laden
+        const sessionRes = await c.auth.getSession();
+        const user = sessionRes?.data?.session?.user || null;
+        if (!user) {
+          if (status) status.textContent = 'Bitte einloggen, um Archiv-Daten zu laden.';
+          return;
+        }
+
+        const { data, error } = await c
+          .from('player_drone_actions')
+          .select('half, time_ms, action_type')
+          .eq('event_id', eventId)
+          .eq('player_id', playerId)
+          .eq('evaluator_user_id', user.id)
+          .order('half',    { ascending: true })
+          .order('time_ms', { ascending: true });
+
+        if (error) {
+          console.error('droneLoadArchive error', error);
+          if (status) status.textContent = 'Fehler beim Laden der Archiv-Daten.';
+          return;
+        }
+
+        if (!data || !data.length) {
+          // Archiv leer → auch lokales Log leeren
+          droneActions = [];
+          dronePlusCount = 0;
+          droneMinusCount = 0;
+          droneUpdateSummary();
+          droneRenderLog();
+          if (status) status.textContent = 'Keine Archiv-Daten für dieses Event und diesen Spieler gefunden.';
+          return;
+        }
+
+        // Lokalen Zustand aus DB-Daten neu aufbauen
+        droneActions = data.map(row => ({
+          half: row.half,
+          ms:   row.time_ms,
+          type: row.action_type
+        }));
+
+        // Plus/Minus neu zählen
+        dronePlusCount  = droneActions.filter(a => a.type === 'plus').length;
+        droneMinusCount = droneActions.filter(a => a.type === 'minus').length;
+
+        droneUpdateSummary();
+        droneRenderLog();
+
+        if (status) {
+          status.textContent = `Archiv geladen: ${droneActions.length} Aktionen für dieses Event & diesen Spieler.`;
+        }
+      } catch (e) {
+        console.error('droneLoadArchive catch', e);
+        if (status) status.textContent = 'Fehler beim Laden der Archiv-Daten.';
+      }
+    }
+    
     async function droneRegisterAction(type) {
       const status   = document.getElementById('drone-status');
       const eventSel = document.getElementById('drone-event-select');
@@ -3579,14 +3666,15 @@ async function radarRunAnalysis() {
       }
     }
 
-        function droneInitUI() {
-      const h1Btn    = document.getElementById('drone-h1-btn');
-      const h2Btn    = document.getElementById('drone-h2-btn');
-      const plusBtn  = document.getElementById('drone-plus-btn');
-      const minusBtn = document.getElementById('drone-minus-btn');
-      const resetBtn = document.getElementById('drone-reset-btn');
-      const eventSel = document.getElementById('drone-event-select');
-      const playerSel= document.getElementById('drone-player-select');
+     function droneInitUI() {
+      const h1Btn     = document.getElementById('drone-h1-btn');
+      const h2Btn     = document.getElementById('drone-h2-btn');
+      const plusBtn   = document.getElementById('drone-plus-btn');
+      const minusBtn  = document.getElementById('drone-minus-btn');
+      const resetBtn  = document.getElementById('drone-reset-btn');
+      const loadBtn   = document.getElementById('drone-load-archive-btn');
+      const eventSel  = document.getElementById('drone-event-select');
+      const playerSel = document.getElementById('drone-player-select');
 
       if (!h1Btn || !h2Btn || !plusBtn || !minusBtn) return;
 
@@ -3595,8 +3683,9 @@ async function radarRunAnalysis() {
       plusBtn.addEventListener('click', () => droneRegisterAction('plus'));
       minusBtn.addEventListener('click', () => droneRegisterAction('minus'));
       if (resetBtn) resetBtn.addEventListener('click', droneReset);
+      if (loadBtn)  loadBtn.addEventListener('click', droneLoadArchive);
 
-      // Wenn Event oder Spieler gewechselt wird → neues Log starten
+      // Wenn Event oder Spieler gewechselt wird → neues Log starten (nur lokal)
       if (eventSel) eventSel.addEventListener('change', droneReset);
       if (playerSel) playerSel.addEventListener('change', droneReset);
 
