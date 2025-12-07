@@ -274,6 +274,7 @@
       <!-- Neuer Reiter nur für Punkt 3 -->
       <button data-target="sec-rating-form">Bewertung</button>
       <button data-target="sec-radar">Radar</button>
+      <button data-target="sec-drone">SpielerDrohne</button>
       <button data-target="sec-ranking">Ranking</button>
       <button data-target="sec-events">Events</button>
       <button data-target="sec-last">Verlauf</button>
@@ -671,6 +672,85 @@
       </div>
     </section>
 
+    <!-- 7b. SpielerDrohne – Einzelspieler mit Zeitstempeln -->
+    <section id="sec-drone" class="section-card">
+      <h2><span>7b. SpielerDrohne™ (Einzelspieler mit Zeitstempeln)</span></h2>
+      <p style="font-size:0.85rem; color:#555;">
+        Wähle ein Spiel und genau einen Spieler. Starte die Stoppuhr zu Beginn der Halbzeit und
+        markiere jede wichtige Aktion mit + (positiv) oder − (negativ). Zu jeder Aktion wird ein
+        Zeitstempel gespeichert, damit du sie später im Video gezielt wiederfindest.
+      </p>
+
+      <h3>Spiel & Spieler wählen</h3>
+      <div class="row">
+        <label for="drone-event-select">Event / Spiel</label>
+        <select id="drone-event-select">
+          <option value="">Bitte wählen …</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="drone-player-select">Spieler</label>
+        <select id="drone-player-select">
+          <option value="">Bitte wählen …</option>
+        </select>
+      </div>
+
+      <div id="drone-status" class="status-line"></div>
+
+      <h3>Stoppuhr</h3>
+      <p class="small-note">
+        Drücke zu Beginn der Halbzeit auf „Start/Stop“. Am Ende der Halbzeit nochmals drücken.
+        Für die zweite Halbzeit gibt es eine eigene Stoppuhr. Aktionen erhalten jeweils den
+        aktuellen Zeitstempel der aktiven Halbzeit.
+      </p>
+
+      <div class="row">
+        <label>1. Halbzeit</label>
+        <button id="drone-h1-btn" type="button">1. Halbzeit Start/Stop</button>
+        <span id="drone-h1-time" class="small-note">00:00</span>
+      </div>
+
+      <div class="row">
+        <label>2. Halbzeit</label>
+        <button id="drone-h2-btn" type="button">2. Halbzeit Start/Stop</button>
+        <span id="drone-h2-time" class="small-note">00:00</span>
+      </div>
+
+      <div class="row">
+        <label>Aktive Halbzeit</label>
+        <span id="drone-active-half" class="small-note">keine</span>
+      </div>
+
+      <h3>Aktionen erfassen</h3>
+      <div class="row">
+        <button id="drone-plus-btn" type="button">+ Aktion</button>
+        <button id="drone-minus-btn" type="button">− Aktion</button>
+      </div>
+
+      <div class="row">
+        <label>Übersicht</label>
+        <span id="drone-summary" class="small-note">
+          Plus: 0 · Minus: 0 · Gesamt: 0
+        </span>
+      </div>
+
+      <h3>Verlauf (Zeitstempel)</h3>
+      <table id="drone-log-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Halbzeit</th>
+            <th>Zeit</th>
+            <th>Typ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="4">Noch keine Aktionen erfasst.</td></tr>
+        </tbody>
+      </table>
+    </section>
+    
     <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
       <h2><span>4. Ranking</span></h2>
@@ -822,6 +902,7 @@
         'sec-ranking':      document.getElementById('sec-ranking'),
         'sec-events':       document.getElementById('sec-events'),
         'sec-last':         document.getElementById('sec-last')
+        'sec-drone':        document.getElementById('sec-drone'),
       };
 
       function showSection(id) {
@@ -3201,7 +3282,240 @@ async function radarRunAnalysis() {
         });
       });
     }
+    
+    // -----------------------------
+    // BLOCK K: SpielerDrohne™ – Einzelspieler mit Zeitstempeln
+    // -----------------------------
 
+    // Interner Zustand pro Halbzeit
+    const droneState = {
+      1: { running: false, startMs: 0, elapsedMs: 0 },
+      2: { running: false, startMs: 0, elapsedMs: 0 }
+    };
+    let droneCurrentHalf = null;     // 1, 2 oder null
+    let droneTimerId = null;
+    let droneActions = [];           // {half, ms, type}
+    let dronePlusCount = 0;
+    let droneMinusCount = 0;
+
+    function droneFormatTime(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const m = String(Math.floor(totalSec / 60)).padStart(2, '0');
+      const s = String(totalSec % 60).padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function droneUpdateTimeDisplay() {
+      const h1Label = document.getElementById('drone-h1-time');
+      const h2Label = document.getElementById('drone-h2-time');
+      const activeLabel = document.getElementById('drone-active-half');
+
+      if (!h1Label || !h2Label || !activeLabel) return;
+
+      const now = Date.now();
+
+      [1, 2].forEach(h => {
+        const st = droneState[h];
+        let ms = st.elapsedMs;
+        if (st.running) {
+          ms += now - st.startMs;
+        }
+        const label = (h === 1 ? h1Label : h2Label);
+        label.textContent = droneFormatTime(ms);
+      });
+
+      activeLabel.textContent = droneCurrentHalf ? `${droneCurrentHalf}. Halbzeit` : 'keine';
+    }
+
+    function droneStartTimerLoop() {
+      if (droneTimerId != null) return;
+      droneTimerId = setInterval(droneUpdateTimeDisplay, 500);
+    }
+
+    function droneStopTimerLoopIfIdle() {
+      if (!droneState[1].running && !droneState[2].running && droneTimerId != null) {
+        clearInterval(droneTimerId);
+        droneTimerId = null;
+      }
+    }
+
+    function droneToggleHalf(half) {
+      const status = document.getElementById('drone-status');
+      const st = droneState[half];
+      const now = Date.now();
+
+      // Wenn Halbzeit läuft → stoppen
+      if (st.running) {
+        st.elapsedMs += now - st.startMs;
+        st.startMs = 0;
+        st.running = false;
+        if (droneCurrentHalf === half) {
+          droneCurrentHalf = null;
+        }
+        if (status) status.textContent = `${half}. Halbzeit gestoppt.`;
+      } else {
+        // andere Halbzeit ggf. stoppen
+        const other = half === 1 ? 2 : 1;
+        if (droneState[other].running) {
+          droneToggleHalf(other);
+        }
+        st.startMs = now;
+        st.running = true;
+        droneCurrentHalf = half;
+        if (status) status.textContent = `${half}. Halbzeit gestartet.`;
+        droneStartTimerLoop();
+      }
+
+      droneUpdateTimeDisplay();
+      droneStopTimerLoopIfIdle();
+    }
+
+    function droneGetCurrentTimeMs() {
+      if (!droneCurrentHalf) return null;
+      const st = droneState[droneCurrentHalf];
+      let ms = st.elapsedMs;
+      if (st.running) {
+        ms += Date.now() - st.startMs;
+      }
+      return ms;
+    }
+
+    function droneUpdateSummary() {
+      const sumEl = document.getElementById('drone-summary');
+      if (!sumEl) return;
+      const total = dronePlusCount + droneMinusCount;
+      sumEl.textContent = `Plus: ${dronePlusCount} · Minus: ${droneMinusCount} · Gesamt: ${total}`;
+    }
+
+    function droneRenderLog() {
+      const tbody = document.querySelector('#drone-log-table tbody');
+      if (!tbody) return;
+
+      if (!droneActions.length) {
+        tbody.innerHTML = '<tr><td colspan="4">Noch keine Aktionen erfasst.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = droneActions.map((a, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${a.half}. HZ</td>
+          <td>${droneFormatTime(a.ms)}</td>
+          <td>${a.type === 'plus' ? '+ Aktion' : '− Aktion'}</td>
+        </tr>
+      `).join('');
+    }
+
+    function droneRegisterAction(type) {
+      const status = document.getElementById('drone-status');
+      const eventSel = document.getElementById('drone-event-select');
+      const playerSel = document.getElementById('drone-player-select');
+
+      if (!eventSel || !playerSel) return;
+
+      const eventId = eventSel.value;
+      const playerId = playerSel.value;
+
+      if (!eventId) {
+        if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
+        return;
+      }
+      if (!playerId) {
+        if (status) status.textContent = 'Bitte einen Spieler wählen.';
+        return;
+      }
+      if (!droneCurrentHalf) {
+        if (status) status.textContent = 'Bitte zuerst eine Halbzeit starten.';
+        return;
+      }
+
+      const ms = droneGetCurrentTimeMs();
+      if (ms == null) {
+        if (status) status.textContent = 'Kein laufender Timer.';
+        return;
+      }
+
+      droneActions.push({
+        half: droneCurrentHalf,
+        ms,
+        type
+      });
+
+      if (type === 'plus') dronePlusCount++;
+      else droneMinusCount++;
+
+      droneUpdateSummary();
+      droneRenderLog();
+
+      if (status) {
+        status.textContent = `Aktion erfasst (${type === 'plus' ? '+' : '−'} · ${droneCurrentHalf}. HZ · ${droneFormatTime(ms)}).`;
+      }
+    }
+
+    async function droneRefreshData() {
+      // eigene Dropdowns mit Spielern & Events füllen
+      const eventSel  = document.getElementById('drone-event-select');
+      const playerSel = document.getElementById('drone-player-select');
+      if (!eventSel || !playerSel) return;
+
+      try {
+        const c = await getClient();
+
+        // Events
+        const eRes = await c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: true });
+
+        if (!eRes.error) {
+          eventSel.innerHTML = '<option value="">Bitte wählen …</option>' +
+            (eRes.data || []).map(ev =>
+              `<option value="${ev.id}">${formatEventDisplayLine(ev)}</option>`
+            ).join('');
+        }
+
+        // Spieler
+        const pRes = await c
+          .from('player')
+          .select('id, full_name, club_name, jersey_number')
+          .order('full_name', { ascending: true });
+
+        if (!pRes.error) {
+          playerSel.innerHTML = '<option value="">Bitte wählen …</option>' +
+            (pRes.data || []).map(pl => {
+              const club = pl.club_name || '';
+              const num  = pl.jersey_number ? `#${pl.jersey_number} ` : '';
+              return `<option value="${pl.id}">${num}${pl.full_name}${club ? ' (' + club + ')' : ''}</option>`;
+            }).join('');
+        }
+      } catch (e) {
+        console.error('droneRefreshData', e);
+      }
+    }
+
+    function droneInitUI() {
+      const h1Btn = document.getElementById('drone-h1-btn');
+      const h2Btn = document.getElementById('drone-h2-btn');
+      const plusBtn = document.getElementById('drone-plus-btn');
+      const minusBtn = document.getElementById('drone-minus-btn');
+
+      if (!h1Btn || !h2Btn || !plusBtn || !minusBtn) return;
+
+      h1Btn.addEventListener('click', () => droneToggleHalf(1));
+      h2Btn.addEventListener('click', () => droneToggleHalf(2));
+      plusBtn.addEventListener('click', () => droneRegisterAction('plus'));
+      minusBtn.addEventListener('click', () => droneRegisterAction('minus'));
+
+      droneUpdateTimeDisplay();
+      droneUpdateSummary();
+      droneRenderLog();
+      droneRefreshData();
+    }
+
+    // Direkt initialisieren
+    droneInitUI();
+
+    
     // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
     async function radarRefreshData() {
       const eventSel  = document.getElementById('radar-event-select');
@@ -3229,6 +3543,8 @@ async function radarRunAnalysis() {
       // Nur aufrufen, wenn die Funktion existiert (zusätzliche Sicherheit)
       if (typeof radarRefreshData === 'function') {
         await radarRefreshData();
+      if (typeof droneRefreshData === 'function') {
+        await droneRefreshData();
       }
     }
 
