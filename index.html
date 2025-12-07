@@ -3456,14 +3456,14 @@ async function radarRunAnalysis() {
       if (status) status.textContent = 'Drohnen-Log zurückgesetzt (nur lokal).';
     }
 
-    function droneRegisterAction(type) {
-      const status = document.getElementById('drone-status');
+    async function droneRegisterAction(type) {
+      const status   = document.getElementById('drone-status');
       const eventSel = document.getElementById('drone-event-select');
-      const playerSel = document.getElementById('drone-player-select');
+      const playerSel= document.getElementById('drone-player-select');
 
       if (!eventSel || !playerSel) return;
 
-      const eventId = eventSel.value;
+      const eventId  = eventSel.value;
       const playerId = playerSel.value;
 
       if (!eventId) {
@@ -3485,6 +3485,7 @@ async function radarRunAnalysis() {
         return;
       }
 
+      // 1) Lokal im Frontend speichern (für Anzeige im Spiel)
       droneActions.push({
         half: droneCurrentHalf,
         ms,
@@ -3499,6 +3500,41 @@ async function radarRunAnalysis() {
 
       if (status) {
         status.textContent = `Aktion erfasst (${type === 'plus' ? '+' : '−'} · ${droneCurrentHalf}. HZ · ${droneFormatTime(ms)}).`;
+      }
+
+      // 2) Zusätzlich in Supabase archivieren
+      try {
+        const c = await getClient();
+
+        // aktuellen Benutzer laden
+        const sessionRes = await c.auth.getSession();
+        const user = sessionRes?.data?.session?.user || null;
+        if (!user) {
+          console.warn('droneRegisterAction: kein eingeloggter User – Aktion wird nur lokal gespeichert.');
+          return;
+        }
+
+        const payload = {
+          event_id:          eventId,
+          player_id:         playerId,
+          evaluator_user_id: user.id,
+          half:              droneCurrentHalf,
+          time_ms:           ms,
+          action_type:       type
+        };
+
+        const { error } = await c
+          .from('player_drone_actions')
+          .insert(payload);
+
+        if (error) {
+          console.error('droneRegisterAction Supabase-Insert error', error);
+          // wir brechen hier nicht ab – lokal ist die Aktion ja schon da
+          if (status) status.textContent += ' (Hinweis: Archiv-Speicherung fehlgeschlagen)';
+        }
+      } catch (e) {
+        console.error('droneRegisterAction Supabase-Fehler', e);
+        // ebenfalls: nur Hinweis, kein Abbruch
       }
     }
 
