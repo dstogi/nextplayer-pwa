@@ -779,7 +779,14 @@
     <button id="dna-load-btn" type="button">DNA laden</button>
   </div>
 
-  <h3>Noten-DNA (Aggregierte Bewertungen)</h3>
+  <h3>Spielerprofil (Stammdaten & Übersicht)</h3>
+  <table id="dna-profile-table">
+    <tbody>
+      <tr><td colspan="2">Noch keine Daten geladen.</td></tr>
+    </tbody>
+  </table>
+
+   <h3>Noten-DNA (Aggregierte Bewertungen)</h3>
   <table id="dna-rating-table">
     <thead>
       <tr>
@@ -812,10 +819,29 @@
       <tr><td colspan="5">Noch keine Daten geladen.</td></tr>
     </tbody>
   </table>
-      
+  <h3>Drohnen-DNA (Halbzeiten-Aktivität)</h3>
+  <p class="small-note">
+    Auswertung der SpielerDrohne™: Aktionen pro Halbzeit über alle Spiele. Zeigt, ob ein Spieler
+    eher in der 1. oder 2. Halbzeit auffällig ist.
+  </p>
+  <table id="dna-drone-table">
+    <thead>
+      <tr>
+        <th>Halbzeit</th>
+        <th>+ Aktionen</th>
+        <th>− Aktionen</th>
+        <th>Netto</th>
+        <th>Gesamt</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="5">Noch keine Daten geladen.</td></tr>
+    </tbody>
+  </table>
+
   <div id="dna-status" class="status-line"></div>
 </section>
-    
+ 
     <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
       <h2><span>4. Ranking</span></h2>
@@ -3786,23 +3812,234 @@ async function radarRunAnalysis() {
     }
 
 // -----------------------------
-// BLOCK L: SpielerDNA – Notenprofil + Radarprofil
+// BLOCK L: SpielerDNA – Profil + Noten + Radar + Drohne
 // -----------------------------
 async function dnaLoad() {
-  const status      = document.getElementById('dna-status');
-  const sel         = document.getElementById('dna-player-select');
-  const ratingBody  = document.querySelector('#dna-rating-table tbody');
-  const radarBody   = document.querySelector('#dna-radar-table tbody');
+  const status       = document.getElementById('dna-status');
+  const sel          = document.getElementById('dna-player-select');
+  const profileBody  = document.querySelector('#dna-profile-table tbody');
+  const ratingBody   = document.querySelector('#dna-rating-table tbody');
+  const radarBody    = document.querySelector('#dna-radar-table tbody');
+  const droneBody    = document.querySelector('#dna-drone-table tbody');
 
-  if (!sel || !ratingBody || !radarBody) return;
+  if (!sel || !profileBody || !ratingBody || !radarBody || !droneBody) return;
 
   const playerId = sel.value;
   if (!playerId) {
     if (status) status.textContent = 'Bitte Spieler wählen.';
-    ratingBody.innerHTML = '<tr><td colspan="3">Kein Spieler gewählt.</td></tr>';
-    radarBody.innerHTML  = '<tr><td colspan="5">Kein Spieler gewählt.</td></tr>';
+    profileBody.innerHTML = '<tr><td colspan="2">Kein Spieler gewählt.</td></tr>';
+    ratingBody.innerHTML  = '<tr><td colspan="3">Kein Spieler gewählt.</td></tr>';
+    radarBody.innerHTML   = '<tr><td colspan="5">Kein Spieler gewählt.</td></tr>';
+    droneBody.innerHTML   = '<tr><td colspan="5">Kein Spieler gewählt.</td></tr>';
     return;
   }
+
+  try {
+    const c = await getClient();
+
+    // 1) Spieler-Stammdaten
+    const { data: playerRow, error: playerErr } = await c
+      .from('player')
+      .select('full_name, club_name, positions, dominant_foot, birthdate')
+      .eq('id', playerId)
+      .maybeSingle();
+
+    if (playerErr) throw playerErr;
+
+    if (!playerRow) {
+      profileBody.innerHTML = '<tr><td colspan="2">Spielerdaten nicht gefunden.</td></tr>';
+    } else {
+      const posStr = Array.isArray(playerRow.positions)
+        ? playerRow.positions.join(', ')
+        : (playerRow.positions || '');
+
+      let footLabel = '';
+      if (playerRow.dominant_foot === 'left') footLabel = 'links';
+      else if (playerRow.dominant_foot === 'right') footLabel = 'rechts';
+      else if (playerRow.dominant_foot === 'both') footLabel = 'beidfüßig';
+
+      const birth = playerRow.birthdate || '';
+      let ageStr = '';
+      if (birth) {
+        const year = parseInt(birth.slice(0,4), 10);
+        if (!isNaN(year)) {
+          const nowY = new Date().getFullYear();
+          ageStr = ` (~${nowY - year} Jahre)`;
+        }
+      }
+
+      profileBody.innerHTML = `
+        <tr><th>Name</th><td>${playerRow.full_name}</td></tr>
+        <tr><th>Verein</th><td>${playerRow.club_name || '-'}</td></tr>
+        <tr><th>Position(en)</th><td>${posStr || '-'}</td></tr>
+        <tr><th>Starker Fuß</th><td>${footLabel || '-'}</td></tr>
+        <tr><th>Geburtsdatum</th><td>${birth || '-'}${ageStr}</td></tr>
+        <tr><th>Bewertungen (gesamt)</th><td id="dna-profile-rating-count">-</td></tr>
+        <tr><th>Radar-Sätze (gesamt)</th><td id="dna-profile-radar-count">-</td></tr>
+        <tr><th>Drohnen-Aktionen (gesamt)</th><td id="dna-profile-drone-count">-</td></tr>
+      `;
+    }
+
+    // 2) Ratings laden
+    const { data: ratingData, error: ratingErr } = await c
+      .from('rating')
+      .select('criteria')
+      .eq('player_id', playerId);
+
+    if (ratingErr) throw ratingErr;
+
+    // 3) Radar laden
+    const { data: radarData, error: radarErr } = await c
+      .from('player_radar')
+      .select('ballsicherheit_plus, ballsicherheit_minus, zweikampf_plus, zweikampf_minus, laufduell_plus, laufduell_minus, abschluss_plus, abschluss_minus, standard_plus, standard_minus, mentalitaet_plus, mentalitaet_minus, fairplay_plus, fairplay_minus')
+      .eq('rated_player_id', playerId);
+
+    if (radarErr) throw radarErr;
+
+    // 4) Drohnen-Aktionen laden
+    const { data: droneData, error: droneErr } = await c
+      .from('player_drone_actions')
+      .select('half, action_type')
+      .eq('player_id', playerId);
+
+    if (droneErr) throw droneErr;
+
+    // -------- Noten-DNA --------
+    if (!ratingData || !ratingData.length) {
+      ratingBody.innerHTML = '<tr><td colspan="3">Keine Bewertungen vorhanden.</td></tr>';
+    } else {
+      const agg = {}; // { kriterium: {sum, count, label} }
+
+      ratingData.forEach(r => {
+        const crit = r.criteria || {};
+        ratingKeys.forEach(([key,label]) => {
+          const v = parseFloat(crit[key]);
+          if (!isNaN(v)) {
+            if (!agg[key]) agg[key] = {sum:0, count:0, label};
+            agg[key].sum   += v;
+            agg[key].count += 1;
+          }
+        });
+      });
+
+      const rows = Object.values(agg).map(obj => {
+        const avg = obj.sum / obj.count;
+        return `
+          <tr>
+            <td>${obj.label}</td>
+            <td>${avg.toFixed(2)}</td>
+            <td>${obj.count}</td>
+          </tr>`;
+      }).join('');
+
+      ratingBody.innerHTML = rows || '<tr><td colspan="3">Keine bewerteten Kriterien.</td></tr>';
+    }
+
+    // -------- Radar-DNA --------
+    if (!radarData || !radarData.length) {
+      radarBody.innerHTML = '<tr><td colspan="5">Keine Radar-Daten vorhanden.</td></tr>';
+    } else {
+      const radarDefs = [
+        ['ballsicherheit', 'Ballsicherheit'],
+        ['zweikampf',     'Zweikampf'],
+        ['laufduell',     'Laufduell'],
+        ['abschluss',     'Abschluss'],
+        ['standard',      'Standards'],
+        ['mentalitaet',   'Mentalität'],
+        ['fairplay',      'Fair Play']
+      ];
+
+      const aggR = {};
+      radarDefs.forEach(([key,label]) => {
+        aggR[key] = { label, plus:0, minus:0, rows:0 };
+      });
+
+      radarData.forEach(row => {
+        radarDefs.forEach(([key]) => {
+          const plus  = row[`${key}_plus`]  || 0;
+          const minus = row[`${key}_minus`] || 0;
+          aggR[key].plus  += plus;
+          aggR[key].minus += minus;
+          if (plus || minus) {
+            aggR[key].rows += 1;
+          }
+        });
+      });
+
+      const radarRowsHtml = radarDefs.map(([key]) => {
+        const a = aggR[key];
+        const net = a.plus - a.minus;
+        return `
+          <tr>
+            <td>${a.label}</td>
+            <td>${net}</td>
+            <td>${a.plus}</td>
+            <td>${a.minus}</td>
+            <td>${a.rows}</td>
+          </tr>`;
+      }).join('');
+
+      radarBody.innerHTML = radarRowsHtml || '<tr><td colspan="5">Keine Radar-Daten vorhanden.</td></tr>';
+    }
+
+    // -------- Drohnen-DNA (Halbzeiten) --------
+    if (!droneData || !droneData.length) {
+      droneBody.innerHTML = '<tr><td colspan="5">Keine Drohnen-Daten vorhanden.</td></tr>';
+    } else {
+      const aggD = {
+        1: { plus:0, minus:0 },
+        2: { plus:0, minus:0 }
+      };
+
+      droneData.forEach(row => {
+        const h = (row.half === 2) ? 2 : 1;
+        if (row.action_type === 'plus') aggD[h].plus++;
+        else if (row.action_type === 'minus') aggD[h].minus++;
+      });
+
+      const rows = [1,2].map(h => {
+        const d = aggD[h];
+        const total = d.plus + d.minus;
+        if (!total) return '';
+        const net = d.plus - d.minus;
+        return `
+          <tr>
+            <td>${h}. Halbzeit</td>
+            <td>${d.plus}</td>
+            <td>${d.minus}</td>
+            <td>${net}</td>
+            <td>${total}</td>
+          </tr>`;
+      }).filter(Boolean).join('');
+
+      droneBody.innerHTML = rows || '<tr><td colspan="5">Keine Drohnen-Daten vorhanden.</td></tr>';
+    }
+
+    // -------- Counts in Profil ergänzen --------
+    const ratingCountCell = document.getElementById('dna-profile-rating-count');
+    const radarCountCell  = document.getElementById('dna-profile-radar-count');
+    const droneCountCell  = document.getElementById('dna-profile-drone-count');
+
+    if (ratingCountCell) ratingCountCell.textContent = ratingData ? ratingData.length : 0;
+    if (radarCountCell)  radarCountCell.textContent  = radarData  ? radarData.length  : 0;
+    if (droneCountCell)  droneCountCell.textContent  = droneData  ? droneData.length  : 0;
+
+    if (status) {
+      const rc = ratingData ? ratingData.length : 0;
+      const rrc= radarData  ? radarData.length  : 0;
+      const dc = droneData  ? droneData.length  : 0;
+      status.textContent = `DNA geladen – ${rc} Bewertungen, ${rrc} Radar-Sätze, ${dc} Drohnen-Aktionen.`;
+    }
+
+  } catch (e) {
+    console.error('dnaLoad', e);
+    if (status) status.textContent = 'Fehler beim Laden der DNA.';
+    profileBody.innerHTML = '<tr><td colspan="2">Fehler beim Laden.</td></tr>';
+    ratingBody.innerHTML  = '<tr><td colspan="3">Fehler beim Laden.</td></tr>';
+    radarBody.innerHTML   = '<tr><td colspan="5">Fehler beim Laden.</td></tr>';
+    droneBody.innerHTML   = '<tr><td colspan="5">Fehler beim Laden.</td></tr>';
+  }
+}
 
   try {
     const c = await getClient();
