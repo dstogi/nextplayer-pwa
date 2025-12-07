@@ -892,18 +892,18 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
-      const sections = {
-        'sec-config':       document.getElementById('sec-config'),
-        'sec-auth':         document.getElementById('sec-auth'),
-        'sec-profile':      document.getElementById('sec-profile'),
-        'sec-rating':       document.getElementById('sec-rating'),
-        'sec-rating-form':  document.getElementById('sec-rating-form'), // NEU
-        'sec-radar':        document.getElementById('sec-radar'),
-        'sec-ranking':      document.getElementById('sec-ranking'),
-        'sec-events':       document.getElementById('sec-events'),
-        'sec-last':         document.getElementById('sec-last')
-        'sec-drone':        document.getElementById('sec-drone'),
-      };
+     const sections = {
+  'sec-config':       document.getElementById('sec-config'),
+  'sec-auth':         document.getElementById('sec-auth'),
+  'sec-profile':      document.getElementById('sec-profile'),
+  'sec-rating':       document.getElementById('sec-rating'),
+  'sec-rating-form':  document.getElementById('sec-rating-form'),
+  'sec-radar':        document.getElementById('sec-radar'),
+  'sec-drone':        document.getElementById('sec-drone'),
+  'sec-ranking':      document.getElementById('sec-ranking'),
+  'sec-events':       document.getElementById('sec-events'),
+  'sec-last':         document.getElementById('sec-last')
+};
 
       function showSection(id) {
         Object.entries(sections).forEach(([key, el]) => {
