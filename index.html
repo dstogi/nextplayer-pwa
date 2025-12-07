@@ -2631,13 +2631,18 @@ if (!radar.length) {
           });
         }
 
-        if (!rows.length) {
-  tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter (Radar).</td></tr>';
-  if (msg) msg.textContent = 'Keine Spieler – ggf. Filter anpassen oder mehr Radar-Daten erfassen.';
-} else {
+       if (!rows.length) {
+  tbody.innerHTML =
+    '<tr><td colspan="8">Keine Spieler für die aktuellen Filter (Radar).</td></tr>';
+  if (msg) {
+    msg.textContent =
+      'Keine Spieler – ggf. Filter anpassen oder mehr Radar-Daten erfassen.';
+  }
+  return; // WENN du hier in einer Funktion bist, kannst du hier abbrechen
 }
-  // 3) Sortierung nach Radar-Score (total)
-  rows.sort((a, b) => b.total - a.total);
+
+// 3) Sortierung nach Radar-Score (total)
+rows.sort((a, b) => b.total - a.total);
 
   const footLabel = f => {
     if (f === 'left')  return 'links';
@@ -2959,6 +2964,7 @@ if (!rows.length) {
         };
 
         if (msg) msg.textContent = `OK: ${rows.length} Spieler im Ranking.`;
+      }
 
     ['change', 'input'].forEach(evt => {
       [
