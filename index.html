@@ -2860,276 +2860,311 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       }
     }
 
-    // -----------------------------
-    // J4: Einfaches Radar-Ranking (nur eigene Daten, nur Watchlist)
-    // -----------------------------
-    async function radarRefreshSummary() {
-      const tbody = document.querySelector('#radar-summary-table tbody');
-      const msg = document.getElementById('radar-summary-msg');
-      const eventSel = document.getElementById('radar-event-select');
+// -----------------------------
+// J4: Einfaches Radar-Ranking (nur eigene Daten, nur Watchlist) – mit + / -
+// -----------------------------
+async function radarRefreshSummary() {
+  const tbody = document.querySelector('#radar-summary-table tbody');
+  const msg = document.getElementById('radar-summary-msg');
+  const eventSel = document.getElementById('radar-event-select');
 
-      if (!tbody || !eventSel || !currentUser) return;
+  if (!tbody || !eventSel || !currentUser) return;
 
-      const eventId = eventSel.value;
-      if (!eventId) {
-        tbody.innerHTML = '<tr><td colspan="9">Bitte zuerst ein Event wählen.</td></tr>';
+  const eventId = eventSel.value;
+  if (!eventId) {
+    tbody.innerHTML = '<tr><td colspan="9">Bitte zuerst ein Event wählen.</td></tr>';
+    if (msg) msg.textContent = '';
+    return;
+  }
+
+  const playerIds = radarWatchlist.map(p => p.playerId);
+  if (!playerIds.length) {
+    tbody.innerHTML = '<tr><td colspan="9">Keine Spieler in der Watchlist.</td></tr>';
+    if (msg) msg.textContent = '';
+    return;
+  }
+
+  try {
+    const c = await getClient();
+    let query = c
+      .from('player_radar')
+      .select('*')
+      .eq('event_id', eventId)
+      .eq('evaluator_user_id', currentUser.id)
+      .in('rated_player_id', playerIds);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="9">Noch keine Radar-Daten erfasst.</td></tr>';
+      if (msg) msg.textContent = '';
+      return;
+    }
+
+    const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
+
+    const rows = data.map(row => {
+      const stat = (field) => {
+        const plus  = row[`${field}_plus`]  || 0;
+        const minus = row[`${field}_minus`] || 0;
+        return { plus, minus, net: plus - minus };
+      };
+
+      const ballsich  = stat('ballsicherheit');
+      const zweik     = stat('zweikampf');
+      const lauf      = stat('laufduell');
+      const abschluss = stat('abschluss');
+      const std       = stat('standard');
+      const ment      = stat('mentalitaet');
+      const fair      = stat('fairplay');
+
+      const total =
+        ballsich.net +
+        zweik.net +
+        lauf.net +
+        abschluss.net +
+        std.net +
+        ment.net +
+        fair.net;
+
+      return {
+        playerId: row.rated_player_id,
+        ballsich,
+        zweik,
+        lauf,
+        abschluss,
+        std,
+        ment,
+        fair,
+        total
+      };
+    });
+
+    rows.sort((a, b) => b.total - a.total);
+
+    tbody.innerHTML = rows.map(r => {
+      const wl = wlMap.get(r.playerId);
+      const label = wl ? wl.playerName : r.playerId;
+      const color = wl ? radarColors[wl.colorIndex] : '#eee';
+      const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
+      const fmt = (s) => `${s.net} ( +${s.plus} / -${s.minus} )`;
+
+      return `
+        <tr style="background:${color};${active}">
+          <td>${label}</td>
+          <td>${r.total}</td>
+          <td>${fmt(r.ballsich)}</td>
+          <td>${fmt(r.zweik)}</td>
+          <td>${fmt(r.lauf)}</td>
+          <td>${fmt(r.abschluss)}</td>
+          <td>${fmt(r.std)}</td>
+          <td>${fmt(r.ment)}</td>
+          <td>${fmt(r.fair)}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (msg) msg.textContent = `Radar-Ranking für ${rows.length} Spieler geladen.`;
+
+  } catch (e) {
+    console.error('radarRefreshSummary', e);
+    tbody.innerHTML = '<tr><td colspan="9">Fehler beim Laden.</td></tr>';
+    if (msg) msg.textContent = 'Fehler beim Ranking.';
+  }
+}
+
+// -----------------------------
+// J5: Erweiterte Radar-Analyse (mit + / - je Kategorie)
+// -----------------------------
+async function radarRunAnalysis() {
+  const tbody = document.querySelector('#radar-analysis-table tbody');
+  const msg = document.getElementById('radar-analysis-msg');
+  const eventSel = document.getElementById('radar-event-select');
+  const scopeSel = document.getElementById('radar-analysis-scope');
+  const playerScopeSel = document.getElementById('radar-analysis-players');
+
+  if (!tbody || !eventSel || !scopeSel || !playerScopeSel) return;
+
+  if (!currentUser) {
+    tbody.innerHTML = '<tr><td colspan="10">Bitte zuerst einloggen.</td></tr>';
+    if (msg) msg.textContent = '';
+    return;
+  }
+
+  const eventId = eventSel.value;
+  if (!eventId) {
+    tbody.innerHTML = '<tr><td colspan="10">Bitte zuerst ein Event wählen.</td></tr>';
+    if (msg) msg.textContent = '';
+    return;
+  }
+
+  const scope = scopeSel.value || 'me';           // 'me' oder 'all'
+  const playerScope = playerScopeSel.value || 'watchlist';  // 'watchlist' oder 'all'
+
+  const watchPlayerIds = radarWatchlist.map(p => p.playerId);
+  if (playerScope === 'watchlist' && !watchPlayerIds.length) {
+    tbody.innerHTML = '<tr><td colspan="10">Keine Spieler in der Watchlist.</td></tr>';
+    if (msg) msg.textContent = '';
+    return;
+  }
+
+  try {
+    const c = await getClient();
+
+    // Basis-Query: alle Radar-Datensätze für dieses Event
+    let query = c
+      .from('player_radar')
+      .select('*')
+      .eq('event_id', eventId);
+
+    // Nur eigene Daten oder alle Bewerter?
+    if (scope === 'me') {
+      query = query.eq('evaluator_user_id', currentUser.id);
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="10">Noch keine Radar-Daten für dieses Event.</td></tr>';
+      if (msg) msg.textContent = '';
+      return;
+    }
+
+    // Auf Watchlist-Spieler einschränken, wenn gewünscht
+    let rows = data;
+    if (playerScope === 'watchlist') {
+      const wlSet = new Set(watchPlayerIds);
+      rows = rows.filter(r => wlSet.has(r.rated_player_id));
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="10">Für die Watchlist liegen keine Radar-Daten vor.</td></tr>';
         if (msg) msg.textContent = '';
         return;
-      }
-
-      const playerIds = radarWatchlist.map(p => p.playerId);
-      if (!playerIds.length) {
-        tbody.innerHTML = '<tr><td colspan="9">Keine Spieler in der Watchlist.</td></tr>';
-        if (msg) msg.textContent = '';
-        return;
-      }
-
-      try {
-        const c = await getClient();
-        let query = c
-          .from('player_radar')
-          .select('*')
-          .eq('event_id', eventId)
-          .eq('evaluator_user_id', currentUser.id)
-          .in('rated_player_id', playerIds);
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        if (!data || !data.length) {
-          tbody.innerHTML = '<tr><td colspan="9">Noch keine Radar-Daten erfasst.</td></tr>';
-          if (msg) msg.textContent = '';
-          return;
-        }
-
-        const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
-
-        const rows = data.map(row => {
-          const nets = f => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
-          return {
-            playerId: row.rated_player_id,
-            ballsich:  nets('ballsicherheit'),
-            zweik:     nets('zweikampf'),
-            lauf:      nets('laufduell'),
-            abschluss: nets('abschluss'),
-            std:       nets('standard'),
-            ment:      nets('mentalitaet'),
-            fair:      nets('fairplay'),
-            total:     nets('ballsicherheit') +
-                       nets('zweikampf') +
-                       nets('laufduell') +
-                       nets('abschluss') +
-                       nets('standard') +
-                       nets('mentalitaet') +
-                       nets('fairplay')
-          };
-        });
-
-        rows.sort((a, b) => b.total - a.total);
-
-        tbody.innerHTML = rows.map(r => {
-          const wl = wlMap.get(r.playerId);
-          const label = wl ? wl.playerName : r.playerId;
-          const color = wl ? radarColors[wl.colorIndex] : '#eee';
-          const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
-
-          return `
-            <tr style="background:${color};${active}">
-              <td>${label}</td>
-              <td>${r.total}</td>
-              <td>${r.ballsich}</td>
-              <td>${r.zweik}</td>
-              <td>${r.lauf}</td>
-              <td>${r.abschluss}</td>
-              <td>${r.std}</td>
-              <td>${r.ment}</td>
-              <td>${r.fair}</td>
-            </tr>
-          `;
-        }).join('');
-
-        if (msg) msg.textContent = `Radar-Ranking für ${rows.length} Spieler geladen.`;
-
-      } catch (e) {
-        console.error('radarRefreshSummary', e);
-        tbody.innerHTML = '<tr><td colspan="9">Fehler beim Laden.</td></tr>';
-        if (msg) msg.textContent = 'Fehler beim Ranking.';
       }
     }
 
-    // -----------------------------
-    // J5: Erweiterte Radar-Analyse (mehrere Bewerter, Watchlist/alle Spieler)
-    // -----------------------------
-    async function radarRunAnalysis() {
-      const tbody = document.querySelector('#radar-analysis-table tbody');
-      const msg = document.getElementById('radar-analysis-msg');
-      const eventSel = document.getElementById('radar-event-select');
-      const scopeSel = document.getElementById('radar-analysis-scope');
-      const playerScopeSel = document.getElementById('radar-analysis-players');
+    // Aggregation je Spieler (+, -, net)
+    const aggMap = new Map();
+    rows.forEach(row => {
+      const id = row.rated_player_id;
+      if (!id) return;
 
-      if (!tbody || !eventSel || !scopeSel || !playerScopeSel) return;
-
-      if (!currentUser) {
-        tbody.innerHTML = '<tr><td colspan="10">Bitte zuerst einloggen.</td></tr>';
-        if (msg) msg.textContent = '';
-        return;
+      let agg = aggMap.get(id);
+      if (!agg) {
+        agg = {
+          playerId: id,
+          ballsich:  { plus:0, minus:0 },
+          zweik:     { plus:0, minus:0 },
+          lauf:      { plus:0, minus:0 },
+          abschluss: { plus:0, minus:0 },
+          std:       { plus:0, minus:0 },
+          ment:      { plus:0, minus:0 },
+          fair:      { plus:0, minus:0 },
+          evalSet:   new Set()
+        };
+        aggMap.set(id, agg);
       }
 
-      const eventId = eventSel.value;
-      if (!eventId) {
-        tbody.innerHTML = '<tr><td colspan="10">Bitte zuerst ein Event wählen.</td></tr>';
-        if (msg) msg.textContent = '';
-        return;
+      const addField = (fieldName, key) => {
+        agg[key].plus  += row[`${fieldName}_plus`]  || 0;
+        agg[key].minus += row[`${fieldName}_minus`] || 0;
+      };
+
+      addField('ballsicherheit', 'ballsich');
+      addField('zweikampf',     'zweik');
+      addField('laufduell',     'lauf');
+      addField('abschluss',     'abschluss');
+      addField('standard',      'std');
+      addField('mentalitaet',   'ment');
+      addField('fairplay',      'fair');
+
+      if (row.evaluator_user_id) {
+        agg.evalSet.add(row.evaluator_user_id);
       }
+    });
 
-      const scope = scopeSel.value || 'me';           // 'me' oder 'all'
-      const playerScope = playerScopeSel.value || 'watchlist';  // 'watchlist' oder 'all'
+    const net = (s) => s.plus - s.minus;
 
-      const watchPlayerIds = radarWatchlist.map(p => p.playerId);
-      if (playerScope === 'watchlist' && !watchPlayerIds.length) {
-        tbody.innerHTML = '<tr><td colspan="10">Keine Spieler in der Watchlist.</td></tr>';
-        if (msg) msg.textContent = '';
-        return;
-      }
+    let result = Array.from(aggMap.values()).map(a => ({
+      playerId: a.playerId,
+      ballsich:  a.ballsich,
+      zweik:     a.zweik,
+      lauf:      a.lauf,
+      abschluss: a.abschluss,
+      std:       a.std,
+      ment:      a.ment,
+      fair:      a.fair,
+      total:     net(a.ballsich) +
+                 net(a.zweik) +
+                 net(a.lauf) +
+                 net(a.abschluss) +
+                 net(a.std) +
+                 net(a.ment) +
+                 net(a.fair),
+      evalCount: a.evalSet.size || 1
+    }));
 
-      try {
-        const c = await getClient();
-
-        // Basis-Query: alle Radar-Datensätze für dieses Event
-        let query = c
-          .from('player_radar')
-          .select('*')
-          .eq('event_id', eventId);
-
-        // Nur eigene Daten oder alle Bewerter?
-        if (scope === 'me') {
-          query = query.eq('evaluator_user_id', currentUser.id);
-        }
-
-        const { data, error } = await query;
-        if (error) throw error;
-
-        if (!data || !data.length) {
-          tbody.innerHTML = '<tr><td colspan="10">Noch keine Radar-Daten für dieses Event.</td></tr>';
-          if (msg) msg.textContent = '';
-          return;
-        }
-
-        // Auf Watchlist-Spieler einschränken, wenn gewünscht
-        let rows = data;
-        if (playerScope === 'watchlist') {
-          const wlSet = new Set(watchPlayerIds);
-          rows = rows.filter(r => wlSet.has(r.rated_player_id));
-          if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="10">Für die Watchlist liegen keine Radar-Daten vor.</td></tr>';
-            if (msg) msg.textContent = '';
-            return;
-          }
-        }
-
-        // Aggregation je Spieler
-        const aggMap = new Map();
-        rows.forEach(row => {
-          const id = row.rated_player_id;
-          if (!id) return;
-
-          let agg = aggMap.get(id);
-          if (!agg) {
-            agg = {
-              playerId: id,
-              ballsich: 0,
-              zweik: 0,
-              lauf: 0,
-              abschluss: 0,
-              std: 0,
-              ment: 0,
-              fair: 0,
-              evalSet: new Set()
-            };
-            aggMap.set(id, agg);
-          }
-
-          const nets = (f) => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
-
-          agg.ballsich  += nets('ballsicherheit');
-          agg.zweik     += nets('zweikampf');
-          agg.lauf      += nets('laufduell');
-          agg.abschluss += nets('abschluss');
-          agg.std       += nets('standard');
-          agg.ment      += nets('mentalitaet');
-          agg.fair      += nets('fairplay');
-
-          if (row.evaluator_user_id) {
-            agg.evalSet.add(row.evaluator_user_id);
-          }
-        });
-
-        let result = Array.from(aggMap.values()).map(a => ({
-          ...a,
-          total: a.ballsich + a.zweik + a.lauf + a.abschluss + a.std + a.ment + a.fair,
-          evalCount: a.evalSet.size || 1
-        }));
-
-        if (!result.length) {
-          tbody.innerHTML = '<tr><td colspan="10">Keine aggregierten Daten gefunden.</td></tr>';
-          if (msg) msg.textContent = '';
-          return;
-        }
-
-        // Nach Gesamt-Netto sortieren (beste Spieler oben)
-        result.sort((a, b) => b.total - a.total);
-
-        // Namen und Vereine nachladen
-        const playerIds = result.map(r => r.playerId);
-        const { data: playerData, error: pErr } = await c
-          .from('player')
-          .select('id, full_name, jersey_number, club_name')
-          .in('id', playerIds);
-
-        if (pErr) throw pErr;
-        const pMap = new Map((playerData || []).map(p => [p.id, p]));
-
-        const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
-
-        tbody.innerHTML = result.map(r => {
-          const pl = pMap.get(r.playerId);
-          const wl = wlMap.get(r.playerId);
-
-          const name = pl?.full_name || wl?.playerName || r.playerId;
-          const club = pl?.club_name || wl?.teamName || '';
-          const num = pl?.jersey_number || wl?.jerseyNumber || null;
-          const label = num ? `#${num} ${name}` : name;
-
-          const color = wl ? radarColors[wl.colorIndex] : '#f9f9f9';
-          const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
-
-          return `
-            <tr style="background:${color};${active}">
-              <td>${label}${club ? ' (' + club + ')' : ''}</td>
-              <td>${r.total}</td>
-              <td>${r.ballsich}</td>
-              <td>${r.zweik}</td>
-              <td>${r.lauf}</td>
-              <td>${r.abschluss}</td>
-              <td>${r.std}</td>
-              <td>${r.ment}</td>
-              <td>${r.fair}</td>
-              <td>${r.evalCount}</td>
-            </tr>
-          `;
-        }).join('');
-
-        if (msg) {
-          const who = scope === 'me' ? 'deine Radar-Daten' : 'alle Bewerter';
-          const plScope = playerScope === 'watchlist' ? 'Watchlist' : 'alle Spieler';
-          msg.textContent = `Analyse für ${who}, ${plScope}: ${result.length} Spieler.`;
-        }
-      } catch (e) {
-        console.error('radarRunAnalysis', e);
-        tbody.innerHTML = '<tr><td colspan="10">Fehler bei der Analyse.</td></tr>';
-        if (msg) msg.textContent = 'Fehler bei der Analyse.';
-      }
+    if (!result.length) {
+      tbody.innerHTML = '<tr><td colspan="10">Keine aggregierten Daten gefunden.</td></tr>';
+      if (msg) msg.textContent = '';
+      return;
     }
+
+    // Nach Gesamt-Netto sortieren (beste Spieler oben)
+    result.sort((a, b) => b.total - a.total);
+
+    // Namen und Vereine nachladen
+    const playerIds = result.map(r => r.playerId);
+    const { data: playerData, error: pErr } = await c
+      .from('player')
+      .select('id, full_name, jersey_number, club_name')
+      .in('id', playerIds);
+
+    if (pErr) throw pErr;
+    const pMap = new Map((playerData || []).map(p => [p.id, p]));
+    const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
+    const fmt = (s) => `${net(s)} ( +${s.plus} / -${s.minus} )`;
+
+    tbody.innerHTML = result.map(r => {
+      const pl = pMap.get(r.playerId);
+      const wl = wlMap.get(r.playerId);
+
+      const name = pl?.full_name || wl?.playerName || r.playerId;
+      const club = pl?.club_name || wl?.teamName || '';
+      const num = pl?.jersey_number || wl?.jerseyNumber || null;
+      const label = num ? `#${num} ${name}` : name;
+
+      const color = wl ? radarColors[wl.colorIndex] : '#f9f9f9';
+      const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
+
+      return `
+        <tr style="background:${color};${active}">
+          <td>${label}${club ? ' (' + club + ')' : ''}</td>
+          <td>${r.total}</td>
+          <td>${fmt(r.ballsich)}</td>
+          <td>${fmt(r.zweik)}</td>
+          <td>${fmt(r.lauf)}</td>
+          <td>${fmt(r.abschluss)}</td>
+          <td>${fmt(r.std)}</td>
+          <td>${fmt(r.ment)}</td>
+          <td>${fmt(r.fair)}</td>
+          <td>${r.evalCount}</td>
+        </tr>
+      `;
+    }).join('');
+
+    if (msg) {
+      const who = scope === 'me' ? 'deine Radar-Daten' : 'alle Bewerter';
+      const plScope = playerScope === 'watchlist' ? 'Watchlist' : 'alle Spieler';
+      msg.textContent = `Analyse für ${who}, ${plScope}: ${result.length} Spieler.`;
+    }
+  } catch (e) {
+    console.error('radarRunAnalysis', e);
+    tbody.innerHTML = '<tr><td colspan="10">Fehler bei der Analyse.</td></tr>';
+    if (msg) msg.textContent = 'Fehler bei der Analyse.';
+  }
+}
 
     // -----------------------------
     // J6: Initialisierung & externe Hooks
