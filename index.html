@@ -4120,7 +4120,7 @@ async function dnaLoad() {
   }
 }
 
-    // Kleine Balkencharts für SpielerDNA
+// Kleine Balkencharts für SpielerDNA
 
 function renderRatingChart(items) {
   const container = document.getElementById('dna-rating-chart');
@@ -4128,6 +4128,10 @@ function renderRatingChart(items) {
 
   if (!items || !items.length) {
     container.innerHTML = '<div class="small-note">Keine Daten für Noten-DNA.</div>';
+    const noteEl = document.getElementById('dna-rating-radar-note');
+    const svg = document.getElementById('dna-rating-radar');
+    if (noteEl) noteEl.textContent = 'Keine Daten für Radar-Diagramm.';
+    if (svg) svg.innerHTML = '';
     return;
   }
 
@@ -4149,20 +4153,11 @@ function renderRatingChart(items) {
     `;
   }).join('');
 
- container.innerHTML = rowsHtml;
+  container.innerHTML = rowsHtml;
 
   // zusätzlich Radar-Diagramm zeichnen
   renderRatingRadar(items);
 }
-    
-function renderRadarChart(aggR, radarDefs) {
-  const container = document.getElementById('dna-radar-chart');
-  if (!container) return;
-
-  if (!aggR) {
-    container.innerHTML = '<div class="small-note">Keine Daten für Radar-DNA.</div>';
-    return;
-  }
 
 function renderRatingRadar(items) {
   const svg = document.getElementById('dna-rating-radar');
@@ -4208,12 +4203,13 @@ function renderRatingRadar(items) {
     labels.push({ x: lx, y: ly, text: obj.label });
   });
 
-  // Hilfsringe zeichnen (4 Level)
+  // Hilfsringe
   const rings = [0.25, 0.5, 0.75, 1].map(r => {
     const rad = maxRadius * r;
     return `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="#ddd" stroke-width="0.5" />`;
   }).join('');
 
+  // Speichen
   const spokes = items.map((obj, idx) => {
     const angle = -Math.PI / 2 + (2 * Math.PI * idx) / n;
     const x = cx + maxRadius * Math.cos(angle);
@@ -4231,7 +4227,7 @@ function renderRatingRadar(items) {
   const polygon = `
     <polygon points="${points.join(' ')}"
              fill="rgba(245,182,66,0.35)"
-             stroke="${'#f5b642'}"
+             stroke="#f5b642"
              stroke-width="1.5" />
   `;
 
@@ -4245,9 +4241,18 @@ function renderRatingRadar(items) {
     </g>
   `;
 
-  noteEl.textContent = '1 = außen (besser), 6 = innen (schlechter) – basierend auf allen Bewertungen.';
+  noteEl.textContent = 'Je weiter außen, desto besser die Note (1 = außen, 6 = innen).';
 }
-  
+
+function renderRadarChart(aggR, radarDefs) {
+  const container = document.getElementById('dna-radar-chart');
+  if (!container) return;
+
+  if (!aggR) {
+    container.innerHTML = '<div class="small-note">Keine Daten für Radar-DNA.</div>';
+    return;
+  }
+
   // Liste aus Aggregaten bauen
   const items = radarDefs.map(([key, label]) => {
     const a = aggR[key];
