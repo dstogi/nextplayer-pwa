@@ -2957,14 +2957,6 @@ if (!rows.length) {
         };
 
         if (msg) msg.textContent = `OK: ${rows.length} Spieler im Ranking.`;
-      } catch (e) {
-        console.error('refreshRanking', e);
-        const msg = document.querySelector('#rank-msg');
-        if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
-        const tbody = document.querySelector('#rank-table tbody');
-        if (tbody) tbody.innerHTML = '<tr><td colspan="8">Fehler beim Laden des Rankings.</td></tr>';
-      }
-    }
 
     ['change', 'input'].forEach(evt => {
       [
