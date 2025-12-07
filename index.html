@@ -3695,18 +3695,26 @@ if (!rows.length) {
     window.refreshLastComments = refreshLastComments;
 
     
+        // ------------------------------
+    // Funktionen für Navigation von außen verfügbar machen
+    window.refreshRanking = refreshRanking;
+    window.refreshLastComments = refreshLastComments;
+
     (async function init() {
       const cfg = loadConfig();
       const urlInput = document.getElementById('sb-url');
       const keyInput = document.getElementById('sb-key');
+
       if (urlInput) urlInput.value = cfg.url;
       if (keyInput) keyInput.value = cfg.key;
 
       if (cfg.url && cfg.key) {
         try {
           await getClient();
-          const rankMsg = $('#rank-msg');
-          if (rankMsg) rankMsg.textContent = 'Bereit (bitte einloggen).';
+          const rankMsg = document.querySelector('#rank-msg');
+          if (rankMsg) {
+            rankMsg.textContent = 'Bereit (bitte einloggen …)';
+          }
           if (window.npShowSection) {
             window.npShowSection('sec-auth');
           }
