@@ -734,6 +734,10 @@
           Plus: 0 · Minus: 0 · Gesamt: 0
         </span>
       </div>
+    
+      <div class="row">
+        <button id="drone-reset-btn" type="button">Drohnen-Log löschen</button>
+      </div>
 
       <h3>Verlauf (Zeitstempel)</h3>
       <table id="drone-log-table">
@@ -1605,11 +1609,13 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     ];
     const gradeSteps = ['1','1.5','2','2.5','3','3.5','4','4.5','5','5.5','6'];
 
-    function gradeCells() {
-      return gradeSteps.map(v => `<option value="${v}">${v}</option>`).join('');
+   function gradeCells() {
+      // Erste Option = leer (–), danach die echten Noten
+      return '<option value="">–</option>' +
+        gradeSteps.map(v => `<option value="${v}">${v}</option>`).join('');
     }
 
-    function buildCriteriaUI() {
+        function buildCriteriaUI() {
       const wrap = document.querySelector('#criteria');
       if (!wrap) return;
       wrap.innerHTML = '';
@@ -1625,6 +1631,19 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       });
     }
     buildCriteriaUI();
+
+    // Formular für eine Spielerbewertung zurücksetzen
+    function resetRatingForm() {
+      // Alle Kriterien auf leer
+      ratingKeys.forEach(([k]) => {
+        const s = document.querySelector(`select[data-k="${k}"]`);
+        if (s) s.value = '';
+      });
+      // Kommentar löschen
+      const commentEl = document.querySelector('#r-comment');
+      if (commentEl) commentEl.value = '';
+    }
+
 
     async function createPlayerRating() {
       const msg = document.getElementById('player-create-msg');
@@ -1888,14 +1907,19 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
             onConflict: 'rater_id,player_id,event_id'
           });
 
-        if (error) {
+               if (error) {
           console.error('upsert rating error', error);
           if (msg) msg.textContent = 'Fehler: ' + error.message;
         } else {
           if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
+
+          // Formular leeren (alle Noten + Kommentar)
+          resetRatingForm();
+
           await refreshRanking();
           await refreshLastComments();
         }
+
       } catch (e) {
         console.error('save rating', e);
         const msg = document.querySelector('#rate-msg');
@@ -2091,12 +2115,22 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     }
 
     // Wechsel im Event-Dropdown → currentEvent aktualisieren
-    const selEvent = document.querySelector('#r-event');
+       const selEvent = document.querySelector('#r-event');
     if (selEvent) {
       selEvent.addEventListener('change', () => {
         const id = selEvent.value;
         const ev = allEvents.find(e => String(e.id) === id);
         if (ev) setCurrentEvent(ev);
+
+        // Neues Event → Formular leeren
+        resetRatingForm();
+      });
+    }
+    const selPlayerForRating = document.querySelector('#r-player');
+    if (selPlayerForRating) {
+      selPlayerForRating.addEventListener('change', () => {
+        // Neuer Spieler → Formular leeren
+        resetRatingForm();
       });
     }
 
@@ -3406,6 +3440,22 @@ async function radarRunAnalysis() {
       `).join('');
     }
 
+    // Drohnen-Log komplett zurücksetzen (nur lokal)
+    function droneReset() {
+      droneActions = [];
+      dronePlusCount = 0;
+      droneMinusCount = 0;
+      droneState[1] = { running:false, startMs:0, elapsedMs:0 };
+      droneState[2] = { running:false, startMs:0, elapsedMs:0 };
+      droneCurrentHalf = null;
+      droneStopTimerLoopIfIdle();
+      droneUpdateTimeDisplay();
+      droneUpdateSummary();
+      droneRenderLog();
+      const status = document.getElementById('drone-status');
+      if (status) status.textContent = 'Drohnen-Log zurückgesetzt (nur lokal).';
+    }
+
     function droneRegisterAction(type) {
       const status = document.getElementById('drone-status');
       const eventSel = document.getElementById('drone-event-select');
@@ -3493,11 +3543,14 @@ async function radarRunAnalysis() {
       }
     }
 
-    function droneInitUI() {
-      const h1Btn   = document.getElementById('drone-h1-btn');
-      const h2Btn   = document.getElementById('drone-h2-btn');
-      const plusBtn = document.getElementById('drone-plus-btn');
-      const minusBtn= document.getElementById('drone-minus-btn');
+        function droneInitUI() {
+      const h1Btn    = document.getElementById('drone-h1-btn');
+      const h2Btn    = document.getElementById('drone-h2-btn');
+      const plusBtn  = document.getElementById('drone-plus-btn');
+      const minusBtn = document.getElementById('drone-minus-btn');
+      const resetBtn = document.getElementById('drone-reset-btn');
+      const eventSel = document.getElementById('drone-event-select');
+      const playerSel= document.getElementById('drone-player-select');
 
       if (!h1Btn || !h2Btn || !plusBtn || !minusBtn) return;
 
@@ -3505,6 +3558,11 @@ async function radarRunAnalysis() {
       h2Btn.addEventListener('click', () => droneToggleHalf(2));
       plusBtn.addEventListener('click', () => droneRegisterAction('plus'));
       minusBtn.addEventListener('click', () => droneRegisterAction('minus'));
+      if (resetBtn) resetBtn.addEventListener('click', droneReset);
+
+      // Wenn Event oder Spieler gewechselt wird → neues Log starten
+      if (eventSel) eventSel.addEventListener('change', droneReset);
+      if (playerSel) playerSel.addEventListener('change', droneReset);
 
       droneUpdateTimeDisplay();
       droneUpdateSummary();
