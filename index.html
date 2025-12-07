@@ -302,6 +302,78 @@
       max-width: 320px;
       max-height: 320px;
     }
+
+    /* SpielerDrohne – Styling */
+
+    #sec-drone {
+      border-left: 4px solid #f97316; /* leicht abgesetzt */
+    }
+
+    .drone-half-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .drone-half-btn {
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      background: #fef3c7; /* helles Orange */
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .drone-half-label {
+      font-size: 0.8rem;
+      color: var(--np-muted);
+    }
+
+    .drone-actions-row {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      margin-top: 4px;
+      margin-bottom: 4px;
+    }
+
+    .drone-action-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .drone-action-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 999px;
+      border: none;
+      font-size: 1.6rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      color: #111;
+    }
+
+    .drone-action-plus {
+      background: #bbf7d0; /* hellgrün */
+    }
+
+    .drone-action-minus {
+      background: #fecaca; /* hellrot */
+    }
+
+    .drone-action-label {
+      font-size: 0.75rem;
+      color: var(--np-muted);
+      text-align: center;
+      max-width: 80px;
+    }
     
     @media (max-width: 700px) {
       main { padding: 10px; }
@@ -756,15 +828,15 @@
         aktuellen Zeitstempel der aktiven Halbzeit.
       </p>
 
-      <div class="row">
+           <div class="row drone-half-row">
         <label>1. Halbzeit</label>
-        <button id="drone-h1-btn" type="button">1. Halbzeit Start/Stop</button>
+        <button id="drone-h1-btn" type="button" class="drone-half-btn">1. Halbzeit Start/Stop</button>
         <span id="drone-h1-time" class="small-note">00:00</span>
       </div>
 
-      <div class="row">
+      <div class="row drone-half-row">
         <label>2. Halbzeit</label>
-        <button id="drone-h2-btn" type="button">2. Halbzeit Start/Stop</button>
+        <button id="drone-h2-btn" type="button" class="drone-half-btn">2. Halbzeit Start/Stop</button>
         <span id="drone-h2-time" class="small-note">00:00</span>
       </div>
 
@@ -773,10 +845,18 @@
         <span id="drone-active-half" class="small-note">keine</span>
       </div>
 
-      <h3>Aktionen erfassen</h3>
-      <div class="row">
-        <button id="drone-plus-btn" type="button">+ Aktion</button>
-        <button id="drone-minus-btn" type="button">− Aktion</button>
+                <h3>Aktionen erfassen</h3>
+      <div class="row drone-actions-row">
+        <div class="drone-action-col">
+          <button id="drone-plus-btn" type="button"
+                  class="drone-action-btn drone-action-plus">+</button>
+          <div class="drone-action-label">Positive Aktion</div>
+        </div>
+        <div class="drone-action-col">
+          <button id="drone-minus-btn" type="button"
+                  class="drone-action-btn drone-action-minus">−</button>
+          <div class="drone-action-label">Negative Aktion</div>
+        </div>
       </div>
 
       <div class="row">
