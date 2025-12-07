@@ -12,10 +12,6 @@
   <link rel="apple-touch-icon" href="NextPlayer-512.png" />
 
   <style>
-   #sec-ranking {
-  border: 2px solid red !important;
-}
-
     :root {
       --np-bg: #050608;
       --np-card: #ffffff;
@@ -76,131 +72,6 @@
       font-weight: 600;
       margin-bottom: 8px;
     }
-/* --- Radar: Klarere Struktur & Boxen --- */
-
-/* Intro-Text im Radar etwas dezenter */
-#sec-radar p {
-  margin-top: 4px;
-  margin-bottom: 10px;
-  font-size: 0.85rem;
-  color: var(--np-muted);
-}
-
-/* Die ersten Zeilen (Event & Spieler) als Filter-Box hervorheben */
-#sec-radar .row:nth-of-type(1),
-#sec-radar .row:nth-of-type(2) {
-  background: #fafafa;
-  border-radius: 6px;
-  padding: 6px 8px;
-}
-
-/* Radar-Tabs mit etwas Luft nach oben/unten */
-#sec-radar .radar-tab {
-  margin-top: 4px;
-}
-
-/* Panel für Live-Aktionen als eigene „Karte“ */
-#sec-radar .radar-panel {
-  margin-top: 10px;
-  background: #ffffff;
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-  padding: 10px 12px;
-}
-
-/* Label im Panel hervorheben (falls benutzt) */
-#sec-radar .radar-player-label {
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-    /* --- Radar Live-Aktionen: bessere Bedienbarkeit --- */
-
-.radar-action-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  margin-bottom: 10px;
-}
-
-.radar-cat {
-  display: flex;
-  align-items: center;
-  min-width: 150px;
-  font-weight: 600;
-}
-
-.radar-cat-icon {
-  font-size: 1.2rem;
-  margin-right: 6px;
-}
-
-.radar-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.radar-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.9rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-  min-width: 90px;
-}
-
-/* grünes Plus */
-.radar-btn-plus {
-  background: #e6f7ea;
-  color: #1b7a2f;
-  border-color: #1b7a2f;
-}
-.radar-btn-plus::before {
-  content: '＋';
-  font-weight: 700;
-  margin-right: 4px;
-}
-
-/* rotes Minus */
-.radar-btn-minus {
-  background: #fde7e7;
-  color: #b32020;
-  border-color: #b32020;
-}
-.radar-btn-minus::before {
-  content: '−';
-  font-weight: 700;
-  margin-right: 4px;
-}
-
-.radar-btn:active {
-  transform: translateY(1px);
-}
-
-.radar-netto {
-  font-size: 0.8rem;
-  color: var(--np-muted);
-}
-
-    #pl-search-results button {
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  background: #fff;
-}
-#pl-search-results button:hover {
-  background: #f7f7f7;
-}
-    
-/* Kleine Hinweise im Radar etwas einheitlicher */
-#sec-radar .small-note {
-  font-size: 0.8rem;
-  color: var(--np-muted);
-}
 
     .small-note {
       font-size: 0.85rem;
@@ -396,16 +267,17 @@
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
     <div class="top-nav">
-  <button data-target="sec-config"  class="active">🛠️ Setup</button>
-  <button data-target="sec-auth">🔑 Login</button>
-  <button data-target="sec-profile">👤 Profil</button>
-  <button data-target="sec-rating">⚽ Spieler & Events</button>
-  <button data-target="sec-rating-form">⭐ Bewertung</button>
-  <button data-target="sec-radar">📡 Radar</button>
-  <button data-target="sec-ranking">📊 Ranking</button>
-  <button data-target="sec-events">📅 Events</button>
-  <button data-target="sec-last">🕒 Verlauf</button>
-</div>
+      <button data-target="sec-config"  class="active">Setup</button>
+      <button data-target="sec-auth">Login</button>
+      <button data-target="sec-profile">Profil</button>
+      <button data-target="sec-rating">Bewerten</button>
+      <!-- Neuer Reiter nur für Punkt 3 -->
+      <button data-target="sec-rating-form">Bewertung</button>
+      <button data-target="sec-radar">Radar</button>
+      <button data-target="sec-ranking">Ranking</button>
+      <button data-target="sec-events">Events</button>
+      <button data-target="sec-last">Verlauf</button>
+    </div>
   </header>
 
   <main>
@@ -519,13 +391,6 @@
     <!-- 2a. Spieler anlegen + Events -->
     <section id="sec-rating" class="section-card">
       <h2><span>2a. Spieler & Events</span></h2>
-            <h3>2a. Spieler suchen</h3>
-      <div class="row">
-        <label for="pl-search-name">Spielername</label>
-        <input id="pl-search-name" type="text" size="30" placeholder="z.B. Elias Koch">
-        <button id="btn-player-search" type="button">Spieler suchen</button>
-      </div>
-      <div id="pl-search-results" class="status-line"></div>
 
       <h3>2a. Spieler anlegen (manuell)</h3>
       <div class="row">
@@ -638,7 +503,7 @@
       <div id="rate-msg" class="status-line"></div>
     </section>
 
-    <!-- 7. SpielerRadar -->
+           <!-- 7. SpielerRadar -->
     <section id="sec-radar" class="section-card">
       <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
       <p style="font-size:0.85rem; color:#555;">
@@ -700,210 +565,68 @@
       <!-- BLOCK: Radar-Live-Aktionen-Panel -->
       <div id="radar-panel" class="radar-panel">
         <h3 id="radar-player-label" class="radar-player-label">Live-Aktionen</h3>
-        <p class="small-note">
+        <p style="font-size:0.8rem; color:#555;">
           Während des Spiels einfach + (gute Aktionen) oder − (nicht so gute) tippen.
         </p>
 
-        <!-- Ballsicherheit -->
-        <div class="radar-action-row" data-field="ballsicherheit">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">🧍‍♂️⚽</span>
-            <span class="radar-cat-label">Ballsicherheit</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="ballsicherheit">
-              ballsicher
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="ballsicherheit">
-              Ballverlust
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="ballsicherheit">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="ballsicherheit" style="margin-bottom:8px;">
+          <strong>Ballsicherheit</strong><br>
+          <button class="radar-btn-plus" data-field="ballsicherheit">+ ballsicher</button>
+          <button class="radar-btn-minus" data-field="ballsicherheit">− Ballverlust</button>
+          <span class="radar-score" data-field="ballsicherheit"></span>
         </div>
 
-        <!-- Zweikampf -->
-        <div class="radar-action-row" data-field="zweikampf">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">🤼‍♂️</span>
-            <span class="radar-cat-label">Zweikampf</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="zweikampf">
-              gewonnen
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="zweikampf">
-              verloren
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="zweikampf">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="zweikampf" style="margin-bottom:8px;">
+          <strong>Zweikampf</strong><br>
+          <button class="radar-btn-plus" data-field="zweikampf">+ gewonnen</button>
+          <button class="radar-btn-minus" data-field="zweikampf">− verloren</button>
+          <span class="radar-score" data-field="zweikampf"></span>
         </div>
 
-        <!-- Laufduell -->
-        <div class="radar-action-row" data-field="laufduell">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">🏃‍♂️</span>
-            <span class="radar-cat-label">Laufduell</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="laufduell">
-              gewonnen
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="laufduell">
-              verloren
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="laufduell">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="laufduell" style="margin-bottom:8px;">
+          <strong>Laufduell</strong><br>
+          <button class="radar-btn-plus" data-field="laufduell">+ gewonnen</button>
+          <button class="radar-btn-minus" data-field="laufduell">− verloren</button>
+          <span class="radar-score" data-field="laufduell"></span>
         </div>
 
-        <!-- Abschluss -->
-        <div class="radar-action-row" data-field="abschluss">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">🥅</span>
-            <span class="radar-cat-label">Abschluss</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="abschluss">
-              guter Abschluss
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="abschluss">
-              schlechter Abschluss
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="abschluss">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="abschluss" style="margin-bottom:8px;">
+          <strong>Abschluss</strong><br>
+          <button class="radar-btn-plus" data-field="abschluss">+ guter Abschluss</button>
+          <button class="radar-btn-minus" data-field="abschluss">− schlechter Abschluss</button>
+          <span class="radar-score" data-field="abschluss"></span>
         </div>
 
-        <!-- Standards -->
-        <div class="radar-action-row" data-field="standard">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">📐</span>
-            <span class="radar-cat-label">Standards</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="standard">
-              gut ausgeführt
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="standard">
-              schwach
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="standard">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="standard" style="margin-bottom:8px;">
+          <strong>Standards</strong><br>
+          <button class="radar-btn-plus" data-field="standard">+ gut ausgeführt</button>
+          <button class="radar-btn-minus" data-field="standard">− schwach</button>
+          <span class="radar-score" data-field="standard"></span>
         </div>
 
-        <!-- Mentalität -->
-        <div class="radar-action-row" data-field="mentalitaet">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">🔥</span>
-            <span class="radar-cat-label">Mentalität</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="mentalitaet">
-              gezeigt
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="mentalitaet">
-              gefehlt
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="mentalitaet">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="mentalitaet" style="margin-bottom:8px;">
+          <strong>Mentalität</strong><br>
+          <button class="radar-btn-plus" data-field="mentalitaet">+ gezeigt</button>
+          <button class="radar-btn-minus" data-field="mentalitaet">− gefehlt</button>
+          <span class="radar-score" data-field="mentalitaet"></span>
         </div>
 
-        <!-- Fair Play -->
-        <div class="radar-action-row" data-field="fairplay">
-          <div class="radar-cat">
-            <span class="radar-cat-icon">🤝</span>
-            <span class="radar-cat-label">Fair Play</span>
-          </div>
-
-          <div class="radar-buttons">
-            <button type="button"
-              class="radar-btn radar-btn-plus"
-              data-field="fairplay">
-              fair
-            </button>
-            <button type="button"
-              class="radar-btn radar-btn-minus"
-              data-field="fairplay">
-              unsportlich
-            </button>
-          </div>
-
-          <div class="radar-netto">
-            <span class="radar-score" data-field="fairplay">
-              Netto: 0 ( +0 / −0 )
-            </span>
-          </div>
+        <div class="radar-row" data-field="fairplay" style="margin-bottom:8px;">
+          <strong>Fair Play</strong><br>
+          <button class="radar-btn-plus" data-field="fairplay">+ fair</button>
+          <button class="radar-btn-minus" data-field="fairplay">− unsportlich</button>
+          <span class="radar-score" data-field="fairplay"></span>
         </div>
       </div>
-    </section> <!-- Ende sec-radar -->
+    </section>
 
     <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
       <h2><span>4. Ranking</span></h2>
-
       <div class="row">
         <label for="club-filter">Verein</label>
         <select id="club-filter"></select>
       </div>
-
       <div class="row">
         <label for="rank-pos">Position</label>
         <select id="rank-pos">
@@ -924,7 +647,6 @@
           <option value="both">beidfüßig</option>
         </select>
       </div>
-
       <div class="row">
         <label for="rank-type">Event-Typ</label>
         <select id="rank-type">
@@ -934,15 +656,6 @@
           <option value="tournament">Turnier</option>
         </select>
       </div>
-     
-      <div class="row">
-        <label for="rank-source">Quelle</label>
-        <select id="rank-source">
-          <option value="rating">Bewertungen (Noten)</option>
-          <option value="radar">Radar (Live-Aktionen)</option>
-        </select>
-      </div>
-
       <div class="row">
         <label for="rank-role">Bewertungs-Rolle</label>
         <select id="rank-role">
@@ -954,24 +667,20 @@
           <option value="sonstige">Sonstige</option>
         </select>
       </div>
-
       <div class="row">
         <label for="rank-from">Von Datum</label>
         <input id="rank-from" type="date">
         <label for="rank-to">Bis Datum</label>
         <input id="rank-to" type="date">
       </div>
-
       <div class="row">
         <label for="rank-min">Min. Bewertungen</label>
         <input id="rank-min" type="number" value="1" min="0" style="width:70px;">
       </div>
-
       <div class="row">
         <label for="rank-q">Suche (Name/Verein)</label>
         <input id="rank-q" type="text" size="30">
       </div>
-
       <div class="row">
         <label for="fav-filter">Watchlist</label>
         <select id="fav-filter">
@@ -982,10 +691,9 @@
           <input type="checkbox" id="rank-top10">
           nur Top 10
         </label>
-        <button id="btn-refresh-ranking" type="button">Ranking aktualisieren</button>
-        <button id="btn-export-csv" type="button">CSV-Export</button>
+        <button id="btn-refresh-ranking">Ranking aktualisieren</button>
+        <button id="btn-export-csv">CSV-Export</button>
       </div>
-
       <div id="rank-msg" class="status-line"></div>
 
       <table id="rank-table">
@@ -1078,46 +786,39 @@
 
       window.npShowSection = showSection;
 
-          buttons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const target = btn.dataset.target;
-        if (target && sections[target]) {
-          showSection(target);
-
-          // Spezialfälle: beim Öffnen Daten laden
-          if (target === 'sec-ranking' && typeof refreshRanking === 'function') {
-            refreshRanking();
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          if (target && sections[target]) {
+            showSection(target);
           }
-          if (target === 'sec-last' && typeof refreshLastComments === 'function') {
-            refreshLastComments();
-          }
-        }
+        });
       });
-    });
 
       // Start mit Setup
       showSection('sec-config');
     });
   </script>
+
   <!-- Supabase-Logik -->
   <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/+esm';
 
-    // Kurz-Helper
-    const $  = (sel) => document.querySelector(sel);
-    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+  const $  = (sel) => document.querySelector(sel);
+  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-    function isUUID(v) {
-      return typeof v === 'string' &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
-    }
+  function isUUID(v) {
+    return typeof v === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+  }
 
-    let supa = null;
-    let currentUser = null;
-    let currentUserMeta = null;
-    let currentProfile = null;
-    let currentEvent = null;
-    let allEvents = [];
+  let supa = null;
+  let currentUser = null;
+  let currentUserMeta = null;
+  let currentProfile = null;
+  let currentEvent = null;
+  let allEvents = [];
+  // ... ab hier dein restlicher (funktionierender) Code
 
     // -----------------------------
     // Supabase-Konfiguration
@@ -1493,8 +1194,8 @@
 
       } catch (e) {
         console.error(e);
-        const msg2 = $('#auth-msg');
-        if (msg2) msg2.textContent = 'Fehler bei Registrierung.';
+        const msg = $('#auth-msg');
+        if (msg) msg.textContent = 'Fehler bei Registrierung.';
       }
     });
 
@@ -1550,8 +1251,8 @@
 
       } catch (e) {
         console.error(e);
-        const msg2 = $('#auth-msg');
-        if (msg2) msg2.textContent = 'Fehler beim Login.';
+        const msg = $('#auth-msg');
+        if (msg) msg.textContent = 'Fehler beim Login.';
       }
     });
 
@@ -1793,8 +1494,1485 @@
     }
     buildCriteriaUI();
 
-    // ... HIER: Due to Platz & Zeit breche ich bewusst ab ...
+    async function createPlayerRating() {
+      const msg = document.getElementById('player-create-msg');
 
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
+
+      const first = (document.getElementById('pl-first')?.value || '').trim();
+      const last  = (document.getElementById('pl-last')?.value  || '').trim();
+      const birth = (document.getElementById('pl-birth')?.value || '').trim();
+      const clubCur  = (document.getElementById('pl-club-current')?.value || '').trim();
+      const clubPrev = (document.getElementById('pl-club-prev')?.value   || '').trim();
+      const numStr   = (document.getElementById('pl-number')?.value      || '').trim();
+      const posSel   = document.getElementById('pl-pos');
+      const footSel  = document.getElementById('pl-foot');
+
+      if (!first || !last) {
+        if (msg) msg.textContent = 'Bitte mindestens Vor- und Nachname eingeben.';
+        return;
+      }
+
+      const full = `${first} ${last}`.trim();
+      const positions = posSel
+        ? Array.from(posSel.selectedOptions).map(o => o.value)
+        : [];
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('player')
+          .insert([{
+            full_name: full,
+            first_name: first,
+            last_name: last,
+            birthdate: birth || null,
+            club_name: clubCur || null,
+            prev_club: clubPrev || null,
+            positions: positions.length ? positions : null,
+            dominant_foot: footSel?.value || null,
+            jersey_number: numStr ? parseInt(numStr, 10) : null
+          }])
+
+          .select('id')
+          .single();
+
+        if (error && error.code === '23505') {
+          const { data: existing } = await c
+            .from('player')
+            .select('id')
+            .eq('full_name', full)
+            .eq('club_name', clubCur || null)
+            .maybeSingle();
+
+          const sel = document.getElementById('r-player');
+          if (sel && existing?.id) {
+            sel.value = existing.id;
+          }
+
+          if (msg) msg.textContent = 'Spieler existiert bereits – wurde ausgewählt.';
+          return;
+        }
+
+        if (error) {
+          console.error('createPlayer error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
+          return;
+        }
+
+        if (msg) msg.textContent = 'Spieler gespeichert.';
+
+        ['pl-first','pl-last','pl-birth','pl-club-current','pl-club-prev','pl-number']
+          .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+          });
+        if (posSel) Array.from(posSel.options).forEach(o => (o.selected = false));
+        if (footSel) footSel.value = '';
+
+        // Spielerlisten aktualisieren:
+        // 1) für die normale Bewertung
+        await refreshPlayers();
+        // 2) für Vereinsfilter im Ranking
+        await refreshClubFilter();
+        // 3) für den Radar-Reiter (Dropdown)
+        if (typeof radarRefreshData === 'function') {
+          await radarRefreshData();
+        }
+
+        // neu angelegten Spieler direkt im Bewertungs-Dropdown auswählen
+        const sel = document.getElementById('r-player');
+        if (sel && data?.id) {
+          sel.value = data.id;
+        }
+      } catch (e) {
+        console.error('createPlayer', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern: ' + (e.message || e);
+      }
+    }
+
+    document.getElementById('btn-create-player')?.addEventListener('click', createPlayerRating);
+
+    async function refreshPlayers() {
+      try {
+        const c = await getClient();
+       const { data, error } = await c
+          .from('player')
+          .select('id, full_name, club_name, jersey_number')
+          .order('full_name');
+        if (error) throw error;
+        const sel = document.querySelector('#r-player');
+        if (!sel) return;
+        sel.innerHTML = (data || []).map(p => {
+          const num = p.jersey_number ? `#${p.jersey_number} ` : '';
+          const club = p.club_name || '';
+          return `<option value="${p.id}">${num}${p.full_name} (${club})</option>`;
+        }).join('');
+      } catch (e) {
+        console.error('refreshPlayers', e);
+      }
+    }
+
+    async function refreshClubFilter() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player')
+          .select('club_name');
+        if (error) throw error;
+        const clubs = Array.from(
+          new Set(
+            (data || [])
+              .map(x => (x.club_name || '').trim())
+              .filter(Boolean)
+          )
+        ).sort();
+        const sel = document.querySelector('#club-filter');
+        if (!sel) return;
+        sel.innerHTML =
+          '<option value="">Alle</option>' +
+          clubs.map(cc => `<option value="${cc}">${cc}</option>`).join('');
+      } catch (e) {
+        console.error('refreshClubFilter', e);
+      }
+    }
+
+    // Events aus echter DB (für Ranking, Verlauf & Karte 3)
+    async function refreshEvents() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: false });
+        if (error) throw error;
+        allEvents = data || [];
+
+        const sel = document.querySelector('#r-event');
+        if (!sel) return;
+        sel.innerHTML = '<option value="">Bitte Event wählen…</option>' +
+          allEvents.map(ev => {
+            const label = formatEventDisplayLine(ev);
+            return `<option value="${ev.id}">${label}</option>`;
+          }).join('');
+      } catch (e) {
+        console.error('refreshEvents', e);
+      }
+    }
+
+    // Bewertung speichern
+    document.querySelector('#btn-add-rating')?.addEventListener('click', async () => {
+      try {
+        const c = await getClient();
+        const sessionRes = await c.auth.getSession();
+        const user = sessionRes?.data?.session?.user || null;
+        const msg = document.querySelector('#rate-msg');
+
+        if (!user) {
+          const m = document.querySelector('#auth-msg');
+          if (m) m.textContent = 'Bitte zuerst einloggen.';
+          return;
+        }
+        if (isMinorLocked()) {
+          if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+          return;
+        }
+
+        if (!currentProfile || !currentProfile.role) {
+          if (msg) msg.textContent = 'Bitte zuerst im Profil (2b) deine Rolle auswählen und speichern.';
+          return;
+        }
+
+        const playerSel = document.querySelector('#r-player');
+        const eventSel  = document.querySelector('#r-event');
+        const commentEl = document.querySelector('#r-comment');
+
+        const player_id = playerSel?.value || null;
+        const dropdownEventId = eventSel?.value || null;
+        let   event_id  = (currentEvent && currentEvent.id) ? currentEvent.id : dropdownEventId;
+
+        if (!event_id) {
+          if (msg) msg.textContent = 'Bitte zuerst ein Event auswählen (3b/3c oder Event-Dropdown).';
+          return;
+        }
+
+        // falls currentEvent noch nicht gesetzt ist → aus allEvents nachladen
+        if (!currentEvent && dropdownEventId) {
+          const ev = allEvents.find(e => String(e.id) === String(dropdownEventId));
+          if (ev) {
+            setCurrentEvent(ev);
+            event_id = ev.id;
+          } else {
+            console.warn('Kein DB-Event gefunden für ID', dropdownEventId);
+          }
+        }
+
+        if (!player_id) {
+          if (msg) msg.textContent = 'Bitte einen Spieler auswählen (oder in 2a neu anlegen).';
+          return;
+        }
+
+        // Nur echte UUIDs speichern – keine Demo-IDs wie "E013"
+        if (!isUUID(String(event_id))) {
+          if (msg) msg.textContent =
+            'Fehler: Dieses Event hat keine gültige ID (z.B. Demo-Event „E007“). ' +
+            'Bitte ein Event aus der Datenbank auswählen oder in 3c neu anlegen.';
+          console.warn('Skip DB insert, invalid UUID for event_id:', event_id);
+          return;
+        }
+
+        const comment = (commentEl?.value || '').trim();
+
+        const crit = {};
+        ratingKeys.forEach(([k]) => {
+          const sel = document.querySelector(`select[data-k="${k}"]`);
+          const v = parseFloat(sel?.value);
+          crit[k] = isNaN(v) ? null : v;
+        });
+
+        const roleForRating = currentProfile.role || '';
+        crit._role  = roleForRating;
+        crit._rater = user.email || '';
+
+        const payload = {
+          rater_id: user.id,
+          player_id,
+          event_id,
+          criteria: crit,
+          comment
+        };
+
+        const { error } = await c
+          .from('rating')
+          .upsert(payload, {
+            onConflict: 'rater_id,player_id,event_id'
+          });
+
+        if (error) {
+          console.error('upsert rating error', error);
+          if (msg) msg.textContent = 'Fehler: ' + error.message;
+        } else {
+          if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
+          await refreshRanking();
+          await refreshLastComments();
+        }
+      } catch (e) {
+        console.error('save rating', e);
+        const msg = document.querySelector('#rate-msg');
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    });
+
+    // -----------------------------
+    // Event-Suche für 3b. Ereignis suchen
+    // -----------------------------
+    async function searchEventsByTerm(term) {
+      try {
+        const c = await getClient();
+
+        let query = c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: false })
+          .limit(50);
+
+        term = (term || '').trim();
+        if (term) {
+          const orFilter =
+            `competition.ilike.%${term}%,` +
+            `opponent.ilike.%${term}%,` +
+            `subtype.ilike.%${term}%,` +
+            `location.ilike.%${term}%`;
+          query = query.or(orFilter);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        // Duplikate nach Inhalt entfernen
+        const unique = [];
+        const seen = new Set();
+        for (const ev of data || []) {
+          const key = [
+            ev.event_date || '',
+            ev.type || '',
+            ev.competition || '',
+            ev.opponent || '',
+            ev.location || ''
+          ].join('|');
+          if (seen.has(key)) continue;
+          seen.add(key);
+          unique.push(ev);
+        }
+
+        renderEventResults(unique);
+      } catch (e) {
+        console.error('searchEventsByTerm', e);
+        const box = document.querySelector('#event-results');
+        if (box) box.textContent = 'Fehler bei der Suche.';
+      }
+    }
+
+    function formatEventPairing(ev) {
+      if (ev.competition || ev.opponent) {
+        const home = (ev.competition || '').trim();
+        const away = (ev.opponent || '').trim();
+        if (home && away) return `${home} - ${away}`;
+        if (home) return home;
+        if (away) return away;
+      }
+      if (ev.subtype) return ev.subtype;
+      return `Event ${ev.id}`;
+    }
+
+    function formatEventDisplayLine(ev) {
+      const parts = [];
+      if (ev.event_date) parts.push(ev.event_date);
+      if (ev.type)       parts.push(ev.type);
+      const pairing = formatEventPairing(ev);
+      if (pairing)      parts.push(pairing);
+      if (ev.location)  parts.push(ev.location);
+      return parts.join(' | ');
+    }
+
+    function renderEventResults(list) {
+      const box   = document.querySelector('#event-results');
+      const label = document.querySelector('#event-current');
+      const card  = document.querySelector('#event-card');
+      if (!box) return;
+
+      if (!list.length) {
+        box.textContent = 'Keine Spiele gefunden.';
+        if (label) label.textContent = 'Kein Spiel ausgewählt.';
+        if (card) {
+          card.innerHTML = '<p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>';
+        }
+        return;
+      }
+
+      const ul = document.createElement('ul');
+      ul.style.listStyle = 'none';
+      ul.style.padding = '0';
+      ul.style.margin = '0';
+
+      list.forEach(ev => {
+        const li = document.createElement('li');
+        li.style.marginBottom = '6px';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.padding = '4px 8px';
+        btn.style.cursor = 'pointer';
+        btn.style.width = '100%';
+        btn.style.textAlign = 'left';
+
+        btn.textContent = formatEventDisplayLine(ev);
+
+        btn.addEventListener('click', () => {
+          setCurrentEvent(ev);
+        });
+
+        li.appendChild(btn);
+        ul.appendChild(ul.lastChild || li);
+        if (li.parentNode !== ul) ul.appendChild(li);
+      });
+
+      box.innerHTML = '';
+      box.appendChild(ul);
+    }
+
+    function setCurrentEvent(ev) {
+      currentEvent = ev;
+
+      const label = document.querySelector('#event-current');
+      if (label) {
+        let pairing = '';
+        if (ev.competition || ev.opponent) {
+          pairing = `${ev.competition || ''} - ${ev.opponent || ''}`.trim();
+        } else if (ev.subtype) {
+          pairing = ev.subtype;
+        } else {
+          pairing = `Event ${ev.id}`;
+        }
+        const dateStr = ev.event_date ? ` am ${ev.event_date}` : '';
+        label.textContent = `Aktuell ausgewähltes Spiel: ${pairing}${dateStr}`;
+      }
+
+      const card = document.querySelector('#event-card');
+      if (card && ev) {
+        const pairing = formatEventPairing(ev);
+        const dateStr = ev.event_date || '';
+        const typeStr = ev.type || '';
+        const locStr  = ev.location || '';
+        const extra   = ev.subtype || '';
+
+        card.innerHTML = `
+          <div style="font-size:0.95rem; font-weight:600; margin-bottom:4px;">
+            ${pairing}
+          </div>
+          <div style="font-size:0.85rem; color:#555; margin-bottom:2px;">
+            Datum: ${dateStr}
+          </div>
+          <div style="font-size:0.85rem; color:#555; margin-bottom:2px;">
+            Typ: ${typeStr}${extra ? ' (' + extra + ')' : ''}
+          </div>
+          <div style="font-size:0.85rem; color:#555; margin-bottom:2px;">
+            Ort: ${locStr}
+          </div>
+          <div style="font-size:0.8rem; color:#777;">
+            Event-ID: ${ev.id}
+          </div>
+        `;
+      }
+
+      const sel = document.querySelector('#r-event');
+      if (sel && ev.id) {
+        const opt = sel.querySelector(`option[value="${ev.id}"]`);
+        if (opt) sel.value = String(ev.id);
+      }
+    }
+
+    // Suchfeld + Button (3b. Ereignis suchen)
+    const inpPairing = document.querySelector('#search-pairing');
+    const btnSearchEvent = document.querySelector('#btn-search-event');
+
+    if (btnSearchEvent && inpPairing) {
+      btnSearchEvent.addEventListener('click', () => {
+        const term = (inpPairing.value || '').trim();
+        searchEventsByTerm(term);
+      });
+
+      inpPairing.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const term = (inpPairing.value || '').trim();
+          searchEventsByTerm(term);
+        }
+      });
+    }
+
+    // Wechsel im Event-Dropdown → currentEvent aktualisieren
+    const selEvent = document.querySelector('#r-event');
+    if (selEvent) {
+      selEvent.addEventListener('change', () => {
+        const id = selEvent.value;
+        const ev = allEvents.find(e => String(e.id) === id);
+        if (ev) setCurrentEvent(ev);
+      });
+    }
+
+    // -----------------------------
+    // Ranking / CSV / ICS / Verlauf / Event anlegen
+    // -----------------------------
+    function loadFavSet() {
+      try {
+        const raw = localStorage.getItem('fav_players') || '[]';
+        const arr = JSON.parse(raw);
+        return new Set(Array.isArray(arr) ? arr : []);
+      } catch {
+        return new Set();
+      }
+    }
+    function saveFavSet(set) {
+      localStorage.setItem('fav_players', JSON.stringify([...set]));
+    }
+    let favSet   = loadFavSet();
+    let lastRows = [];
+    let ratingsByPlayer = new Map();
+
+    async function refreshRanking() {
+      try {
+        const c = await getClient();
+        const [pRes, eRes, rRes] = await Promise.all([
+          c.from('player').select('id, full_name, club_name, positions, dominant_foot, birthdate'),
+          c.from('event').select('id, event_date, type, competition, opponent, subtype, location'),
+          c.from('rating').select('player_id, event_id, criteria, created_at')
+            .order('created_at', { ascending: false })
+            .limit(2000)
+        ]);
+
+        if (pRes.error || eRes.error || rRes.error) {
+          console.error(pRes.error || eRes.error || rRes.error);
+          const msg = document.querySelector('#rank-msg');
+          if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+          return;
+        }
+
+        const players = pRes.data || [];
+        const events  = eRes.data || [];
+        const ratings = rRes.data || [];
+
+        const pMap = new Map(players.map(p => [p.id, p]));
+        const eMap = new Map(events.map(e => [e.id, e]));
+
+        const clubF   = document.querySelector('#club-filter')?.value || '';
+        const posF    = document.querySelector('#rank-pos')?.value || '';
+        const footF   = document.querySelector('#rank-foot')?.value || '';
+        const typeF   = document.querySelector('#rank-type')?.value || '';
+        const roleF   = (document.querySelector('#rank-role')?.value || '').toLowerCase();
+        const fromF   = document.querySelector('#rank-from')?.value || '';
+        const toF     = document.querySelector('#rank-to')?.value || '';
+        const q       = (document.querySelector('#rank-q')?.value || '').toLowerCase();
+        const minR    = parseInt(document.querySelector('#rank-min')?.value || '0', 10) || 0;
+        const favMode = document.querySelector('#fav-filter')?.value || 'all';
+
+        const agg = new Map();
+        ratingsByPlayer = new Map();
+        let rows = [];
+
+        for (const r of ratings) {
+          const ev = eMap.get(r.event_id);
+          const pl = pMap.get(r.player_id);
+          if (!ev || !pl) continue;
+
+          const critObj = r.criteria || {};
+          const roleVal = (critObj._role || '').toLowerCase();
+
+          if (roleF && roleF !== 'alle' && roleVal !== roleF) continue;
+
+          const d = (ev.event_date || '').slice(0, 10);
+
+          if (typeF && ev.type !== typeF) continue;
+          if (fromF && d < fromF) continue;
+          if (toF   && d > toF)   continue;
+
+          const vals = Object.entries(critObj)
+            .map(([k, v]) => k.startsWith('_') ? NaN : Number(v))
+            .filter(n => Number.isFinite(n));
+          if (!vals.length) continue;
+
+          const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+
+          let list = ratingsByPlayer.get(r.player_id);
+          if (!list) {
+            list = [];
+            ratingsByPlayer.set(r.player_id, list);
+          }
+          list.push({
+            avg,
+            created_at: r.created_at || '',
+            event_date: ev.event_date || '',
+            event_type: ev.type || '',
+            event_name: formatEventPairing(ev),
+            role:       critObj._role  || '',
+            rater:      critObj._rater || ''
+          });
+
+          const key = r.player_id;
+          let stat = agg.get(key);
+          if (!stat) {
+            stat = { sum: 0, cnt: 0, last: '0000-00-00' };
+          }
+          stat.sum  += avg;
+          stat.cnt  += 1;
+          if (d > stat.last) stat.last = d;
+          agg.set(key, stat);
+        }
+
+        rows = [];
+        for (const [playerId, st] of agg.entries()) {
+          const pl = pMap.get(playerId) || {
+            full_name: playerId,
+            club_name: '',
+            positions: null,
+            dominant_foot: null,
+            birthdate: null
+          };
+          const avg = st.sum / st.cnt;
+          rows.push({
+            id:    playerId,
+            name:  pl.full_name,
+            club:  pl.club_name || '',
+            pos:   pl.positions || null,
+            foot:  pl.dominant_foot || '',
+            birth: pl.birthdate || '',
+            cnt:   st.cnt,
+            avg,
+            last:  st.last
+          });
+        }
+
+        rows = rows.filter(r => {
+          const matchClub = !clubF || r.club === clubF;
+
+          const posArr = Array.isArray(r.pos)
+            ? r.pos
+            : (typeof r.pos === 'string' && r.pos.length
+              ? r.pos.split(',').map(x => x.trim()).filter(Boolean)
+              : []);
+
+          const matchPos  = !posF || posArr.includes(posF);
+          const matchFoot = !footF || r.foot === footF;
+          const matchText = !q || r.name.toLowerCase().includes(q) || r.club.toLowerCase().includes(q);
+          const matchCnt  = r.cnt >= minR;
+          const matchFav  = (favMode !== 'fav' || favSet.has(r.id));
+
+          return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
+        });
+
+        rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
+        const top = document.querySelector('#rank-top10')?.checked;
+        if (top) rows = rows.slice(0, 10);
+
+        lastRows = rows.slice();
+
+        const tb = document.querySelector('#rank-table tbody');
+        if (!tb) return;
+
+        tb.innerHTML = rows.length
+          ? rows.map(r => {
+              const star   = favSet.has(r.id) ? '★' : '☆';
+              const posStr = Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || '');
+              const footLabel =
+                r.foot === 'left' ? 'links' :
+                r.foot === 'right' ? 'rechts' :
+                r.foot === 'both' ? 'beidfüßig' : '';
+              return `<tr data-pid="${r.id}">
+                        <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
+                        <td>${r.name}</td>
+                        <td>${r.club}</td>
+                        <td>${posStr}</td>
+                        <td>${footLabel}</td>
+                        <td>${r.cnt}</td>
+                        <td>${r.avg.toFixed(2)}</td>
+                        <td>${r.last || ''}</td>
+                      </tr>`;
+            }).join('')
+          : '<tr><td colspan="8">Keine Daten für die aktuellen Filter.</td></tr>';
+
+        tb.querySelectorAll('.fav-toggle').forEach(el => {
+          el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            const pid = el.getAttribute('data-pid');
+            if (!pid) return;
+            if (favSet.has(pid)) favSet.delete(pid);
+            else favSet.add(pid);
+            saveFavSet(favSet);
+            refreshRanking();
+          });
+        });
+
+        tb.onclick = (ev) => {
+          const tr = ev.target.closest('tr[data-pid]');
+          if (!tr) return;
+          if (ev.target.classList.contains('fav-toggle')) return;
+
+          const pid = tr.getAttribute('data-pid');
+          const row = lastRows.find(r => String(r.id) === String(pid));
+          if (!row) return;
+
+          const pl = pMap.get(row.id) || {};
+          const birthStr = pl.birthdate || '-';
+          const footVal  = pl.dominant_foot || row.foot || '';
+          const footLabel =
+            footVal === 'left' ? 'links' :
+            footVal === 'right' ? 'rechts' :
+            footVal === 'both' ? 'beidfüßig' : (footVal || '-');
+          const posStr   = Array.isArray(row.pos) ? row.pos.join(', ') : (row.pos || '');
+
+          const details = ratingsByPlayer.get(row.id) || [];
+
+          let detailText = '';
+          if (details.length) {
+            detailText =
+              '\n\nEinzelbewertungen:\n' +
+              details.map(d => {
+                const date  = (d.event_date || '').slice(0,10);
+                const typeShort =
+                  d.event_type === 'match'      ? 'Sp.' :
+                  d.event_type === 'training'   ? 'Tr.' :
+                  d.event_type === 'tournament' ? 'Tu.' :
+                  (d.event_type || '');
+
+                const pairing = d.event_name || '';
+                const role    = d.role  || '';
+                const rater   = d.rater || '';
+                const raterShort = rater.includes('@') ? rater.split('@')[0] : rater;
+
+                return `- ${date} ${typeShort} ${pairing} | Ø ${d.avg.toFixed(2)} | Rolle: ${role} | Bew.: ${raterShort}`;
+              }).join('\n');
+          } else {
+            detailText = '\n\nKeine Einzelbewertungen gefunden.';
+          }
+
+          alert(
+            'Spieler: '      + row.name + '\n' +
+            'Geb.: '         + birthStr + '\n' +
+            'Verein: '       + row.club + '\n' +
+            'Position(en): ' + posStr + '\n' +
+            'Fuß: '          + footLabel + '\n' +
+            'Bewertungen: '  + row.cnt + '\n' +
+            'Ø Note: '       + row.avg.toFixed(2) +
+            detailText
+          );
+        };
+
+        const rankMsgLocal = $('#rank-msg');
+        if (rankMsgLocal) rankMsgLocal.textContent = `OK: ${rows.length} Spieler`;
+      } catch (e) {
+        console.error('refreshRanking', e);
+        const msg = $('#rank-msg');
+        if (msg) msg.textContent = 'Fehler beim Laden des Rankings.';
+      }
+    }
+
+    ['change', 'input'].forEach(evt => {
+      [
+        'club-filter',
+        'rank-pos',
+        'rank-foot',
+        'rank-type',
+        'rank-role',
+        'rank-from',
+        'rank-to',
+        'rank-min',
+        'rank-q',
+        'fav-filter',
+        'rank-top10'
+      ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(evt, () => refreshRanking());
+      });
+    });
+    document.getElementById('btn-refresh-ranking')?.addEventListener('click', () => refreshRanking());
+
+    document.getElementById('btn-export-csv')?.addEventListener('click', () => {
+      if (!lastRows.length) return;
+      const header = ['Spieler','Verein','Position(en)','Fuß','#Bewertungen','Ø Note','Letztes Event'];
+      const lines = [
+        header.join(';'),
+        ...lastRows.map(r =>
+          [
+            r.name,
+            r.club,
+            Array.isArray(r.pos) ? r.pos.join(', ') : (r.pos || ''),
+            (r.foot === 'left' ? 'links' : r.foot === 'right' ? 'rechts' : r.foot === 'both' ? 'beidfüßig' : ''),
+            r.cnt,
+            r.avg.toFixed(2),
+            r.last || ''
+          ].join(';')
+        )
+      ];
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ranking.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function parseICS(txt) {
+      const out = [];
+      const blocks = txt.split(/BEGIN:VEVENT/).slice(1).map(s => 'BEGIN:VEVENT' + s);
+      for (const block of blocks) {
+        const get = (k) => {
+          const re = new RegExp('^' + k + '(?:;[^:]+)?:\\s*(.+)$','m');
+          const m  = block.match(re);
+          return m ? m[1].trim() : null;
+        };
+        let dt = get('DTSTART');
+        if (!dt) {
+          const m = block.match(/^DTSTART(?:;TZID=[^:]+)?:([0-9T]+)/m);
+          if (m) dt = m[1];
+        }
+        if (!dt) continue;
+        const raw = dt.replace(/[^0-9]/g,'').slice(0,8);
+        if (raw.length < 8) continue;
+        const event_date = `${raw.slice(0,4)}-${raw.slice(4,6)}-${raw.slice(6,8)}`;
+        const summary  = get('SUMMARY')  || '';
+        const location = get('LOCATION') || '';
+        out.push({
+          event_date,
+          type:'match',
+          subtype: summary.slice(0,120),
+          competition:null,
+          age_group:null,
+          opponent:null,
+          location:location.slice(0,120)
+        });
+      }
+      return out;
+    }
+
+    document.getElementById('btn-import-ics')?.addEventListener('click', async () => {
+      const c = await getClient().catch(e => {
+        const m = $('#ics-msg');
+        if (m) m.textContent = 'Nicht verbunden.';
+        return null;
+      });
+      if (!c) return;
+      const fileInput = document.getElementById('ics-file');
+      const msg = document.getElementById('ics-msg');
+      const file = fileInput?.files?.[0];
+      if (!file) { if (msg) msg.textContent = 'Bitte eine .ics-Datei wählen.'; return; }
+      try {
+        const txt = await file.text();
+        const events = parseICS(txt);
+        if (!events.length) { if (msg) msg.textContent = 'Keine VEVENTs gefunden.'; return; }
+        const { error } = await c.from('event').insert(events);
+        if (error) { console.error(error); if (msg) msg.textContent = 'Fehler: ' + error.message; }
+        else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
+      } catch (e) {
+        console.error(e);
+        const msg = document.getElementById('ics-msg');
+        if (msg) msg.textContent = 'Fehler beim Import.';
+      }
+    });
+
+    document.getElementById('btn-import-ics-url')?.addEventListener('click', async () => {
+      const c = await getClient().catch(e => {
+        const m = $('#ics-msg');
+        if (m) m.textContent = 'Nicht verbunden.';
+        return null;
+      });
+      if (!c) return;
+      const msg  = document.getElementById('ics-msg');
+      const url  = (document.getElementById('ics-url')?.value || '').trim();
+      if (!url) { if (msg) msg.textContent = 'Bitte eine ICS-URL eingeben.'; return; }
+      try {
+        const res = await fetch(url, { redirect:'follow' });
+        if (!res.ok) throw new Error(res.statusText);
+        const txt = await res.text();
+        const events = parseICS(txt);
+        if (!events.length) { if (msg) msg.textContent = 'Keine VEVENTs gefunden.'; return; }
+        const { error } = await c.from('event').insert(events);
+        if (error) { console.error(error); if (msg) msg.textContent = 'Fehler: ' + error.message; }
+        else { if (msg) msg.textContent = `OK – ${events.length} Events importiert.`; refreshEvents(); }
+      } catch (e) {
+        console.error(e);
+        if (msg) msg.textContent = 'Fehler beim Laden. Nutze ggf. Download + Datei-Import.';
+      }
+    });
+
+    async function refreshLastComments() {
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('rating')
+          .select('id, player_id, event_id, comment, created_at')
+          .order('created_at', { ascending:false })
+          .limit(5);
+        if (error) throw error;
+        const pMap = new Map();
+        const eMap = new Map();
+        const idsP = Array.from(new Set((data||[]).map(r => r.player_id).filter(Boolean)));
+        const idsE = Array.from(new Set((data||[]).map(r => r.event_id).filter(Boolean)));
+        if (idsP.length) {
+          const pr = await c.from('player').select('id, full_name').in('id', idsP);
+          (pr.data||[]).forEach(p => pMap.set(p.id, p.full_name));
+        }
+        if (idsE.length) {
+          const er = await c.from('event').select('id, event_date, subtype, competition, opponent').in('id', idsE);
+          (er.data||[]).forEach(ev => {
+            let name = '';
+            if (ev.competition || ev.opponent) {
+              name = `${ev.competition || ''} - ${ev.opponent || ''}`.trim();
+            } else if (ev.subtype) {
+              name = ev.subtype;
+            } else {
+              name = ev.event_date || '';
+            }
+            eMap.set(ev.id, `${ev.event_date || ''} ${name}`);
+          });
+        }
+        const box = document.getElementById('last-ratings');
+        if (!box) return;
+        box.innerHTML = (data||[]).length
+          ? (data||[]).map(r =>
+              `<tr>
+                <td>${(r.created_at||'').slice(0,10)}</td>
+                <td>${pMap.get(r.player_id) || r.player_id}</td>
+                <td>${eMap.get(r.event_id) || ''}</td>
+                <td>${(r.comment || '').substring(0,120)}</td>
+              </tr>`
+            ).join('')
+          : '<tr><td colspan="4">Noch keine Bewertungen.</td></tr>';
+      } catch (e) {
+        console.error('refreshLastComments', e);
+      }
+    }
+
+    async function createEvent() {
+      const dateEl   = document.getElementById('event-date');
+      const typeEl   = document.getElementById('event-type');
+      const homeEl   = document.getElementById('event-home');
+      const awayEl   = document.getElementById('event-away');
+      const nameEl   = document.getElementById('event-name');
+      const locEl    = document.getElementById('event-location');
+      const msg      = document.getElementById('event-create-msg');
+
+      if (!currentUser) {
+        if (msg) msg.textContent = 'Bitte zuerst einloggen.';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        return;
+      }
+
+      const event_date = (dateEl?.value || '').trim();
+      const type       = (typeEl?.value || '').trim();
+
+      const competition = (homeEl?.value || '').trim();
+      const opponent    = (awayEl?.value || '').trim();
+      const subtype     = (nameEl?.value || '').trim();
+      const location    = (locEl?.value || '').trim();
+
+      if (!event_date || !type) {
+        if (msg) msg.textContent = 'Bitte mindestens Datum und Event-Typ eingeben.';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('event')
+          .insert([{
+            event_date,
+            type,
+            competition,
+            opponent,
+            subtype,
+            location
+          }])
+          .select();
+
+        if (error) {
+          console.error('createEvent error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
+          return;
+        }
+
+        if (msg) msg.textContent = 'Event gespeichert.';
+
+        if (homeEl) homeEl.value = '';
+        if (awayEl) awayEl.value = '';
+        if (nameEl) nameEl.value = '';
+        if (locEl)  locEl.value  = '';
+
+        await refreshEvents();
+        if (data && data.length) {
+          setCurrentEvent(data[0]);
+        }
+      } catch (e) {
+        console.error('createEvent', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    }
+
+    document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
+   
+    // -----------------------------
+    // SpielerRadar™ – Live-Aktionen
+    // -----------------------------
+    let currentRadar = null;
+    let currentRadarPlayerId = null;
+
+    // Drei feste Farben für die Watchlist-Slots
+    const radarColors = ['#fff4db', '#e3f3ff', '#e8ffe5'];
+
+    // Watchlist (max. 3 Spieler)
+    // Struktur: { playerId, playerName, teamName, colorIndex }
+    let radarWatchlist = [];
+    const wlBox = () => document.getElementById('radar-watchlist');
+
+    async function radarLoadEventsForRadar() {
+      const sel = document.getElementById('radar-event-select');
+      const statusEl = document.getElementById('radar-status');
+      if (!sel) return;
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('event')
+          .select('id, event_date, type, competition, opponent, subtype, location')
+          .order('event_date', { ascending: true });
+        if (error) throw error;
+
+        sel.innerHTML = '<option value="">Bitte wählen …</option>';
+        (data || []).forEach(ev => {
+          const opt = document.createElement('option');
+          opt.value = ev.id;
+          opt.textContent = formatEventDisplayLine(ev);
+          sel.appendChild(opt);
+        });
+
+        if (statusEl) statusEl.textContent = 'Events für SpielerRadar geladen.';
+      } catch (e) {
+        console.error('radarLoadEventsForRadar', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Laden der Events für SpielerRadar.';
+      }
+    }
+
+    async function radarLoadPlayersForRadar() {
+      const sel = document.getElementById('radar-player-select');
+      const statusEl = document.getElementById('radar-status');
+      if (!sel) return;
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player')
+          .select('id, full_name, club_name, positions, jersey_number')
+          .order('full_name', { ascending: true });
+
+        if (error) throw error;
+
+        // Dropdown leeren und Standard-Option setzen
+        sel.innerHTML = '<option value="">Bitte wählen …</option>';
+
+        // Alle Spieler einfügen
+        (data || []).forEach(pl => {
+          const club = pl.club_name || '';
+          const pos = (pl.positions && pl.positions.length)
+            ? ` [${pl.positions.join(', ')}]`
+            : '';
+          const num = pl.jersey_number ? `#${pl.jersey_number} ` : '';
+          const opt = document.createElement('option');
+          opt.value = pl.id;
+          opt.textContent = `${num}${pl.full_name} (${club})${pos}`;
+          if (club) opt.dataset.club = club;
+          if (pl.jersey_number != null) opt.dataset.number = pl.jersey_number;
+          sel.appendChild(opt);
+        });
+
+        if (statusEl) statusEl.textContent = 'Spieler für SpielerRadar geladen.';
+      } catch (e) {
+        console.error('radarLoadPlayersForRadar', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Laden der Spieler für SpielerRadar.';
+      }
+    }
+
+    // Watchlist-Tabs rendern
+    function radarRenderWatchlist() {
+      const box = wlBox();
+      if (!box) return;
+      box.innerHTML = '';
+
+      radarWatchlist.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'radar-tab';
+
+        const color = radarColors[item.colorIndex] || radarColors[0];
+        btn.style.backgroundColor = color;
+
+        // Inhalt neu aufbauen
+        btn.innerHTML = '';
+
+        // Trikot-Badge mit Nummer
+        if (item.jerseyNumber) {
+          const badge = document.createElement('span');
+          badge.className = 'jersey-badge';
+          badge.textContent = item.jerseyNumber;
+          badge.style.marginRight = '6px';
+          btn.appendChild(badge);
+        }
+
+        // Spielername
+        const textSpan = document.createElement('span');
+        textSpan.textContent = item.playerName;
+        btn.appendChild(textSpan);
+
+        // aktiven Spieler markieren
+        if (item.playerId === currentRadarPlayerId) {
+          btn.classList.add('active');
+          btn.style.boxShadow = '0 0 0 2px rgba(0,0,0,0.08)';
+        } else {
+          btn.classList.remove('active');
+          btn.style.boxShadow = 'none';
+        }
+
+        btn.addEventListener('click', () => {
+          radarLoadPlayerFromWatchlist(item.playerId);
+        });
+
+        box.appendChild(btn);
+      });
+    }
+
+    // Spieler aus Watchlist wählen → Dropdown setzen → Radar starten
+    function radarLoadPlayerFromWatchlist(playerId) {
+      const playerSel = document.getElementById('radar-player-select');
+      if (!playerSel) return;
+      const opt = playerSel.querySelector(`option[value="${playerId}"]`);
+      if (opt) {
+        playerSel.value = playerId;
+      }
+      radarStartOrLoad();
+    }
+
+    // Spieler zur Watchlist hinzufügen (max. 3)
+    function radarAddToWatchlist() {
+      const playerSel = document.getElementById('radar-player-select');
+      const eventSel  = document.getElementById('radar-event-select');
+      const status    = document.getElementById('radar-status');
+
+      if (!eventSel.value) {
+        if (status) status.textContent = 'Bitte zuerst ein Event wählen.';
+        return;
+      }
+      if (!playerSel.value) {
+        if (status) status.textContent = 'Bitte einen Spieler wählen.';
+        return;
+      }
+
+      const opt = playerSel.options[playerSel.selectedIndex];
+      const playerId = opt.value;
+      const playerName = opt.textContent;
+      const teamName = opt.dataset.club || null;
+      const jerseyNumber = opt.dataset.number ? parseInt(opt.dataset.number, 10) : null;
+
+      if (radarWatchlist.length >= 3) {
+        if (status) status.textContent = 'Maximal 3 Spieler in der Watchlist.';
+        return;
+      }
+      if (radarWatchlist.some(p => p.playerId === playerId)) {
+        if (status) status.textContent = 'Spieler ist bereits in der Watchlist.';
+        return;
+      }
+
+      const colorIndex = radarWatchlist.length % radarColors.length;
+
+      radarWatchlist.push({ playerId, playerName, teamName, colorIndex, jerseyNumber });
+      radarRenderWatchlist();
+
+      if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
+    }
+
+    function radarUpdateScoresUI() {
+      if (!currentRadar) return;
+      const fields = [
+        'ballsicherheit',
+        'zweikampf',
+        'laufduell',
+        'abschluss',
+        'standard',
+        'mentalitaet',
+        'fairplay'
+      ];
+      fields.forEach(field => {
+        const plus = currentRadar[`${field}_plus`] || 0;
+        const minus = currentRadar[`${field}_minus`] || 0;
+        const netto = plus - minus;
+        const span = document.querySelector(`.radar-score[data-field="${field}"]`);
+        if (span) {
+          span.textContent = `Netto: ${netto} ( +${plus} / −${minus} )`;
+        }
+      });
+    }
+
+    async function radarStartOrLoad() {
+      const statusEl    = document.getElementById('radar-status');
+      const panel       = document.getElementById('radar-panel');
+      const eventSel    = document.getElementById('radar-event-select');
+      const playerSel   = document.getElementById('radar-player-select');
+      const playerLabel = document.getElementById('radar-player-label');
+
+      if (!eventSel || !playerSel) return;
+
+      const eventId  = eventSel.value || '';
+      const playerId = playerSel.value || '';
+
+      if (!currentUser) {
+        if (statusEl) statusEl.textContent = 'Bitte zuerst einloggen.';
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+      if (isMinorLocked()) {
+        if (statusEl) statusEl.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+      if (!eventId || !playerId) {
+        if (statusEl) statusEl.textContent = 'Bitte Event und Spieler auswählen.';
+        if (panel) panel.style.display = 'none';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        const evaluatorId = currentUser.id;
+        const playerOption   = playerSel.options[playerSel.selectedIndex];
+        const playerTeamName = playerOption?.dataset?.club || null;
+        const evaluatorTeamName = currentProfile?.club_name || null;
+
+        // vorhandenen Datensatz laden
+        let { data, error } = await c
+          .from('player_radar')
+          .select('*')
+          .eq('event_id', eventId)
+          .eq('rated_player_id', playerId)
+          .eq('evaluator_user_id', evaluatorId)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        // falls noch keiner, neuen Datensatz anlegen
+        if (!data) {
+          const ins = await c
+            .from('player_radar')
+            .insert({
+              event_id: eventId,
+              rated_player_id: playerId,
+              evaluator_user_id: evaluatorId,
+              player_team_name: playerTeamName,
+              evaluator_team_name: evaluatorTeamName
+            })
+            .select('*')
+            .single();
+
+          if (ins.error) throw ins.error;
+          data = ins.data;
+        }
+
+        currentRadar = data;
+        currentRadarPlayerId = playerId;
+
+        radarUpdateScoresUI();
+
+        // aktiven Watchlist-Eintrag suchen → Farbe holen
+        const activeItem = radarWatchlist.find(p => p.playerId === playerId);
+        const panelColor = activeItem
+          ? (radarColors[activeItem.colorIndex] || '#fff9dd')
+          : '#fff9dd';
+
+        if (panel) {
+          panel.style.display = 'block';
+          panel.style.backgroundColor = panelColor;
+          panel.style.borderTop = '1px solid ' + panelColor;
+        }
+
+        // Tabs neu zeichnen (damit dort auch der aktive Spieler markiert ist)
+        radarRenderWatchlist();
+
+        if (playerLabel) {
+          playerLabel.textContent = `Live-Aktionen: ${playerOption.textContent}`;
+        }
+        if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
+
+        // Ranking für dieses Spiel aktualisieren, falls vorhanden
+        if (typeof radarRefreshSummary === 'function') {
+          await radarRefreshSummary();
+        }
+      } catch (e) {
+        console.error('radarStartOrLoad', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Starten des SpielerRadars.';
+        if (panel) panel.style.display = 'none';
+      }
+    }
+
+    async function radarHandleButtonClick(field, isPlus) {
+      if (!currentRadar) return;
+      const statusEl = document.getElementById('radar-status');
+      const plusField = `${field}_plus`;
+      const minusField = `${field}_minus`;
+      const updates = {};
+
+      if (isPlus) {
+        updates[plusField] = (currentRadar[plusField] || 0) + 1;
+      } else {
+        updates[minusField] = (currentRadar[minusField] || 0) + 1;
+      }
+
+      try {
+        const c = await getClient();
+        const { data, error } = await c
+          .from('player_radar')
+          .update(updates)
+          .eq('id', currentRadar.id)
+          .select('*')
+          .single();
+        if (error) throw error;
+        currentRadar = data;
+        radarUpdateScoresUI();
+        if (statusEl) statusEl.textContent = 'Aktion erfasst.';
+        await radarRefreshSummary();
+      } catch (e) {
+        console.error('radarHandleButtonClick', e);
+        if (statusEl) statusEl.textContent = 'Fehler beim Speichern der Aktion.';
+      }
+    }
+
+    function radarInitUI() {
+      const eventSel = document.getElementById('radar-event-select');
+      const playerSel = document.getElementById('radar-player-select');
+      const startBtn = document.getElementById('radar-start-btn');
+      const addBtn = document.getElementById('radar-add-to-watchlist');
+      if (!eventSel || !playerSel || !startBtn) return;
+
+      radarLoadEventsForRadar();
+      radarLoadPlayersForRadar();
+
+      startBtn.addEventListener('click', radarStartOrLoad);
+      if (addBtn) addBtn.addEventListener('click', radarAddToWatchlist);
+
+      document.querySelectorAll('.radar-btn-plus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = btn.getAttribute('data-field');
+          radarHandleButtonClick(field, true);
+        });
+      });
+      document.querySelectorAll('.radar-btn-minus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = btn.getAttribute('data-field');
+          radarHandleButtonClick(field, false);
+        });
+      });
+    }
+    
+        async function radarRefreshSummary() {
+      const tbody = document.querySelector('#radar-summary-table tbody');
+      const msg = document.getElementById('radar-summary-msg');
+      const eventSel = document.getElementById('radar-event-select');
+
+      if (!tbody || !eventSel || !currentUser) return;
+
+      const eventId = eventSel.value;
+      if (!eventId) {
+        tbody.innerHTML = '<tr><td colspan="9">Bitte zuerst ein Event wählen.</td></tr>';
+        if (msg) msg.textContent = '';
+        return;
+      }
+
+      const playerIds = radarWatchlist.map(p => p.playerId);
+      if (!playerIds.length) {
+        tbody.innerHTML = '<tr><td colspan="9">Keine Spieler in der Watchlist.</td></tr>';
+        if (msg) msg.textContent = '';
+        return;
+      }
+
+      try {
+        const c = await getClient();
+        let query = c
+          .from('player_radar')
+          .select('*')
+          .eq('event_id', eventId)
+          .eq('evaluator_user_id', currentUser.id)
+          .in('rated_player_id', playerIds);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || !data.length) {
+          tbody.innerHTML = '<tr><td colspan="9">Noch keine Radar-Daten erfasst.</td></tr>';
+          if (msg) msg.textContent = '';
+          return;
+        }
+
+        const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
+
+        const rows = data.map(row => {
+          const nets = f => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
+          return {
+            playerId: row.rated_player_id,
+            // alle Feldnamen exakt wie in der Tabelle:
+            ballsich:  nets('ballsicherheit'),
+            zweik:     nets('zweikampf'),
+            lauf:      nets('laufduell'),
+            abschluss: nets('abschluss'),
+            std:       nets('standard'),
+            ment:      nets('mentalitaet'),
+            fair:      nets('fairplay'),
+            total:     nets('ballsicherheit') +
+                       nets('zweikampf') +
+                       nets('laufduell') +
+                       nets('abschluss') +
+                       nets('standard') +
+                       nets('mentalitaet') +
+                       nets('fairplay')
+          };
+        });
+
+        rows.sort((a, b) => b.total - a.total);
+
+        tbody.innerHTML = rows.map(r => {
+          const wl = wlMap.get(r.playerId);
+          const label = wl ? wl.playerName : r.playerId;
+          const color = wl ? radarColors[wl.colorIndex] : '#eee';
+          const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
+
+          return `
+            <tr style="background:${color};${active}">
+              <td>${label}</td>
+              <td>${r.total}</td>
+              <td>${r.ballsich}</td>
+              <td>${r.zweik}</td>
+              <td>${r.lauf}</td>
+              <td>${r.abschluss}</td>
+              <td>${r.std}</td>
+              <td>${r.ment}</td>
+              <td>${r.fair}</td>
+            </tr>
+          `;
+        }).join('');
+
+        if (msg) msg.textContent = `Radar-Ranking für ${rows.length} Spieler geladen.`;
+
+      } catch (e) {
+        console.error('radarRefreshSummary', e);
+        tbody.innerHTML = '<tr><td colspan="9">Fehler beim Laden.</td></tr>';
+        if (msg) msg.textContent = 'Fehler beim Ranking.';
+      }
+    }
+
+    radarInitUI();
+
+    // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
+    async function radarRefreshData() {
+      const eventSel  = document.getElementById('radar-event-select');
+      const playerSel = document.getElementById('radar-player-select');
+
+      // Wenn der Radar-Reiter im HTML noch nicht existiert, einfach nichts tun
+      if (!eventSel || !playerSel) return;
+
+      await Promise.all([
+        radarLoadEventsForRadar(),
+        radarLoadPlayersForRadar()
+      ]);
+    }
+ 
+    // -----------------------------
+    // Daten-Init nach Login
+    // -----------------------------
+        async function refreshAllData() {
+      await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
+      await refreshRanking();
+      await refreshLastComments();
+
+      // Nur aufrufen, wenn die Funktion existiert (zusätzliche Sicherheit)
+      if (typeof radarRefreshData === 'function') {
+        await radarRefreshData();
+      }
+    }
+
+    (async function init() {
+      const cfg = loadConfig();
+      const urlInput = document.getElementById('sb-url');
+      const keyInput = document.getElementById('sb-key');
+      if (urlInput) urlInput.value = cfg.url;
+      if (keyInput) keyInput.value = cfg.key;
+
+      if (cfg.url && cfg.key) {
+        try {
+          await getClient();
+          const rankMsg = $('#rank-msg');
+          if (rankMsg) rankMsg.textContent = 'Bereit (bitte einloggen).';
+          if (window.npShowSection) {
+            window.npShowSection('sec-auth');
+          }
+        } catch (e) {
+          console.error('init', e);
+        }
+      }
+    })();
   </script>
 </body>
 </html>
