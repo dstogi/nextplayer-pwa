@@ -503,7 +503,7 @@
       <div id="rate-msg" class="status-line"></div>
     </section>
 
-           <!-- 7. SpielerRadar -->
+    <!-- 7. SpielerRadar -->
     <section id="sec-radar" class="section-card">
       <h2><span>7. SpielerRadar™ (Live-Aktionen)</span></h2>
       <p style="font-size:0.85rem; color:#555;">
@@ -517,6 +517,7 @@
         <!-- Tabs werden per JS eingefügt -->
       </div>
 
+      <!-- Auswahl: Event & Spieler -->
       <div class="row">
         <label for="radar-event-select">Event / Spiel</label>
         <select id="radar-event-select">
@@ -538,9 +539,12 @@
 
       <div id="radar-status" class="status-line"></div>
 
-      <!-- BLOCK: Radar-Ranking-Tabelle -->
+      <!-- BLOCK: Radar-Ranking-Tabelle (pro Event, nur eigener Account, nur Watchlist) -->
       <div id="radar-summary" style="margin-top:16px;">
         <h3>Radar-Ranking (dieses Spiel)</h3>
+        <p class="small-note">
+          Einfacher Überblick für deine Watchlist – basiert nur auf deinen Radar-Aktionen in diesem Spiel.
+        </p>
         <table id="radar-summary-table">
           <thead>
             <tr>
@@ -562,7 +566,7 @@
         <div id="radar-summary-msg" class="status-line small-note"></div>
       </div>
 
-            <!-- BLOCK: Radar-Analyse (erweitertes Ranking) -->
+      <!-- BLOCK: Radar-Analyse (erweitertes Ranking) -->
       <div id="radar-analysis" style="margin-top:16px;">
         <h3>Radar-Analyse (erweitertes Ranking)</h3>
 
@@ -2519,8 +2523,10 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
    
     // -----------------------------
-    // SpielerRadar™ – Live-Aktionen
+    // BLOCK J: SpielerRadar™ – Live-Aktionen & Analyse
     // -----------------------------
+
+    // Aktuelle Radar-Session (ein Event + ein Spieler + ein Bewerter)
     let currentRadar = null;
     let currentRadarPlayerId = null;
 
@@ -2528,10 +2534,13 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
     const radarColors = ['#fff4db', '#e3f3ff', '#e8ffe5'];
 
     // Watchlist (max. 3 Spieler)
-    // Struktur: { playerId, playerName, teamName, colorIndex }
+    // Struktur: { playerId, playerName, teamName, colorIndex, jerseyNumber }
     let radarWatchlist = [];
     const wlBox = () => document.getElementById('radar-watchlist');
 
+    // -----------------------------
+    // J1: Laden von Events & Spielern für den Radar-Reiter
+    // -----------------------------
     async function radarLoadEventsForRadar() {
       const sel = document.getElementById('radar-event-select');
       const statusEl = document.getElementById('radar-status');
@@ -2598,7 +2607,9 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       }
     }
 
-    // Watchlist-Tabs rendern
+    // -----------------------------
+    // J2: Watchlist-Verwaltung (max. 3 Spieler)
+    // -----------------------------
     function radarRenderWatchlist() {
       const box = wlBox();
       if (!box) return;
@@ -2694,6 +2705,9 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       if (status) status.textContent = `Spieler ${playerName} zur Watchlist hinzugefügt.`;
     }
 
+    // -----------------------------
+    // J3: Radar-Session starten / Aktionen buchen
+    // -----------------------------
     function radarUpdateScoresUI() {
       if (!currentRadar) return;
       const fields = [
@@ -2805,10 +2819,8 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
         }
         if (statusEl) statusEl.textContent = 'SpielerRadar aktiv – Aktionen können erfasst werden.';
 
-        // Ranking für dieses Spiel aktualisieren, falls vorhanden
-        if (typeof radarRefreshSummary === 'function') {
-          await radarRefreshSummary();
-        }
+        // Ranking für dieses Spiel aktualisieren
+        await radarRefreshSummary();
       } catch (e) {
         console.error('radarStartOrLoad', e);
         if (statusEl) statusEl.textContent = 'Fehler beim Starten des SpielerRadars.';
@@ -2848,37 +2860,106 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       }
     }
 
-       function radarInitUI() {
+    // -----------------------------
+    // J4: Einfaches Radar-Ranking (nur eigene Daten, nur Watchlist)
+    // -----------------------------
+    async function radarRefreshSummary() {
+      const tbody = document.querySelector('#radar-summary-table tbody');
+      const msg = document.getElementById('radar-summary-msg');
       const eventSel = document.getElementById('radar-event-select');
-      const playerSel = document.getElementById('radar-player-select');
-      const startBtn = document.getElementById('radar-start-btn');
-      const addBtn = document.getElementById('radar-add-to-watchlist');
-      const analysisBtn = document.getElementById('radar-analysis-run');
 
-      if (!eventSel || !playerSel || !startBtn) return;
+      if (!tbody || !eventSel || !currentUser) return;
 
-      radarLoadEventsForRadar();
-      radarLoadPlayersForRadar();
+      const eventId = eventSel.value;
+      if (!eventId) {
+        tbody.innerHTML = '<tr><td colspan="9">Bitte zuerst ein Event wählen.</td></tr>';
+        if (msg) msg.textContent = '';
+        return;
+      }
 
-      startBtn.addEventListener('click', radarStartOrLoad);
-      if (addBtn) addBtn.addEventListener('click', radarAddToWatchlist);
-      if (analysisBtn) analysisBtn.addEventListener('click', radarRunAnalysis);
+      const playerIds = radarWatchlist.map(p => p.playerId);
+      if (!playerIds.length) {
+        tbody.innerHTML = '<tr><td colspan="9">Keine Spieler in der Watchlist.</td></tr>';
+        if (msg) msg.textContent = '';
+        return;
+      }
 
-      document.querySelectorAll('.radar-btn-plus').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const field = btn.getAttribute('data-field');
-          radarHandleButtonClick(field, true);
+      try {
+        const c = await getClient();
+        let query = c
+          .from('player_radar')
+          .select('*')
+          .eq('event_id', eventId)
+          .eq('evaluator_user_id', currentUser.id)
+          .in('rated_player_id', playerIds);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        if (!data || !data.length) {
+          tbody.innerHTML = '<tr><td colspan="9">Noch keine Radar-Daten erfasst.</td></tr>';
+          if (msg) msg.textContent = '';
+          return;
+        }
+
+        const wlMap = new Map(radarWatchlist.map(p => [p.playerId, p]));
+
+        const rows = data.map(row => {
+          const nets = f => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
+          return {
+            playerId: row.rated_player_id,
+            ballsich:  nets('ballsicherheit'),
+            zweik:     nets('zweikampf'),
+            lauf:      nets('laufduell'),
+            abschluss: nets('abschluss'),
+            std:       nets('standard'),
+            ment:      nets('mentalitaet'),
+            fair:      nets('fairplay'),
+            total:     nets('ballsicherheit') +
+                       nets('zweikampf') +
+                       nets('laufduell') +
+                       nets('abschluss') +
+                       nets('standard') +
+                       nets('mentalitaet') +
+                       nets('fairplay')
+          };
         });
-      });
-      document.querySelectorAll('.radar-btn-minus').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const field = btn.getAttribute('data-field');
-          radarHandleButtonClick(field, false);
-        });
-      });
+
+        rows.sort((a, b) => b.total - a.total);
+
+        tbody.innerHTML = rows.map(r => {
+          const wl = wlMap.get(r.playerId);
+          const label = wl ? wl.playerName : r.playerId;
+          const color = wl ? radarColors[wl.colorIndex] : '#eee';
+          const active = r.playerId === currentRadarPlayerId ? 'font-weight:600;' : '';
+
+          return `
+            <tr style="background:${color};${active}">
+              <td>${label}</td>
+              <td>${r.total}</td>
+              <td>${r.ballsich}</td>
+              <td>${r.zweik}</td>
+              <td>${r.lauf}</td>
+              <td>${r.abschluss}</td>
+              <td>${r.std}</td>
+              <td>${r.ment}</td>
+              <td>${r.fair}</td>
+            </tr>
+          `;
+        }).join('');
+
+        if (msg) msg.textContent = `Radar-Ranking für ${rows.length} Spieler geladen.`;
+
+      } catch (e) {
+        console.error('radarRefreshSummary', e);
+        tbody.innerHTML = '<tr><td colspan="9">Fehler beim Laden.</td></tr>';
+        if (msg) msg.textContent = 'Fehler beim Ranking.';
+      }
     }
-    
-    // Erweiterte Radar-Analyse (mehrere Bewerter, Watchlist/alle Spieler)
+
+    // -----------------------------
+    // J5: Erweiterte Radar-Analyse (mehrere Bewerter, Watchlist/alle Spieler)
+    // -----------------------------
     async function radarRunAnalysis() {
       const tbody = document.querySelector('#radar-analysis-table tbody');
       const msg = document.getElementById('radar-analysis-msg');
@@ -2971,7 +3052,7 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           const nets = (f) => (row[`${f}_plus`] || 0) - (row[`${f}_minus`] || 0);
 
           agg.ballsich  += nets('ballsicherheit');
-          agg.zweik     += nets('zweikkampf');
+          agg.zweik     += nets('zweikampf');
           agg.lauf      += nets('laufduell');
           agg.abschluss += nets('abschluss');
           agg.std       += nets('standard');
@@ -3050,14 +3131,44 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       }
     }
 
-    radarInitUI();
+    // -----------------------------
+    // J6: Initialisierung & externe Hooks
+    // -----------------------------
+    function radarInitUI() {
+      const eventSel = document.getElementById('radar-event-select');
+      const playerSel = document.getElementById('radar-player-select');
+      const startBtn = document.getElementById('radar-start-btn');
+      const addBtn = document.getElementById('radar-add-to-watchlist');
+      const analysisBtn = document.getElementById('radar-analysis-run');
+
+      if (!eventSel || !playerSel || !startBtn) return;
+
+      radarLoadEventsForRadar();
+      radarLoadPlayersForRadar();
+
+      startBtn.addEventListener('click', radarStartOrLoad);
+      if (addBtn) addBtn.addEventListener('click', radarAddToWatchlist);
+      if (analysisBtn) analysisBtn.addEventListener('click', radarRunAnalysis);
+
+      document.querySelectorAll('.radar-btn-plus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = btn.getAttribute('data-field');
+          radarHandleButtonClick(field, true);
+        });
+      });
+      document.querySelectorAll('.radar-btn-minus').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const field = btn.getAttribute('data-field');
+          radarHandleButtonClick(field, false);
+        });
+      });
+    }
 
     // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
     async function radarRefreshData() {
       const eventSel  = document.getElementById('radar-event-select');
       const playerSel = document.getElementById('radar-player-select');
 
-      // Wenn der Radar-Reiter im HTML noch nicht existiert, einfach nichts tun
       if (!eventSel || !playerSel) return;
 
       await Promise.all([
@@ -3065,6 +3176,9 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
         radarLoadPlayersForRadar()
       ]);
     }
+
+    // Direkt nach Definition initialisieren
+    radarInitUI();
  
     // -----------------------------
     // Daten-Init nach Login
