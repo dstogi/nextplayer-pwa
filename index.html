@@ -3283,7 +3283,7 @@ async function radarRunAnalysis() {
       });
     }
     
-    // -----------------------------
+        // -----------------------------
     // BLOCK K: SpielerDrohne™ – Einzelspieler mit Zeitstempeln
     // -----------------------------
 
@@ -3451,6 +3451,7 @@ async function radarRunAnalysis() {
         status.textContent = `Aktion erfasst (${type === 'plus' ? '+' : '−'} · ${droneCurrentHalf}. HZ · ${droneFormatTime(ms)}).`;
       }
     }
+
     async function droneRefreshData() {
       // eigene Dropdowns mit Spielern & Events füllen
       const eventSel  = document.getElementById('drone-event-select');
@@ -3460,7 +3461,7 @@ async function radarRunAnalysis() {
       try {
         const c = await getClient();
 
-        // Events laden
+        // Events
         const eRes = await c
           .from('event')
           .select('id, event_date, type, competition, opponent, subtype, location')
@@ -3473,7 +3474,7 @@ async function radarRunAnalysis() {
             ).join('');
         }
 
-        // Spieler laden
+        // Spieler
         const pRes = await c
           .from('player')
           .select('id, full_name, club_name, jersey_number')
@@ -3511,13 +3512,10 @@ async function radarRunAnalysis() {
       droneRefreshData();
     }
 
-    // Direkt nach Definition initialisieren
-    droneInitUI();
- 
     // -----------------------------
     // Daten-Init nach Login
     // -----------------------------
-        async function refreshAllData() {
+    async function refreshAllData() {
       await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
       await refreshRanking();
       await refreshLastComments();
@@ -3525,6 +3523,7 @@ async function radarRunAnalysis() {
       // Nur aufrufen, wenn die Funktion existiert (zusätzliche Sicherheit)
       if (typeof radarRefreshData === 'function') {
         await radarRefreshData();
+      }
       if (typeof droneRefreshData === 'function') {
         await droneRefreshData();
       }
@@ -3549,6 +3548,10 @@ async function radarRunAnalysis() {
           console.error('init', e);
         }
       }
+
+      // UI-Initialisierung für Radar & SpielerDrohne
+      radarInitUI();
+      droneInitUI();
     })();
   </script>
 </body>
