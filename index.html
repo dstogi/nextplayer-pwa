@@ -2919,14 +2919,14 @@ async function radarRefreshSummary() {
       const ment      = stat('mentalitaet');
       const fair      = stat('fairplay');
 
-      const total =
-        ballsich.net +
-        zweik.net +
-        lauf.net +
-        abschluss.net +
-        std.net +
-        ment.net +
-        fair.net;
+            const total =
+        (ballsich.plus + ballsich.minus) +
+        (zweik.plus     + zweik.minus) +
+        (lauf.plus      + lauf.minus) +
+        (abschluss.plus + abschluss.minus) +
+        (std.plus       + std.minus) +
+        (ment.plus      + ment.minus) +
+        (fair.plus      + fair.minus);
 
       return {
         playerId: row.rated_player_id,
@@ -3095,15 +3095,18 @@ async function radarRunAnalysis() {
       std:       a.std,
       ment:      a.ment,
       fair:      a.fair,
-      total:     net(a.ballsich) +
-                 net(a.zweik) +
-                 net(a.lauf) +
-                 net(a.abschluss) +
-                 net(a.std) +
-                 net(a.ment) +
-                 net(a.fair),
+      total:     actions(a.ballsich) +
+                 actions(a.zweik) +
+                 actions(a.lauf) +
+                 actions(a.abschluss) +
+                 actions(a.std) +
+                 actions(a.ment) +
+                 actions(a.fair),
       evalCount: a.evalSet.size || 1
     }));
+    
+    const net = (s) => s.plus - s.minus;
+    const actions = (s) => s.plus + s.minus;
 
     if (!result.length) {
       tbody.innerHTML = '<tr><td colspan="10">Keine aggregierten Daten gefunden.</td></tr>';
