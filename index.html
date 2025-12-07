@@ -276,6 +276,7 @@
       <button data-target="sec-radar">Radar</button>
       <button data-target="sec-drone">SpielerDrohne</button>
       <button data-target="sec-ranking">Ranking</button>
+      <button data-target="sec-player-dna">SpielerDNA</button>
       <button data-target="sec-events">Events</button>
       <button data-target="sec-last">Verlauf</button>
     </div>
@@ -761,6 +762,39 @@
         </tbody>
       </table>
     </section>
+
+    <section id="sec-player-dna" class="section-card" style="display:none;">
+  <h2><span>SpielerDNA™ – Profilanalyse</span></h2>
+
+  <p class="small-note">
+    Wähle einen Spieler aus und lade seine gesamte Bewertungs-DNA. Später kannst du hier
+    nach Rollen, Eventtypen oder Zeit filtern.
+  </p>
+
+  <div class="row">
+    <label for="dna-player-select">Spieler</label>
+    <select id="dna-player-select">
+      <option value="">Bitte wählen…</option>
+    </select>
+    <button id="dna-load-btn" type="button">DNA laden</button>
+  </div>
+
+  <h3>Noten-DNA (Aggregierte Bewertungen)</h3>
+  <table id="dna-rating-table">
+    <thead>
+      <tr>
+        <th>Kriterium</th>
+        <th>Ø Note</th>
+        <th>Anzahl</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="3">Noch keine Daten geladen.</td></tr>
+    </tbody>
+  </table>
+
+  <div id="dna-status" class="status-line"></div>
+</section>
     
     <!-- 4. Ranking -->
     <section id="sec-ranking" class="section-card">
@@ -913,7 +947,9 @@
   'sec-drone':        document.getElementById('sec-drone'),
   'sec-ranking':      document.getElementById('sec-ranking'),
   'sec-events':       document.getElementById('sec-events'),
-  'sec-last':         document.getElementById('sec-last')
+  'sec-last':         document.getElementById('sec-last'),
+  'sec-player-dna': document.getElementById('sec-player-dna'),
+  
 };
 
       function showSection(id) {
@@ -1774,6 +1810,15 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
           const club = p.club_name || '';
           return `<option value="${p.id}">${num}${p.full_name} (${club})</option>`;
         }).join('');
+        // Spieler für DNA-Select nachladen
+const dnaSel = document.getElementById('dna-player-select');
+if (dnaSel) {
+  dnaSel.innerHTML = '<option value="">Bitte wählen…</option>' +
+    (data || []).map(p => {
+      const club = p.club_name || '';
+      return `<option value="${p.id}">${p.full_name} (${club})</option>`;
+    }).join('');
+}
       } catch (e) {
         console.error('refreshPlayers', e);
       }
@@ -3696,6 +3741,74 @@ async function radarRunAnalysis() {
     }
 
     // -----------------------------
+// BLOCK L: SpielerDNA – Notenprofil
+// -----------------------------
+async function dnaLoad() {
+  const status = document.getElementById('dna-status');
+  const sel = document.getElementById('dna-player-select');
+  const tbody = document.querySelector('#dna-rating-table tbody');
+
+  if (!sel || !tbody) return;
+
+  const playerId = sel.value;
+  if (!playerId) {
+    if (status) status.textContent = 'Bitte Spieler wählen.';
+    tbody.innerHTML = '<tr><td colspan="3">Kein Spieler gewählt.</td></tr>';
+    return;
+  }
+
+  try {
+    const c = await getClient();
+    const { data, error } = await c
+      .from('rating')
+      .select('criteria')
+      .eq('player_id', playerId);
+
+    if (error) throw error;
+
+    if (!data || !data.length) {
+      tbody.innerHTML = '<tr><td colspan="3">Keine Bewertungen vorhanden.</td></tr>';
+      if (status) status.textContent = 'Keine Daten geladen.';
+      return;
+    }
+
+    // Aggregation vorbereiten
+    const agg = {}; // { kriterium: {sum, count} }
+
+    data.forEach(r => {
+      const crit = r.criteria || {};
+      ratingKeys.forEach(([key,label]) => {
+        const val = parseFloat(crit[key]);
+        if (!isNaN(val)) {
+          if (!agg[key]) agg[key] = {sum:0, count:0, label};
+          agg[key].sum += val;
+          agg[key].count++;
+        }
+      });
+    });
+
+    // Tabelle aufbauen
+    const rows = Object.entries(agg).map(([key,obj]) => {
+      const avg = obj.sum / obj.count;
+      return `
+        <tr>
+          <td>${obj.label}</td>
+          <td>${avg.toFixed(2)}</td>
+          <td>${obj.count}</td>
+        </tr>`;
+    }).join('');
+
+    tbody.innerHTML = rows || '<tr><td colspan="3">Keine bewerteten Kriterien.</td></tr>';
+
+    if (status) status.textContent = `DNA geladen – ${data.length} Bewertungen verarbeitet.`;
+
+  } catch (e) {
+    console.error('dnaLoad', e);
+    if (status) status.textContent = 'Fehler beim Laden der DNA.';
+  }
+}
+    
+    // -----------------------------
     // Daten-Init nach Login
     // -----------------------------
     async function refreshAllData() {
@@ -3732,10 +3845,17 @@ async function radarRunAnalysis() {
         }
       }
 
-      // UI-Initialisierung für Radar & SpielerDrohne
+            // UI-Initialisierung für Radar & SpielerDrohne
       radarInitUI();
       droneInitUI();
+
+      // 🧬 NEU: Klick-Handler für SpielerDNA-Button
+      const dnaBtn = document.getElementById('dna-load-btn');
+      if (dnaBtn) {
+        dnaBtn.addEventListener('click', dnaLoad);
+      }
     })();
+
   </script>
 </body>
 </html>
