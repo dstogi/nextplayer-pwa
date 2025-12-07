@@ -2506,31 +2506,6 @@ if (!radar.length) {
   tbody.innerHTML = '<tr><td colspan="8">Noch keine Radar-Daten vorhanden.</td></tr>';
 } else {
   }
-  // ==== ab hier normal weiterarbeiten, ALLES IN DIESEM BLOCK ====
-
-  const pMap = new Map(players.map(p => [p.id, p]));
-  const eMap = new Map(events.map(e => [e.id, e]));
-
-  // Filter aus dem Ranking-UI
-  const clubF = document.querySelector('#club-filter')?.value || '';
-  const posF  = document.querySelector('#rank-pos')?.value || '';
-  const footF = document.querySelector('#rank-foot')?.value || '';
-  const typeF = document.querySelector('#rank-type')?.value || '';
-  const fromF = document.querySelector('#rank-from')?.value || '';
-  const toF   = document.querySelector('#rank-to')?.value || '';
-  const q     = (document.querySelector('#rank-q')?.value || '').toLowerCase();
-  const minR  = parseInt(document.querySelector('#rank-min')?.value || '0', 10) || 0;
-
-  const agg = new Map();
-
-  // ... hier dein kompletter restlicher Radar-Ranking-Code:
-  //   - Durch radar-Einträge laufen
-  //   - Filtern
-  //   - rows-Array bauen
-  //   - ggf. "if (!rows.length) { ... } else { ... }"
-  //   - sortieren
-  //   - tbody.innerHTML = rows.map(...).join('');
-}
 
 // =========================================================
 // RANKING (Bewertungen aus Tabelle "rating")
