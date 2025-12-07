@@ -1934,16 +1934,41 @@ if (dnaSel) {
 
         const comment = (commentEl?.value || '').trim();
 
+        // Alle Kriterien müssen eine Note haben
         const crit = {};
-        ratingKeys.forEach(([k]) => {
+        const missing = [];
+
+        ratingKeys.forEach(([k, label]) => {
           const sel = document.querySelector(`select[data-k="${k}"]`);
-          const v = parseFloat(sel?.value);
-          crit[k] = isNaN(v) ? null : v;
+          const raw = sel?.value ?? '';
+
+          // nichts ausgewählt (= "–") → fehlt
+          if (!raw) {
+            missing.push(label);
+            return;
+          }
+
+          const v = parseFloat(raw);
+          if (isNaN(v)) {
+            missing.push(label);
+          } else {
+            crit[k] = v;
+          }
         });
+
+        if (missing.length > 0) {
+          if (msg) {
+            msg.textContent =
+              'Bitte alle Kriterien bewerten. Es fehlen noch Noten für: ' +
+              missing.join(', ');
+          }
+          return; // NICHT speichern
+        }
 
         const roleForRating = currentProfile.role || '';
         crit._role  = roleForRating;
         crit._rater = user.email || '';
+
 
         const payload = {
           rater_id: user.id,
