@@ -289,6 +289,19 @@
       flex-shrink: 0;
       font-variant-numeric: tabular-nums;
     }
+
+    /* Radar-Chart (Spider) für Noten-DNA */
+    .dna-radar-wrapper {
+      margin-top: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .dna-radar-svg {
+      max-width: 320px;
+      max-height: 320px;
+    }
     
     @media (max-width: 700px) {
       main { padding: 10px; }
@@ -841,8 +854,16 @@
   <div id="dna-rating-chart" class="dna-chart">
     <!-- Balken werden per JS eingefügt -->
   </div>
-  
-  <h3>Radar-DNA (Live-Aktionen)</h3>
+
+  <h4>Noten-DNA – Radar-Diagramm</h4>
+  <div class="dna-radar-wrapper">
+    <svg id="dna-rating-radar" class="dna-radar-svg" viewBox="0 0 320 320"></svg>
+    <p id="dna-rating-radar-note" class="small-note">
+      Je weiter außen, desto besser die Note (1 = außen, 6 = innen).
+    </p>
+  </div>
+
+   <h3>Radar-DNA (Live-Aktionen)</h3>
   <p class="small-note">
     Aggregierte SpielerRadar™-Daten über alle Spiele: Netto-Wert, Anzahl positiver und negativer Aktionen
     und wie viele Radar-Sätze (Spiele/Bewerter-Kombinationen) vorhanden sind.
@@ -4128,9 +4149,12 @@ function renderRatingChart(items) {
     `;
   }).join('');
 
-  container.innerHTML = rowsHtml;
-}
+ container.innerHTML = rowsHtml;
 
+  // zusätzlich Radar-Diagramm zeichnen
+  renderRatingRadar(items);
+}
+    
 function renderRadarChart(aggR, radarDefs) {
   const container = document.getElementById('dna-radar-chart');
   if (!container) return;
@@ -4140,6 +4164,90 @@ function renderRadarChart(aggR, radarDefs) {
     return;
   }
 
+function renderRatingRadar(items) {
+  const svg = document.getElementById('dna-rating-radar');
+  const noteEl = document.getElementById('dna-rating-radar-note');
+  if (!svg || !noteEl) return;
+
+  if (!items || !items.length) {
+    svg.innerHTML = '';
+    noteEl.textContent = 'Keine Daten für Radar-Diagramm.';
+    return;
+  }
+
+  const w = 320;
+  const h = 320;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxRadius = 120;
+  const maxScore = 6;
+
+  const n = items.length;
+  if (n === 0) {
+    svg.innerHTML = '';
+    return;
+  }
+
+  // Punkte für Polygon berechnen
+  const points = [];
+  const labels = [];
+
+  items.forEach((obj, idx) => {
+    const avg = obj.sum / obj.count;
+    const score = Math.max(0, Math.min(maxScore, 7 - avg)); // 1 → außen, 6 → innen
+    const r = (score / maxScore) * maxRadius;
+
+    const angle = -Math.PI / 2 + (2 * Math.PI * idx) / n; // Start oben
+    const x = cx + r * Math.cos(angle);
+    const y = cy + r * Math.sin(angle);
+    points.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+
+    // Label leicht nach außen setzen
+    const lx = cx + (maxRadius + 16) * Math.cos(angle);
+    const ly = cy + (maxRadius + 16) * Math.sin(angle);
+    labels.push({ x: lx, y: ly, text: obj.label });
+  });
+
+  // Hilfsringe zeichnen (4 Level)
+  const rings = [0.25, 0.5, 0.75, 1].map(r => {
+    const rad = maxRadius * r;
+    return `<circle cx="${cx}" cy="${cy}" r="${rad}" fill="none" stroke="#ddd" stroke-width="0.5" />`;
+  }).join('');
+
+  const spokes = items.map((obj, idx) => {
+    const angle = -Math.PI / 2 + (2 * Math.PI * idx) / n;
+    const x = cx + maxRadius * Math.cos(angle);
+    const y = cy + maxRadius * Math.sin(angle);
+    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#eee" stroke-width="0.5" />`;
+  }).join('');
+
+  const labelsSvg = labels.map(l => `
+    <text x="${l.x.toFixed(1)}" y="${l.y.toFixed(1)}"
+          font-size="8" text-anchor="middle" dominant-baseline="middle">
+      ${l.text}
+    </text>
+  `).join('');
+
+  const polygon = `
+    <polygon points="${points.join(' ')}"
+             fill="rgba(245,182,66,0.35)"
+             stroke="${'#f5b642'}"
+             stroke-width="1.5" />
+  `;
+
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.innerHTML = `
+    <g>
+      ${rings}
+      ${spokes}
+      ${polygon}
+      ${labelsSvg}
+    </g>
+  `;
+
+  noteEl.textContent = '1 = außen (besser), 6 = innen (schlechter) – basierend auf allen Bewertungen.';
+}
+  
   // Liste aus Aggregaten bauen
   const items = radarDefs.map(([key, label]) => {
     const a = aggR[key];
