@@ -2505,6 +2505,7 @@ if (!radar.length) {
   if (msg) msg.textContent = 'Noch keine Radar-Daten in der Datenbank.';
   tbody.innerHTML = '<tr><td colspan="8">Noch keine Radar-Daten vorhanden.</td></tr>';
 } else {
+  }
   // ==== ab hier normal weiterarbeiten, ALLES IN DIESEM BLOCK ====
 
   const pMap = new Map(players.map(p => [p.id, p]));
@@ -2634,6 +2635,7 @@ if (!radar.length) {
   tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter (Radar).</td></tr>';
   if (msg) msg.textContent = 'Keine Spieler – ggf. Filter anpassen oder mehr Radar-Daten erfassen.';
 } else {
+}
   // 3) Sortierung nach Radar-Score (total)
   rows.sort((a, b) => b.total - a.total);
 
