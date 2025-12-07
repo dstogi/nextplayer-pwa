@@ -2846,43 +2846,51 @@ if (!ratings.length) {
           return matchClub && matchPos && matchFoot && matchText && matchCnt && matchFav;
         });
 
-        // 6) Sortierung & Top 10
-        rows.sort((a, b) => (a.avg - b.avg) || (b.cnt - a.cnt));
-        if (topOnly) rows = rows.slice(0, 10);
+       // 6) Sortierung & Top 10
+rows.sort((a, b) => (b.avg - a.avg) || (b.cnt - a.cnt));
+if (topOnly) rows = rows.slice(0, 10);
 
-        lastRows = rows.slice();
+lastRows = rows.slice();
 
-        if (!rows.length) {
-          tbody.innerHTML = '<tr><td colspan="8">Keine Spieler für die aktuellen Filter gefunden.</td></tr>';
-          if (msg) msg.textContent = 'Keine Spieler – ggf. Filter zurücksetzen oder mehr Bewertungen speichern.';
-          return;
-        }
+if (!rows.length) {
+  tbody.innerHTML =
+    '<tr><td colspan="8">Keine Spieler für die aktuellen Filter.</td></tr>';
+  if (msg) {
+    msg.textContent =
+      'Keine Spieler – ggf. Filter anpassen oder mehr Bewertungen erfassen.';
+  }
+} else {
+  // 7) Tabelle rendern
+  const footLabel = f => {
+    if (f === 'left') return 'links';
+    if (f === 'right') return 'rechts';
+    if (f === 'both') return 'beidfüßig';
+    return '';
+  };
 
-        // 7) Tabelle rendern
-        const footLabel = f =>
-          f === 'left' ? 'links' :
-          f === 'right' ? 'rechts' :
-          f === 'both' ? 'beidfüßig' : '';
+  const posStr = p =>
+    Array.isArray(p) ? p.join(', ') : (typeof p === 'string' ? p : '');
 
-        const posStr = p =>
-          Array.isArray(p) ? p.join(', ') :
-          (typeof p === 'string' ? p : '');
+  tbody.innerHTML = rows.map(r => {
+    const star = favSet.has(r.id) ? '★ ' : '☆ ';
+    return `
+      <tr data-pid="${r.id}">
+        <td><span class="fav-toggle" data-pid="${r.id}" title="Favorit umschalten">${star}</span></td>
+        <td>${r.name}</td>
+        <td>${r.club}</td>
+        <td>${posStr(r.pos)}</td>
+        <td>${footLabel(r.foot)}</td>
+        <td>${r.cnt}</td>
+        <td>${r.avg.toFixed(2)}</td>
+        <td>${r.last || ''}</td>
+      </tr>
+    `;
+  }).join('');
 
-        tbody.innerHTML = rows.map(r => {
-          const star = favSet.has(r.id) ? '★' : '☆';
-          return `
-            <tr data-pid="${r.id}">
-              <td><span class="fav-toggle" data-pid="${r.id}" title="Watchlist an/aus">${star}</span></td>
-              <td>${r.name}</td>
-              <td>${r.club}</td>
-              <td>${posStr(r.pos)}</td>
-              <td>${footLabel(r.foot)}</td>
-              <td>${r.cnt}</td>
-              <td>${r.avg.toFixed(2)}</td>
-              <td>${r.last || ''}</td>
-            </tr>
-          `;
-        }).join('');
+  if (msg) {
+    msg.textContent = `OK: ${rows.length} Spieler im Ranking.`;
+  }
+}
 
         // Watchlist-Klick
         tbody.querySelectorAll('.fav-toggle').forEach(el => {
