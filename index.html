@@ -253,6 +253,43 @@
       font-weight: 600;
     }
 
+    /* Kleine Balkencharts für SpielerDNA */
+    .dna-chart {
+      margin-top: 8px;
+      margin-bottom: 12px;
+      max-width: 650px;
+    }
+    .dna-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 0.8rem;
+    }
+    .dna-bar-label {
+      width: 120px;
+      flex-shrink: 0;
+    }
+    .dna-bar {
+      flex: 1;
+      height: 10px;
+      background: #eee;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .dna-bar-inner {
+      height: 100%;
+      background: var(--np-accent);
+      border-radius: 999px;
+      transition: width 0.3s ease;
+    }
+    .dna-bar-value {
+      width: 60px;
+      text-align: right;
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+    }
+    
     @media (max-width: 700px) {
       main { padding: 10px; }
       label { min-width: 110px; }
@@ -800,6 +837,11 @@
     </tbody>
   </table>
 
+  <h4>Noten-DNA – visuelle Darstellung</h4>
+  <div id="dna-rating-chart" class="dna-chart">
+    <!-- Balken werden per JS eingefügt -->
+  </div>
+  
   <h3>Radar-DNA (Live-Aktionen)</h3>
   <p class="small-note">
     Aggregierte SpielerRadar™-Daten über alle Spiele: Netto-Wert, Anzahl positiver und negativer Aktionen
@@ -819,6 +861,11 @@
       <tr><td colspan="5">Noch keine Daten geladen.</td></tr>
     </tbody>
   </table>
+  <h4>Radar-DNA – visuelle Darstellung</h4>
+  <div id="dna-radar-chart" class="dna-chart">
+    <!-- Balken werden per JS eingefügt -->
+  </div>
+
   <h3>Drohnen-DNA (Halbzeiten-Aktivität)</h3>
   <p class="small-note">
     Auswertung der SpielerDrohne™: Aktionen pro Halbzeit über alle Spiele. Zeigt, ob ein Spieler
@@ -3907,6 +3954,8 @@ async function dnaLoad() {
     // -------- Noten-DNA --------
     if (!ratingData || !ratingData.length) {
       ratingBody.innerHTML = '<tr><td colspan="3">Keine Bewertungen vorhanden.</td></tr>';
+      const chart = document.getElementById('dna-rating-chart');
+      if (chart) chart.innerHTML = '<div class="small-note">Keine Daten für Noten-DNA.</div>';
     } else {
       const agg = {}; // { kriterium: {sum, count, label} }
 
@@ -3922,7 +3971,8 @@ async function dnaLoad() {
         });
       });
 
-      const rows = Object.values(agg).map(obj => {
+      const values = Object.values(agg);
+      const rows = values.map(obj => {
         const avg = obj.sum / obj.count;
         return `
           <tr>
@@ -3933,11 +3983,16 @@ async function dnaLoad() {
       }).join('');
 
       ratingBody.innerHTML = rows || '<tr><td colspan="3">Keine bewerteten Kriterien.</td></tr>';
+
+      // Chart aktualisieren
+      renderRatingChart(values);
     }
 
-    // -------- Radar-DNA --------
+        // -------- Radar-DNA --------
     if (!radarData || !radarData.length) {
       radarBody.innerHTML = '<tr><td colspan="5">Keine Radar-Daten vorhanden.</td></tr>';
+      const chart = document.getElementById('dna-radar-chart');
+      if (chart) chart.innerHTML = '<div class="small-note">Keine Daten für Radar-DNA.</div>';
     } else {
       const radarDefs = [
         ['ballsicherheit', 'Ballsicherheit'],
@@ -3968,7 +4023,7 @@ async function dnaLoad() {
 
       const radarRowsHtml = radarDefs.map(([key]) => {
         const a = aggR[key];
-        const net = a.plus - a.minus;
+        const net = (a.plus || 0) - (a.minus || 0);
         return `
           <tr>
             <td>${a.label}</td>
@@ -3980,6 +4035,9 @@ async function dnaLoad() {
       }).join('');
 
       radarBody.innerHTML = radarRowsHtml || '<tr><td colspan="5">Keine Radar-Daten vorhanden.</td></tr>';
+
+      // Chart aktualisieren
+      renderRadarChart(aggR, radarDefs);
     }
 
     // -------- Drohnen-DNA (Halbzeiten) --------
@@ -4039,6 +4097,82 @@ async function dnaLoad() {
     radarBody.innerHTML   = '<tr><td colspan="5">Fehler beim Laden.</td></tr>';
     droneBody.innerHTML   = '<tr><td colspan="5">Fehler beim Laden.</td></tr>';
   }
+}
+
+    // Kleine Balkencharts für SpielerDNA
+
+function renderRatingChart(items) {
+  const container = document.getElementById('dna-rating-chart');
+  if (!container) return;
+
+  if (!items || !items.length) {
+    container.innerHTML = '<div class="small-note">Keine Daten für Noten-DNA.</div>';
+    return;
+  }
+
+  const maxScore = 6; // 1 ist beste Note, 6 die schlechteste
+  const rowsHtml = items.map(obj => {
+    const avg = obj.sum / obj.count;
+    // besser = längerer Balken → invertieren
+    const score = Math.max(0, Math.min(maxScore, 7 - avg));
+    const width = (score / maxScore) * 100;
+
+    return `
+      <div class="dna-bar-row">
+        <span class="dna-bar-label">${obj.label}</span>
+        <div class="dna-bar">
+          <div class="dna-bar-inner" style="width:${width.toFixed(1)}%;"></div>
+        </div>
+        <span class="dna-bar-value">${avg.toFixed(2)}</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = rowsHtml;
+}
+
+function renderRadarChart(aggR, radarDefs) {
+  const container = document.getElementById('dna-radar-chart');
+  if (!container) return;
+
+  if (!aggR) {
+    container.innerHTML = '<div class="small-note">Keine Daten für Radar-DNA.</div>';
+    return;
+  }
+
+  // Liste aus Aggregaten bauen
+  const items = radarDefs.map(([key, label]) => {
+    const a = aggR[key];
+    if (!a) return null;
+    const total = (a.plus || 0) + (a.minus || 0);
+    return {
+      label,
+      total,
+      net: (a.plus || 0) - (a.minus || 0)
+    };
+  }).filter(x => x && x.total > 0);
+
+  if (!items.length) {
+    container.innerHTML = '<div class="small-note">Keine Daten für Radar-DNA.</div>';
+    return;
+  }
+
+  const maxTotal = Math.max(...items.map(x => x.total)) || 1;
+
+  const rowsHtml = items.map(x => {
+    const width = (x.total / maxTotal) * 100;
+    return `
+      <div class="dna-bar-row">
+        <span class="dna-bar-label">${x.label}</span>
+        <div class="dna-bar">
+          <div class="dna-bar-inner" style="width:${width.toFixed(1)}%;"></div>
+        </div>
+        <span class="dna-bar-value">${x.net}</span>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = rowsHtml;
 }
     
     // -----------------------------
