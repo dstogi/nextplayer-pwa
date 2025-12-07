@@ -2847,32 +2847,36 @@ document.getElementById('btn-export-csv')
     URL.revokeObjectURL(url);
   });
 
-// -----------------------------
-// Daten-Init nach Login
-// -----------------------------
-async function refreshAllData() {
-  await Promise.all([refreshPlayers(), refreshEvents(), refreshClubFilter()]);
-  await refreshRanking();
-  await refreshLastComments();
+    // -----------------------------
+    // Daten-Init nach Login
+    // -----------------------------
+    async function refreshAllData() {
+      // Spieler / Events / Club-Filter laden
+      await Promise.all([
+        refreshPlayers(),
+        refreshEvents(),
+        refreshClubFilter()
+      ]);
 
-  // Nur aufrufen, wenn die Funktion existiert (zusätzliche Sicherheit)
-  if (typeof radarRefreshData === 'function') {
-    await radarRefreshData();
-  }
-}
-   
+      // Ranking & letzte Bewertungen
+      await refreshRanking();
+      await refreshLastComments();
+
+      // Nur aufrufen, wenn die Funktion existiert (zusätzliche Sicherheit)
+      if (typeof radarRefreshData === 'function') {
+        await radarRefreshData();
+      }
+    }
+
     // -----------------------------
     // Funktionen für Navigation von außen verfügbar machen
     // -----------------------------
     window.refreshRanking = refreshRanking;
     window.refreshLastComments = refreshLastComments;
 
-    
-        // ------------------------------
-    // Funktionen für Navigation von außen verfügbar machen
-    window.refreshRanking = refreshRanking;
-    window.refreshLastComments = refreshLastComments;
-
+    // -----------------------------
+    // Init beim Laden der Seite
+    // -----------------------------
     (async function init() {
       const cfg = loadConfig();
       const urlInput = document.getElementById('sb-url');
