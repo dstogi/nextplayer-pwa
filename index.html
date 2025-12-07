@@ -3451,7 +3451,6 @@ async function radarRunAnalysis() {
         status.textContent = `Aktion erfasst (${type === 'plus' ? '+' : '−'} · ${droneCurrentHalf}. HZ · ${droneFormatTime(ms)}).`;
       }
     }
-
     async function droneRefreshData() {
       // eigene Dropdowns mit Spielern & Events füllen
       const eventSel  = document.getElementById('drone-event-select');
@@ -3461,7 +3460,7 @@ async function radarRunAnalysis() {
       try {
         const c = await getClient();
 
-        // Events
+        // Events laden
         const eRes = await c
           .from('event')
           .select('id, event_date, type, competition, opponent, subtype, location')
@@ -3474,7 +3473,7 @@ async function radarRunAnalysis() {
             ).join('');
         }
 
-        // Spieler
+        // Spieler laden
         const pRes = await c
           .from('player')
           .select('id, full_name, club_name, jersey_number')
@@ -3494,10 +3493,10 @@ async function radarRunAnalysis() {
     }
 
     function droneInitUI() {
-      const h1Btn = document.getElementById('drone-h1-btn');
-      const h2Btn = document.getElementById('drone-h2-btn');
+      const h1Btn   = document.getElementById('drone-h1-btn');
+      const h2Btn   = document.getElementById('drone-h2-btn');
       const plusBtn = document.getElementById('drone-plus-btn');
-      const minusBtn = document.getElementById('drone-minus-btn');
+      const minusBtn= document.getElementById('drone-minus-btn');
 
       if (!h1Btn || !h2Btn || !plusBtn || !minusBtn) return;
 
@@ -3512,25 +3511,8 @@ async function radarRunAnalysis() {
       droneRefreshData();
     }
 
-    // Direkt initialisieren
-    droneInitUI();
-
-    
-    // Hilfsfunktion: Radar-Dropdowns neu laden (Event + Spieler)
-    async function radarRefreshData() {
-      const eventSel  = document.getElementById('radar-event-select');
-      const playerSel = document.getElementById('radar-player-select');
-
-      if (!eventSel || !playerSel) return;
-
-      await Promise.all([
-        radarLoadEventsForRadar(),
-        radarLoadPlayersForRadar()
-      ]);
-    }
-
     // Direkt nach Definition initialisieren
-    radarInitUI();
+    droneInitUI();
  
     // -----------------------------
     // Daten-Init nach Login
