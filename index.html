@@ -2038,7 +2038,7 @@ if (dnaSel) {
         }
 
         // Nur echte UUIDs speichern – keine Demo-IDs wie "E013"
-        if (!isUUID(String(event_id))) {
+                if (!isUUID(String(event_id))) {
           if (msg) msg.textContent =
             'Fehler: Dieses Event hat keine gültige ID (z.B. Demo-Event „E007“). ' +
             'Bitte ein Event aus der Datenbank auswählen oder in 3c neu anlegen.';
@@ -2046,7 +2046,60 @@ if (dnaSel) {
           return;
         }
 
+        // Prüfen, ob bereits eine Bewertung existiert (für 24h-Logik & Hinweis)
+        let isUpdate = false;
+        try {
+          const { data: existing, error: existingErr } = await c
+            .from('rating')
+            .select('id, created_at')
+            .eq('rater_id', user.id)
+            .eq('player_id', player_id)
+            .eq('event_id', event_id)
+            .maybeSingle();
+
+          if (existingErr) {
+            console.warn('Check existing rating error', existingErr);
+          }
+
+          if (existing) {
+            isUpdate = true;
+            const createdAt = existing.created_at ? new Date(existing.created_at) : null;
+            const now = new Date();
+
+            if (createdAt) {
+              const diffMs = now.getTime() - createdAt.getTime();
+              const diffHours = diffMs / (1000 * 60 * 60);
+
+              // Wenn älter als 24h → keine Änderung mehr möglich
+              if (diffHours > 24) {
+                if (msg) {
+                  msg.textContent =
+                    'Du hast diesen Spieler in diesem Event bereits vor mehr als 24 Stunden bewertet. ' +
+                    'Die Bewertung kann aus Fairnessgründen nicht mehr geändert werden.';
+                }
+                return;
+              }
+            }
+
+            // Innerhalb der 24h → Nutzer fragen, ob er aktualisieren möchte
+            const ok = window.confirm(
+              'Du hast diesen Spieler in diesem Event bereits bewertet.\n' +
+              'Deine neue Eingabe ersetzt deine bisherige Bewertung.\n\n' +
+              'Möchtest du die Bewertung aktualisieren?'
+            );
+            if (!ok) {
+              if (msg) msg.textContent = 'Bewertung wurde nicht geändert.';
+              return;
+            }
+          }
+        } catch (e) {
+          console.error('Check existing rating (24h-Regel)', e);
+          // Bei Fehler erlauben wir lieber trotzdem das Speichern,
+          // damit der User nicht hängen bleibt – 24h-Regel greift dann ggf. nicht.
+        }
+
         const comment = (commentEl?.value || '').trim();
+
 
         // Alle Kriterien müssen eine Note haben
         const crit = {};
@@ -2098,13 +2151,17 @@ if (dnaSel) {
             onConflict: 'rater_id,player_id,event_id'
           });
 
-               if (error) {
+                      if (error) {
           console.error('upsert rating error', error);
           if (msg) msg.textContent = 'Fehler: ' + error.message;
         } else {
-          if (msg) msg.textContent = 'Bewertung gespeichert (ggf. aktualisiert).';
+          if (msg) {
+            msg.textContent = isUpdate
+              ? 'Bewertung aktualisiert.'
+              : 'Bewertung gespeichert.';
+          }
 
-          // Formular leeren (alle Noten + Kommentar)
+          // Formular leeren
           resetRatingForm();
 
           await refreshRanking();
