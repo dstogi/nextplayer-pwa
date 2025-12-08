@@ -3042,59 +3042,6 @@ if (dnaSel) {
         if (msg) msg.textContent = 'Fehler beim Speichern.';
       }
     }
-    
-    document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
-
-      const event_date = (dateEl?.value || '').trim();
-      const type       = (typeEl?.value || '').trim();
-
-      const competition = (homeEl?.value || '').trim();
-      const opponent    = (awayEl?.value || '').trim();
-      const subtype     = (nameEl?.value || '').trim();
-      const location    = (locEl?.value || '').trim();
-
-      if (!event_date || !type) {
-        if (msg) msg.textContent = 'Bitte mindestens Datum und Event-Typ eingeben.';
-        return;
-      }
-
-      try {
-        const c = await getClient();
-
-        const { data, error } = await c
-          .from('event')
-          .insert([{
-            event_date,
-            type,
-            competition,
-            opponent,
-            subtype,
-            location
-          }])
-          .select();
-
-        if (error) {
-          console.error('createEvent error', error);
-          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
-          return;
-        }
-
-        if (msg) msg.textContent = 'Event gespeichert.';
-
-        if (homeEl) homeEl.value = '';
-        if (awayEl) awayEl.value = '';
-        if (nameEl) nameEl.value = '';
-        if (locEl)  locEl.value  = '';
-
-        await refreshEvents();
-        if (data && data.length) {
-          setCurrentEvent(data[0]);
-        }
-      } catch (e) {
-        console.error('createEvent', e);
-        if (msg) msg.textContent = 'Fehler beim Speichern.';
-      }
-    }
 
     document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
    
