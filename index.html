@@ -122,7 +122,12 @@
       cursor: pointer;
       white-space: nowrap;
     }
-
+    
+.top-nav button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
     .top-nav button.active {
       background: var(--np-accent);
       border-color: var(--np-accent);
@@ -388,20 +393,23 @@
     <h1>NextPlayer™ – Scouting App</h1>
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
-    <div class="top-nav">
-      <button data-target="sec-config"  class="active">Setup</button>
-      <button data-target="sec-auth">Login</button>
-      <button data-target="sec-profile">Profil</button>
-      <button data-target="sec-rating">Bewerten</button>
-      <!-- Neuer Reiter nur für Punkt 3 -->
-      <button data-target="sec-rating-form">Bewertung</button>
-      <button data-target="sec-radar">Radar</button>
-      <button data-target="sec-drone">SpielerDrohne</button>
-      <button data-target="sec-ranking">Ranking</button>
-      <button data-target="sec-player-dna">SpielerDNA</button>
-      <button data-target="sec-events">Events</button>
-      <button data-target="sec-last">Verlauf</button>
-    </div>
+<div class="top-nav">
+  <button data-target="sec-config">⚙️ Einstellungen</button>
+  <button data-target="sec-auth">🔐 Login / Konto</button>
+  <button data-target="sec-profile">🙍 Profil</button>
+
+  <button data-target="sec-rating">📝 Spieler & Event</button>
+  <button data-target="sec-rating-form">📝 Bewertung erfassen</button>
+
+  <button data-target="sec-radar">📡 Radar</button>
+  <button data-target="sec-drone">🎯 SpielerDrohne</button>
+
+  <button data-target="sec-ranking">🏆 Ranking</button>
+  <button data-target="sec-player-dna">🧬 SpielerDNA</button>
+
+  <button data-target="sec-events">📅 Events</button>
+  <button data-target="sec-last">📜 Verlauf</button>
+</div>
   </header>
 
   <main>
