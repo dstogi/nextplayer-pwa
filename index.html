@@ -336,34 +336,46 @@
     }
 
     .drone-actions-row {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+   .drone-action-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+       /* Layout für die Drohnen-Buttons (Desktop) */
+    .drone-actions-row {
       display: flex;
-      gap: 16px;
-      align-items: center;
-      margin-top: 4px;
-      margin-bottom: 4px;
+      gap: 32px;
+      align-items: flex-start;
+      margin-bottom: 12px;
     }
 
     .drone-action-col {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 4px;
     }
 
     .drone-action-btn {
-  width: 80px;
-  height: 80px;
-  border-radius: 999px;
-  border: none;
-  font-size: 2.4rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-  color: #111;
-}
+      width: 80px;
+      height: 80px;
+      border-radius: 999px;
+      border: none;
+      font-size: 2.4rem;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+      color: #111;
+    }
 
     .drone-action-plus {
       background: #bbf7d0; /* hellgrün */
@@ -385,11 +397,25 @@
       label { min-width: 110px; }
       .row { gap: 6px; }
       header h1 { font-size: 1.1rem; }
+
+      /* Handy-Layout: Drohnen-Buttons untereinander & größer */
+      .drone-actions-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+      }
+
+      .drone-action-btn {
+        width: 96px;
+        height: 96px;
+        font-size: 2.8rem;
+      }
     }
   </style>
 </head>
 <body>
   <header>
+
     <h1>NextPlayer™ – Scouting App</h1>
     <div class="subtitle">Bewertungen sammeln, Ranking sehen, Talente entdecken.</div>
 
