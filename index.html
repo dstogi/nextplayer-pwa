@@ -605,66 +605,8 @@
         <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
       </div>
 
-      <!-- 3c. Neues Event anlegen -->
-      <h3>3c. Neues Event anlegen</h3>
-
-      <div class="row">
-        <label for="event-date">Datum</label>
-        <input id="event-date" type="date">
-      </div>
-
-      <div class="row">
-        <label for="event-time">Anpfiff (Uhrzeit)</label>
-        <input id="event-time" type="time">
-      </div>
-
-      <div class="row">
-        <label for="event-type">Art (Basis)</label>
-        <select id="event-type">
-          <option value="match">Spiel</option>
-          <option value="training">Training</option>
-          <option value="tournament">Turnier</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <label for="event-category">Kategorie</label>
-        <select id="event-category">
-          <option value="">Bitte wählen…</option>
-          <option value="Meisterschaftsspiel">Meisterschaftsspiel</option>
-          <option value="Pokalspiel">Pokalspiel</option>
-          <option value="Freundschaftsspiel">Freundschaftsspiel</option>
-          <option value="Vorbereitungsspiel">Vorbereitungsspiel</option>
-          <option value="Trainingsspiel">Trainingsspiel</option>
-          <option value="Sonstiges">Sonstiges</option>
-        </select>
-      </div>
-
-      <div class="row">
-        <label for="event-home">Heimmannschaft</label>
-        <input id="event-home" type="text" size="40" placeholder="z.B. FC 08 Villingen U17">
-      </div>
-
-      <div class="row">
-        <label for="event-away">Gastmannschaft</label>
-        <input id="event-away" type="text" size="40" placeholder="z.B. SC Freiburg U17">
-      </div>
-
-      <div class="row">
-        <label for="event-name">Event-Name (optional)</label>
-        <input id="event-name" type="text" size="40" placeholder="z.B. ENBW-Oberliga, Turniername…">
-      </div>
-
-      <div class="row">
-        <label for="event-location">Ort / Platz</label>
-        <input id="event-location" type="text" size="40" placeholder="z.B. Kunstrasen Villingen">
-      </div>
-
-      <div class="row">
-        <button id="btn-create-event" type="button">Event speichern</button>
-      </div>
-
       <div id="event-create-msg" class="status-line"></div>
+    </section>
 
     <!-- 3. Bewertung erfassen – eigener Reiter -->
     <section id="sec-rating-form" class="section-card">
@@ -1193,57 +1135,8 @@
     }
   </script>
 
-    <!-- Navigation -->
+   <!-- Navigation -->
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const buttons = Array.from(document.querySelectorAll('.top-nav button'));
-
-      const sections = {
-        'sec-config'     : document.getElementById('sec-config'),
-        'sec-auth'       : document.getElementById('sec-auth'),
-        'sec-profile'    : document.getElementById('sec-profile'),
-        'sec-rating'     : document.getElementById('sec-rating'),       // Spieler & Event
-        'sec-rating-form': document.getElementById('sec-rating-form'),  // Bewertung erfassen
-        'sec-radar'      : document.getElementById('sec-radar'),
-        'sec-drone'      : document.getElementById('sec-drone'),
-        'sec-ranking'    : document.getElementById('sec-ranking'),
-        'sec-player-dna' : document.getElementById('sec-player-dna'),
-        'sec-events'     : document.getElementById('sec-events'),
-        'sec-last'       : document.getElementById('sec-last')
-      };
-
-      function showSection(id) {
-        // alle Sections durchgehen und nur eine anzeigen
-        Object.entries(sections).forEach(([key, el]) => {
-          if (!el) return;
-          el.style.display = (key === id) ? 'block' : 'none';
-        });
-        // aktiven Button markieren
-        buttons.forEach(btn => {
-          btn.classList.toggle('active', btn.dataset.target === id);
-        });
-        // nach oben scrollen
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-
-      // globaler Zugriff (z. B. nach Login)
-      window.npShowSection = showSection;
-
-      // Klicks auf die Buttons abfangen
-      buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-          const target = btn.dataset.target;
-          if (target && sections[target]) {
-            showSection(target);
-          }
-        });
-      });
-
-      // Start mit Einstellungen (oder sec-auth, wenn du willst)
-      showSection('sec-config');
-    });
-  </script>
-
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
      const sections = {
@@ -3011,9 +2904,7 @@ if (dnaSel) {
 
     async function createEvent() {
       const dateEl   = document.getElementById('event-date');
-      const timeEl   = document.getElementById('event-time');
       const typeEl   = document.getElementById('event-type');
-      const catEl    = document.getElementById('event-category');
       const homeEl   = document.getElementById('event-home');
       const awayEl   = document.getElementById('event-away');
       const nameEl   = document.getElementById('event-name');
@@ -3029,26 +2920,18 @@ if (dnaSel) {
         return;
       }
 
-      const event_date   = (dateEl?.value || '').trim();
-      const kickoff_time = (timeEl?.value || '').trim();
-      const type         = (typeEl?.value || '').trim() || 'match';
+      const event_date = (dateEl?.value || '').trim();
+      const type       = (typeEl?.value || '').trim();
 
       const competition = (homeEl?.value || '').trim();
       const opponent    = (awayEl?.value || '').trim();
-      const category    = (catEl?.value || '').trim();
-      const extraName   = (nameEl?.value || '').trim();
+      const subtype     = (nameEl?.value || '').trim();
       const location    = (locEl?.value || '').trim();
 
       if (!event_date || !type) {
         if (msg) msg.textContent = 'Bitte mindestens Datum und Event-Typ eingeben.';
         return;
       }
-
-      // subtype = Kategorie + optionaler Event-Name
-      const subtypeParts = [];
-      if (category)  subtypeParts.push(category);
-      if (extraName) subtypeParts.push(extraName);
-      const subtype = subtypeParts.length ? subtypeParts.join(' – ') : null;
 
       try {
         const c = await getClient();
@@ -3061,8 +2944,7 @@ if (dnaSel) {
             competition,
             opponent,
             subtype,
-            location,
-            kickoff_time: kickoff_time || null
+            location
           }])
           .select();
 
@@ -3078,9 +2960,6 @@ if (dnaSel) {
         if (awayEl) awayEl.value = '';
         if (nameEl) nameEl.value = '';
         if (locEl)  locEl.value  = '';
-        if (timeEl) timeEl.value = '';
-        if (catEl)  catEl.value  = '';
-        if (dateEl) dateEl.value = '';
 
         await refreshEvents();
         if (data && data.length) {
