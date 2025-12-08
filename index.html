@@ -605,8 +605,66 @@
         <p style="margin:0; color:#555;">Kein Spiel ausgewählt.</p>
       </div>
 
+      <!-- 3c. Neues Event anlegen -->
+      <h3>3c. Neues Event anlegen</h3>
+
+      <div class="row">
+        <label for="event-date">Datum</label>
+        <input id="event-date" type="date">
+      </div>
+
+      <div class="row">
+        <label for="event-time">Anpfiff (Uhrzeit)</label>
+        <input id="event-time" type="time">
+      </div>
+
+      <div class="row">
+        <label for="event-type">Art (Basis)</label>
+        <select id="event-type">
+          <option value="match">Spiel</option>
+          <option value="training">Training</option>
+          <option value="tournament">Turnier</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="event-category">Kategorie</label>
+        <select id="event-category">
+          <option value="">Bitte wählen…</option>
+          <option value="Meisterschaftsspiel">Meisterschaftsspiel</option>
+          <option value="Pokalspiel">Pokalspiel</option>
+          <option value="Freundschaftsspiel">Freundschaftsspiel</option>
+          <option value="Vorbereitungsspiel">Vorbereitungsspiel</option>
+          <option value="Trainingsspiel">Trainingsspiel</option>
+          <option value="Sonstiges">Sonstiges</option>
+        </select>
+      </div>
+
+      <div class="row">
+        <label for="event-home">Heimmannschaft</label>
+        <input id="event-home" type="text" size="40" placeholder="z.B. FC 08 Villingen U17">
+      </div>
+
+      <div class="row">
+        <label for="event-away">Gastmannschaft</label>
+        <input id="event-away" type="text" size="40" placeholder="z.B. SC Freiburg U17">
+      </div>
+
+      <div class="row">
+        <label for="event-name">Event-Name (optional)</label>
+        <input id="event-name" type="text" size="40" placeholder="z.B. ENBW-Oberliga, Turniername…">
+      </div>
+
+      <div class="row">
+        <label for="event-location">Ort / Platz</label>
+        <input id="event-location" type="text" size="40" placeholder="z.B. Kunstrasen Villingen">
+      </div>
+
+      <div class="row">
+        <button id="btn-create-event" type="button">Event speichern</button>
+      </div>
+
       <div id="event-create-msg" class="status-line"></div>
-    </section>
 
     <!-- 3. Bewertung erfassen – eigener Reiter -->
     <section id="sec-rating-form" class="section-card">
@@ -2904,7 +2962,9 @@ if (dnaSel) {
 
     async function createEvent() {
       const dateEl   = document.getElementById('event-date');
+      const timeEl   = document.getElementById('event-time');
       const typeEl   = document.getElementById('event-type');
+      const catEl    = document.getElementById('event-category');
       const homeEl   = document.getElementById('event-home');
       const awayEl   = document.getElementById('event-away');
       const nameEl   = document.getElementById('event-name');
@@ -2919,6 +2979,69 @@ if (dnaSel) {
         if (msg) msg.textContent = 'Dein Konto ist noch nicht freigeschaltet (Elternzustimmung fehlt).';
         return;
       }
+
+      const event_date   = (dateEl?.value || '').trim();
+      const kickoff_time = (timeEl?.value || '').trim();
+      const type         = (typeEl?.value || '').trim() || 'match';
+
+      const competition = (homeEl?.value || '').trim();
+      const opponent    = (awayEl?.value || '').trim();
+      const category    = (catEl?.value || '').trim();
+      const extraName   = (nameEl?.value || '').trim();
+      const location    = (locEl?.value || '').trim();
+
+      if (!event_date || !type) {
+        if (msg) msg.textContent = 'Bitte mindestens Datum und Event-Typ eingeben.';
+        return;
+      }
+
+      // subtype = Kategorie + optionaler Event-Name
+      const subtypeParts = [];
+      if (category)  subtypeParts.push(category);
+      if (extraName) subtypeParts.push(extraName);
+      const subtype = subtypeParts.length ? subtypeParts.join(' – ') : null;
+
+      try {
+        const c = await getClient();
+
+        const { data, error } = await c
+          .from('event')
+          .insert([{
+            event_date,
+            type,
+            competition,
+            opponent,
+            subtype,
+            location,
+            kickoff_time: kickoff_time || null
+          }])
+          .select();
+
+        if (error) {
+          console.error('createEvent error', error);
+          if (msg) msg.textContent = 'Fehler beim Speichern: ' + error.message;
+          return;
+        }
+
+        if (msg) msg.textContent = 'Event gespeichert.';
+
+        if (homeEl) homeEl.value = '';
+        if (awayEl) awayEl.value = '';
+        if (nameEl) nameEl.value = '';
+        if (locEl)  locEl.value  = '';
+        if (timeEl) timeEl.value = '';
+        if (catEl)  catEl.value  = '';
+        if (dateEl) dateEl.value = '';
+
+        await refreshEvents();
+        if (data && data.length) {
+          setCurrentEvent(data[0]);
+        }
+      } catch (e) {
+        console.error('createEvent', e);
+        if (msg) msg.textContent = 'Fehler beim Speichern.';
+      }
+    }
 
       const event_date = (dateEl?.value || '').trim();
       const type       = (typeEl?.value || '').trim();
