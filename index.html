@@ -3042,6 +3042,8 @@ if (dnaSel) {
         if (msg) msg.textContent = 'Fehler beim Speichern.';
       }
     }
+    
+    document.getElementById('btn-create-event')?.addEventListener('click', createEvent);
 
       const event_date = (dateEl?.value || '').trim();
       const type       = (typeEl?.value || '').trim();
