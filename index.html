@@ -1193,8 +1193,57 @@
     }
   </script>
 
-   <!-- Navigation -->
+    <!-- Navigation -->
   <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const buttons = Array.from(document.querySelectorAll('.top-nav button'));
+
+      const sections = {
+        'sec-config'     : document.getElementById('sec-config'),
+        'sec-auth'       : document.getElementById('sec-auth'),
+        'sec-profile'    : document.getElementById('sec-profile'),
+        'sec-rating'     : document.getElementById('sec-rating'),       // Spieler & Event
+        'sec-rating-form': document.getElementById('sec-rating-form'),  // Bewertung erfassen
+        'sec-radar'      : document.getElementById('sec-radar'),
+        'sec-drone'      : document.getElementById('sec-drone'),
+        'sec-ranking'    : document.getElementById('sec-ranking'),
+        'sec-player-dna' : document.getElementById('sec-player-dna'),
+        'sec-events'     : document.getElementById('sec-events'),
+        'sec-last'       : document.getElementById('sec-last')
+      };
+
+      function showSection(id) {
+        // alle Sections durchgehen und nur eine anzeigen
+        Object.entries(sections).forEach(([key, el]) => {
+          if (!el) return;
+          el.style.display = (key === id) ? 'block' : 'none';
+        });
+        // aktiven Button markieren
+        buttons.forEach(btn => {
+          btn.classList.toggle('active', btn.dataset.target === id);
+        });
+        // nach oben scrollen
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+
+      // globaler Zugriff (z. B. nach Login)
+      window.npShowSection = showSection;
+
+      // Klicks auf die Buttons abfangen
+      buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          if (target && sections[target]) {
+            showSection(target);
+          }
+        });
+      });
+
+      // Start mit Einstellungen (oder sec-auth, wenn du willst)
+      showSection('sec-config');
+    });
+  </script>
+
     document.addEventListener('DOMContentLoaded', () => {
       const buttons = Array.from(document.querySelectorAll('.top-nav button'));
      const sections = {
