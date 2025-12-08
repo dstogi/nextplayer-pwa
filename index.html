@@ -122,13 +122,6 @@
       cursor: pointer;
       white-space: nowrap;
     }
-
-/* Aktiver Navigations-Button oben */
-button[data-target].nav-active {
-  background: var(--np-accent);
-  color: #050608;
-  box-shadow: 0 0 0 2px rgba(245, 182, 66, 0.3);
-}
     
 .top-nav button {
   display: flex;
@@ -1194,44 +1187,6 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-
-// === Navigation: aktiven Tab markieren (bereinigt) ===
-document.addEventListener('click', (ev) => {
-  const btn = ev.target.closest('button[data-target]');
-  if (!btn) return;
-
-  const all = document.querySelectorAll('button[data-target]');
-
-  // Alle Tabs auf "normal" zurücksetzen
-  all.forEach(b => {
-    b.classList.remove('nav-active');
-    b.style.backgroundColor = '';
-    b.style.color = '';
-  });
-
-  // Geklickten Tab hervorheben
-  btn.classList.add('nav-active');
-  btn.style.backgroundColor = 'var(--np-accent)';
-  btn.style.color = '#050608';
-});
-
-    // Optional: Standard-Tab beim Laden markieren
-window.addEventListener('DOMContentLoaded', () => {
-  // Wenn du einen bestimmten Tab als Start willst,
-  // kannst du hier gezielt nach seinem data-target suchen.
-  // Beispiel (anpassen, falls dein Wert anders heißt!):
-  // const defaultBtn = document.querySelector('button[data-target="#sec-player-event"]');
-
-  const defaultBtn =
-    document.querySelector('button[data-target].nav-active') ||
-    document.querySelector('button[data-target]');
-
-  if (!defaultBtn) return;
-
-  defaultBtn.classList.add('nav-active');
-  defaultBtn.style.backgroundColor = 'var(--np-accent)';
-  defaultBtn.style.color = '#050608';
-});
 
   function isUUID(v) {
     return typeof v === 'string' &&
