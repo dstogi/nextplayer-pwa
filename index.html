@@ -122,6 +122,13 @@
       cursor: pointer;
       white-space: nowrap;
     }
+
+/* Aktiver Navigations-Button oben */
+button[data-target].nav-active {
+  background: var(--np-accent);
+  color: #050608;
+  box-shadow: 0 0 0 2px rgba(245, 182, 66, 0.3);
+}
     
 .top-nav button {
   display: flex;
@@ -1187,6 +1194,27 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+   // === Navigation: aktiven Tab markieren (KLEINES FEATURE) ===
+document.addEventListener('click', (ev) => {
+  const btn = ev.target.closest('button[data-target]');
+  if (!btn) return;
+
+  // Alle Top-Menü-Buttons zurücksetzen
+  document.querySelectorAll('button[data-target]').forEach(b =>
+    b.classList.remove('nav-active')
+  );
+
+  // Den geklickten Button hervorheben
+  btn.classList.add('nav-active');
+});
+
+// Optional: beim Laden Standard-Tab markieren (z.B. Einstellungen)
+window.addEventListener('DOMContentLoaded', () => {
+  const firstBtn = document.querySelector('button[data-target]');
+  if (firstBtn) firstBtn.classList.add('nav-active');
+});
+ 
 
   function isUUID(v) {
     return typeof v === 'string' &&
