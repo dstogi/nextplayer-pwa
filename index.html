@@ -1272,9 +1272,9 @@
     });
   </script>
 
-  <!-- Supabase-Logik -->
+   <!-- Supabase-Logik -->
   <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/+esm';
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.48.0/+esm';
 
   const $  = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -1284,44 +1284,37 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
   }
 
+  // --- Globale Zustände nur EINMAL deklarieren ---
   let supa = null;
   let currentUser = null;
   let currentUserMeta = null;
   let currentProfile = null;
   let currentEvent = null;
   let allEvents = [];
-  // ... ab hier dein restlicher (funktionierender) Code
 
-let supa = null;
-let currentUser = null;
-let currentUserMeta = null;
-let currentProfile = null;
-let currentEvent = null;
-let allEvents = [];
+  // === 3. Bewertung erfassen – Farblogik (Dropdowns) ===
+  const ratingFormSection = document.getElementById('sec-rating-form');
 
-// === 3. Bewertung erfassen – Farblogik (Dropdowns) ===
-const ratingFormSection = document.getElementById('sec-rating-form');
+  if (ratingFormSection) {
+    ratingFormSection.addEventListener('change', (ev) => {
+      // nur Selects im Kriterien-Bereich (#criteria)
+      const sel = ev.target.closest('#criteria select');
+      if (!sel) return;
 
-if (ratingFormSection) {
-  ratingFormSection.addEventListener('change', (ev) => {
-    // nur Selects im Kriterien-Bereich (#criteria)
-    const sel = ev.target.closest('#criteria select');
-    if (!sel) return;
+      const row = sel.closest('.row');
+      if (!row) return;
 
-    const row = sel.closest('.row');
-    if (!row) return;
+      // Wenn eine sinnvolle Note gewählt ist → Zeile grün,
+      // sonst wieder grau
+      if (sel.value && sel.value !== '-') {
+        row.classList.add('rated');
+      } else {
+        row.classList.remove('rated');
+      }
+    });
+  }
 
-    // Wenn eine sinnvolle Note gewählt ist → Zeile grün,
-    // sonst wieder grau
-    if (sel.value && sel.value !== '-') {
-      row.classList.add('rated');
-    } else {
-      row.classList.remove('rated');
-    }
-  });
-}
-
-      // -----------------------------
+       // -----------------------------
     // Supabase-Konfiguration
     // -----------------------------
     function loadConfig() {
