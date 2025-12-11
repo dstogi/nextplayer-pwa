@@ -348,7 +348,7 @@
   align-items: center;
 }
 
-       /* Layout für die Drohnen-Buttons (Desktop) */
+        /* SpielerDrohne – Layout (Desktop) */
     .drone-actions-row {
       display: flex;
       gap: 32px;
@@ -391,7 +391,61 @@
       text-align: center;
       max-width: 80px;
     }
-    
+
+    /* === 3. Bewertung erfassen – Layout & Farben === */
+
+    /* Jede Bewertungszeile */
+    .rating-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: #f5f5f5;           /* grau: noch nicht bewertet */
+      margin-bottom: 4px;
+    }
+
+    /* Label links */
+    .rating-row > label {
+      flex: 1;
+    }
+
+    /* Button-Gruppe rechts */
+    .rating-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Plus/Minus-Buttons */
+    .rating-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      border: 1px solid #ddd;
+      background: #ffffff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* kleiner Wert in der Mitte */
+    .rating-value {
+      min-width: 20px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Wenn bewertet → Zeile hellgrün */
+    .rating-row.rated {
+      background: #dcfce7;           /* hellgrün */
+    }
+
+    /* Mobile-Optimierung */
     @media (max-width: 700px) {
       main { padding: 10px; }
       label { min-width: 110px; }
@@ -409,6 +463,16 @@
         width: 96px;
         height: 96px;
         font-size: 2.8rem;
+      }
+
+      .rating-row {
+        padding: 8px 10px;
+      }
+
+      .rating-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 1.3rem;
       }
     }
   </style>
@@ -1226,6 +1290,80 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
   let currentEvent = null;
   let allEvents = [];
   // ... ab hier dein restlicher (funktionierender) Code
+
+    // === 3. Bewertung erfassen – Layout & Farblogik ===
+
+// richtet das Layout der Kriterienzeilen hübsch her
+function enhanceCriteriaLayout() {
+  const container = document.getElementById('criteria');
+  if (!container) return;
+
+  const rows = Array.from(container.querySelectorAll('.row'));
+
+  rows.forEach((row) => {
+    // schon bearbeitet? Dann überspringen
+    if (row.classList.contains('rating-row')) return;
+
+    row.classList.add('rating-row');
+
+    // wir gehen davon aus: erstes Kind = <label>, Rest = Buttons/Anzeige
+    const label = row.querySelector('label');
+    if (!label) return;
+
+    const children = Array.from(row.children);
+
+    const controls = document.createElement('div');
+    controls.className = 'rating-controls';
+
+    children.forEach((child) => {
+      if (child !== label) {
+        controls.appendChild(child);
+      }
+    });
+
+    row.appendChild(controls);
+  });
+
+  // Buttons für Styling markieren
+  container.querySelectorAll('button').forEach((btn) => {
+    btn.classList.add('rating-btn');
+  });
+
+  // Wert-Anzeige markieren (heuristisch über ID-Namen)
+  container.querySelectorAll('span').forEach((span) => {
+    if (span.classList.contains('rating-value')) return;
+    const id = span.id || '';
+    if (/crit-|wert|note/i.test(id)) {
+      span.classList.add('rating-value');
+    }
+  });
+}
+
+// beim Laden einmal aufrufen
+document.addEventListener('DOMContentLoaded', () => {
+  enhanceCriteriaLayout();
+});
+
+// wenn später noch einmal Kriterien neu gerendert werden sollten,
+// kannst du enhanceCriteriaLayout() nach dem Rendern einfach erneut aufrufen.
+
+// Klick-Logik: sobald ein Bewertungs-Button geklickt wird → Zeile grün
+const ratingFormSection = document.getElementById('sec-rating-form');
+
+if (ratingFormSection) {
+  ratingFormSection.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('.rating-btn');
+    if (!btn) return;
+
+    const row =
+      btn.closest('.rating-row') ||
+      btn.closest('.row');
+
+    if (row) {
+      row.classList.add('rated');
+    }
+  });
+}
 
     // -----------------------------
     // Supabase-Konfiguration
